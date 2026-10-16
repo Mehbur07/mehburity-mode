@@ -74,5 +74,19 @@
 	"mehburity.speech.mining.done_one": "Tamamdır!",
 	"mehburity.speech.mining.unreachable": "O bloğa ulaşamıyorum.",
 	"mehburity.speech.mining.stopped": "Tamam, kazmayı bıraktım.",
-	"mehburity.speech.mining.server_off": "Bu sunucuda madencilik kapalı."
+	"mehburity.speech.mining.server_off": "Bu sunucuda madencilik kapalı.",
+	"mehburity.speech.build.server_off": "Bu sunucuda ev yapma kapalı.",
+	"mehburity.speech.build.already": "Zaten ev yapıyorum!",
+	"mehburity.speech.build.no_room": "Buraya ev yapamam: dokunmamam gereken bir şey var ya da yer yok. Daha düz, açık bir yer dene.",
+	"mehburity.speech.build.start": "Bana bırak! Sana bir ev yapıyorum.",
+	"mehburity.speech.build.not_building": "Şu an bir şey yapmıyorum.",
+	"mehburity.speech.build.nothing_to_undo": "Kaldırılacak bir ev yapmadım ki.",
+	"mehburity.speech.build.undone": "Puf! Ev gitti, her şey eskisi gibi oldu.",
+	"mehburity.speech.build.done": "Evin hazır! İçeride yatak, sandık ve meşaleler var. Beğendin mi?",
+	"mehburity.speech.build.stopped": "Tamam, inşaatı durdurdum. Kaldırmamı istersen \"evi geri al\" de.",
+	"mehburity.speech.build.held_off": "Bu sunucuda kendi bloğunla ev yapmak kapalı.",
+	"mehburity.speech.build.hold_block": "Duvarları hangi bloktan istiyorsan onu eline al.",
+	"mehburity.speech.build.held_unbreakable": "Kırılmaz bloklarla ev yapamam.",
+	"mehburity.speech.build.held_not_full": "Ondan duvar olmaz. Tam bir blok tut.",
+	"mehburity.speech.mining.busy_building": "Şu an senin evini yapıyorum!"
 }

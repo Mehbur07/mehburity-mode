@@ -152,6 +152,10 @@ public final class Mining {
 					"Your Mehburity is not nearby. Use /mehburity cagir first."));
 			return null;
 		}
+		if (mehburity.getBuildJob() != null) {
+			MehburitySpeech.say(owner, MehburitySpeech.text("mining.busy_building", "I'm building your house right now!"));
+			return null;
+		}
 		if (MiningBag.isFull(owner)) {
 			MehburitySpeech.say(owner, MehburitySpeech.text("mining.bag_full",
 					"My bag is full! Say \"kazdığın madenleri ver\" and I'll hand everything over."));

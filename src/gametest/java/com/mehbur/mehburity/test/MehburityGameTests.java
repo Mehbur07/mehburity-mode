@@ -134,7 +134,7 @@ public final class MehburityGameTests {
 		CommandNode<CommandSourceStack> root = helper.getLevel().getServer().getCommands().getDispatcher()
 				.getRoot().getChild(MehburityCommands.ROOT);
 		helper.assertTrue(root != null, "/mehburity must be registered");
-		for (String sub : new String[]{"yenile", "cagir", "otur", "takip", "ayarlar", "savas", "kaz", "ver", "canta"}) {
+		for (String sub : new String[]{"yenile", "cagir", "otur", "takip", "ayarlar", "savas", "kaz", "ver", "canta", "ev"}) {
 			helper.assertTrue(root.getChild(sub) != null, "/mehburity " + sub + " must be registered");
 		}
 		helper.succeed();

@@ -23,8 +23,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -85,6 +88,7 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 			checkSettingsAndCommands(context, server, playerId);
 			checkCombat(context, server, playerId);
 			checkMining(context, server, playerId);
+			checkBuilding(context, server, playerId);
 			checkDarkness(context, server);
 		}
 
@@ -230,6 +234,48 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		context.waitFor(mc -> mc.player.getInventory().countItem(Items.RAW_IRON) >= 2, 100);
 		context.waitTicks(10);
 		context.takeScreenshot("mehburity-m3-given");
+	}
+
+	/** "Mehburity, taş ev yap" from the real chat, a look at the house, then "evi geri al". */
+	private static void checkBuilding(ClientGameTestContext context, TestServerContext server, UUID playerId) {
+		double speed = server.computeOnServer(s -> MehburityConfig.get().build.blocksPerSecond);
+		server.runOnServer(s -> MehburityConfig.get().build.blocksPerSecond = 120.0);
+		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, taş ev yap"));
+		server.waitFor(s -> CompanionManager.find(s, playerId).getBuildJob() != null, 100);
+		BlockPos door = server.computeOnServer(s -> CompanionManager.find(s, playerId).getBuildJob().plan().origin().above());
+		context.waitTicks(40);
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.getInput().lookAt(door.above(3));
+		context.takeScreenshot("mehburity-h1-building");
+		server.waitFor(s -> CompanionManager.find(s, playerId).getBuildJob() == null, 1200);
+		if (!server.computeOnServer(s -> s.overworld().getBlockState(door).getBlock() instanceof DoorBlock)) {
+			throw new AssertionError("the house must have a door at " + door);
+		}
+		// Step back to see the whole house.
+		server.runOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			Vec3 back = player.position().subtract(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(7.0));
+			player.teleportTo(back.x, player.getY() + 1.0, back.z);
+		});
+		context.waitTicks(20);
+		context.getInput().lookAt(door.above(3));
+		context.waitTicks(5);
+		context.takeScreenshot("mehburity-h2-house");
+		context.getInput().pressKey(options -> options.keyToggleGui);
+
+		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, evi geri al"));
+		server.waitFor(s -> !(s.overworld().getBlockState(door).getBlock() instanceof DoorBlock), 100);
+		// Taking the house down must not leave torches, doors or other blocks lying around as items.
+		String dropped = server.computeOnServer(s -> s.overworld()
+				.getEntitiesOfClass(ItemEntity.class, new AABB(door).inflate(12.0),
+						item -> item.getItem().getItem() instanceof BlockItem)
+				.toString());
+		if (!dropped.equals("[]")) {
+			throw new AssertionError("undo dropped blocks as items: " + dropped);
+		}
+		server.runOnServer(s -> MehburityConfig.get().build.blocksPerSecond = speed);
+		context.waitTicks(10);
+		context.takeScreenshot("mehburity-h3-undone");
 	}
 
 	private static void assertEquals(Object expected, Object actual, String what) {

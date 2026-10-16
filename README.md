@@ -4,7 +4,7 @@ Minecraft **26.2 / Fabric** modu. Mehburity, oyuncunun yanında süzülen neon c
 yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar ve sinirlenince
 18 blokluk bir canavara dönüşür.
 
-> Durum: **Faz 4 (madencilik) tamamlandı.** Ev, öfke ve canavar formu sonraki fazlarda gelecek;
+> Durum: **Faz 5 (ev yapma) tamamlandı.** Öfke ve canavar formu sonraki fazlarda gelecek;
 > tam README Faz 8'de.
 
 ## Özellikler (şu an)
@@ -45,6 +45,20 @@ yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar
   Elmas kazma ile kazılmış gibi düşürür (her cevher eşyasını verir, XP küreleri çıkar). Spawn korumasına,
   macera moduna ve koruma modlarına uyar. Saldırı olursa kazmayı bırakıp savaşır, sonra devam eder.
   Gemini çantada ne olduğunu bilir.
+- **Ev yapma (yaratıcı mod gibi, malzeme harcamaz):** Sohbete **"Mehburity, ev yap"** yaz: Mehburity önüne,
+  kapısı sana bakan küçük bir ev kurar. 7×7 gövde, köşe direkleri, kapı, camlar, basamaklı piramit çatı, gerekiyorsa
+  zemin altına temel; içinde yatak, sandık, çalışma masası, fırın ve meşaleler (Verity karanlığında önemli).
+  Mehburity inşaat alanında süzülüp blokları tek tek yerleştirir.
+  - Stiller: **"taş ev yap"**, **"tuğla ev yap"**, **"ahşap ev yap"** (varsayılan), ve
+    **"elimdeki bloktan ev yap"**: duvarlar elindeki bloktan olur. Her tam blok olur; kırılmaz bloklar (ana kaya,
+    bariyer...), operatör blokları (komut bloğu...) ve tam olmayan bloklar (meşale, basamak...) olmaz.
+  - **"Mehburity, evi geri al"** → evi kaldırır, oradaki her şeyi eski haline getirir (son ev, sunucu kapanana kadar).
+  - **"Mehburity, inşaatı durdur"** → yarıda bırakır (yine geri alınabilir).
+  - İngilizce: "build me a house", "build a stone house", "remove the house", "stop building".
+
+  Kırılmaz bloklara, eşya tutan bloklara (sandık, fırın...) ve korunan alanlara asla dokunmaz; önünde böyle bir şey
+  varsa sağına, arkasına ya da soluna kurar, hiçbir yöne sığmazsa söyler. Kazma ile aynı anda yapılmaz; saldırı
+  olursa önce savaşır. İnşaat sürerken Mehburity sahasından ayrılmaz.
 - **Mehburity:** Havada süzülen, pürüzsüz neon cyan küre; yüzü baktığı yöne döner. Seni takip eder,
   uzakta kalırsa (veya başka boyuttaysan) yanına ışınlanır.
 - **Ölümsüz:** Hiçbir hasar almaz, `/kill` ile ölmez; boşluğa düşerse sahibinin yanına döner.
@@ -71,6 +85,9 @@ Alt komutlar ASCII yazılır (Minecraft'ın komut ayrıştırıcısı "ç, ğ" k
 | `/mehburity kaz` | herkes | Etraftaki cevherleri kazar ("Mehburity, maden kaz") |
 | `/mehburity kaz bunu` | herkes | Baktığın bloğu kazar ("Mehburity, bunu kaz") |
 | `/mehburity kaz dur` | herkes | Kazmayı bırakır ("Mehburity, kazmayı bırak") |
+| `/mehburity ev` | herkes | Ev yapar ("Mehburity, ev yap"); stil: `/mehburity ev ahsap\|tas\|tugla\|elimdeki` |
+| `/mehburity ev dur` | herkes | İnşaatı durdurur ("Mehburity, inşaatı durdur") |
+| `/mehburity ev geri` | herkes | Son evi kaldırır, araziyi eski haline getirir ("Mehburity, evi geri al") |
 | `/mehburity ver` | herkes | Kazdıklarını verir ("Mehburity, kazdığın madenleri ver") |
 | `/mehburity canta` | herkes | Çantada ne olduğunu söyler ("Mehburity, ne kazdın?") |
 | `/mehburity ayarlar` | herkes | Ayarlar ekranını açar (Gemini anahtarı, ses) |
@@ -131,6 +148,13 @@ Gemini ile konuşma ve ses Google'ın API kotasından düşer (ücretsiz katman�
 | `mining.bagSlots` | 27 | Çanta boyutu (yığın) |
 | `mining.maxBlocksPerTrip` | 64 | Bir seferde en fazla kaç blok kazar |
 | `mining.pointRange` | 24.0 | "Bunu kaz" için baktığın bloğun en uzak mesafesi |
+| `build.enabled` | true | Sunucu genelinde ev yapma açık mı |
+| `build.defaultStyle` | "ahsap" | Stil söylenmezse: `ahsap`, `tas`, `tugla` |
+| `build.allowHeldBlock` | true | "Elimdeki bloktan ev yap"a izin |
+| `build.blocksPerSecond` | 15.0 | İnşaat hızı |
+| `build.maxFoundationDepth` | 6 | Zemin altındaki boşlukları bu derinliğe kadar doldurur |
+| `build.furnish` | true | Yatak, sandık, çalışma masası, fırın (meşaleler her zaman konur) |
+| `build.reach` | 8.0 | Blokları bu uzaklıktan yerleştirir |
 | `ai.enabled` | true | Mehburity sohbete cevap versin mi |
 | `ai.chatPrefixes` | ["mehburity", "mehbur"] | Mesaj bunlardan biriyle başlarsa Mehburity'ye sorulmuş sayılır |
 | `ai.hearingRadius` | 32.0 | Cevabı sohbette görebilecek oyuncuların uzaklığı (blok) |
@@ -207,14 +231,16 @@ src/main/java/com/mehbur/mehburity/
   config/   Tek ayar dosyası
   combat/   Savaş: hedef kuralları (CombatTargets), hedef seçimi, ışın saldırısı, hasar tipi
   mining/   Madencilik: kurallar (MiningRules), kazma hedefi (MineGoal), çanta (MiningBag), sohbet emirleri (MiningChat)
-  build/ anger/   Sonraki fazlar
+  build/    Ev: plan (HousePlan), stiller (HouseStyle), inşaat hedefi (BuildGoal), geri alma (Building), sohbet emirleri (BuildChat)
+  anger/    Sonraki faz
 src/client/java/com/mehbur/mehburity/client/
   render/   Küre renderer'ı (+ ışın), kutu modeli
   verity/   Karanlığın istemci tarafı (lightmap mixin'i)
   ai/       İstemcide Gemini çağrısı (ClientAi) ve ses (VoicePlayer)
   screen/   Ayarlar ekranı + Mod Menu entegrasyonu
   config/
-src/gametest/   Sunucu ve istemci oyun testleri (FakeGemini: testler için yerel sahte Gemini sunucusu)
+src/gametest/   Sunucu ve istemci oyun testleri (FakeGemini: testler için yerel sahte Gemini sunucusu;
+                ev testi kendi test ortamında, mehburity-test:solo, tek başına çalışır)
 tools/          gen_textures.py, scan_secrets.py
 ```
 

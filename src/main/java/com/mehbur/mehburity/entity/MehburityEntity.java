@@ -1,5 +1,7 @@
 package com.mehbur.mehburity.entity;
 
+import com.mehbur.mehburity.build.BuildGoal;
+import com.mehbur.mehburity.build.BuildJob;
 import com.mehbur.mehburity.combat.BeamAttackGoal;
 import com.mehbur.mehburity.combat.DefendOwnerTargetGoal;
 import com.mehbur.mehburity.config.MehburityConfig;
@@ -58,6 +60,8 @@ public class MehburityEntity extends PathfinderMob {
 	private CompanionMode mode = CompanionMode.FOLLOW;
 	/** What the owner asked it to mine; not saved (a new Mehburity after login starts idle). */
 	private @Nullable MiningJob miningJob;
+	/** The house it is building; not saved either. */
+	private @Nullable BuildJob buildJob;
 	private int clientBeamTicks;
 	private int clientFlashTicks;
 
@@ -89,7 +93,8 @@ public class MehburityEntity extends PathfinderMob {
 		this.targetSelector.addGoal(1, targeting);
 		// Fighting comes before following; the companion manager still teleports it back if it gets too far.
 		this.goalSelector.addGoal(1, new BeamAttackGoal(this, targeting));
-		// Mining pauses for fights and keeps following from pulling it away from the ore.
+		// Jobs pause for fights and keep following from pulling it away from the work. Only one job runs at a time.
+		this.goalSelector.addGoal(2, new BuildGoal(this));
 		this.goalSelector.addGoal(2, new MineGoal(this));
 		this.goalSelector.addGoal(3, new FollowOwnerFlyingGoal(this));
 		this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
@@ -153,6 +158,14 @@ public class MehburityEntity extends PathfinderMob {
 
 	public void setMiningJob(@Nullable MiningJob job) {
 		this.miningJob = job;
+	}
+
+	public @Nullable BuildJob getBuildJob() {
+		return buildJob;
+	}
+
+	public void setBuildJob(@Nullable BuildJob job) {
+		this.buildJob = job;
 	}
 
 	// ---------------------------------------------------------------- emerge animation

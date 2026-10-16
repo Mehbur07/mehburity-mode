@@ -27,6 +27,7 @@ import java.util.function.UnaryOperator;
  */
 public final class CompanionManager {
 	private static final int CHECK_INTERVAL = 20;
+	private static final double BUILD_LEASH = 96.0;
 
 	private CompanionManager() {
 	}
@@ -93,7 +94,7 @@ public final class CompanionManager {
 
 		MehburityEntity mehburity = findEntity(server, companion.entityId());
 		if (mehburity != null) {
-			if (companion.mode() == CompanionMode.FOLLOW && mehburity.isTooFarFrom(player)) {
+			if (companion.mode() == CompanionMode.FOLLOW && mehburity.isTooFarFrom(player) && !isBusyBuilding(mehburity, player)) {
 				mehburity.teleportToOwner(player);
 			}
 			return;
@@ -105,6 +106,11 @@ public final class CompanionManager {
 				MehburitySpeech.speak(player, MehburitySpeech.text("welcome_back", "Welcome back, %s!", player.getDisplayName()));
 			}
 		}
+	}
+
+	/** A house under construction keeps Mehburity at the site, unless the owner went really far or elsewhere. */
+	private static boolean isBusyBuilding(MehburityEntity mehburity, ServerPlayer owner) {
+		return mehburity.getBuildJob() != null && owner.level() == mehburity.level() && mehburity.distanceToSqr(owner) < BUILD_LEASH * BUILD_LEASH;
 	}
 
 	// ---------------------------------------------------------------- box

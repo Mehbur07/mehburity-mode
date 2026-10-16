@@ -74,5 +74,19 @@
 	"mehburity.speech.mining.done_one": "Done!",
 	"mehburity.speech.mining.unreachable": "I can't reach that block.",
 	"mehburity.speech.mining.stopped": "Okay, I stopped mining.",
-	"mehburity.speech.mining.server_off": "Mining is turned off on this server."
+	"mehburity.speech.mining.server_off": "Mining is turned off on this server.",
+	"mehburity.speech.build.server_off": "Building is turned off on this server.",
+	"mehburity.speech.build.already": "I'm already building!",
+	"mehburity.speech.build.no_room": "I can't build here: there is something I must not touch, or no room. Try a flatter, open spot.",
+	"mehburity.speech.build.start": "Leave it to me! I'm building you a house.",
+	"mehburity.speech.build.not_building": "I'm not building anything right now.",
+	"mehburity.speech.build.nothing_to_undo": "I haven't built anything to take down.",
+	"mehburity.speech.build.undone": "Poof! The house is gone and everything is back as it was.",
+	"mehburity.speech.build.done": "Your house is ready! There's a bed, a chest and torches inside. Do you like it?",
+	"mehburity.speech.build.stopped": "Okay, I stopped building. Say \"evi geri al\" if you want it gone.",
+	"mehburity.speech.build.held_off": "Building with your own block is turned off on this server.",
+	"mehburity.speech.build.hold_block": "Hold the block you want the walls made of.",
+	"mehburity.speech.build.held_unbreakable": "I can't build with unbreakable blocks.",
+	"mehburity.speech.build.held_not_full": "That won't make a wall. Hold a full block.",
+	"mehburity.speech.mining.busy_building": "I'm building your house right now!"
 }

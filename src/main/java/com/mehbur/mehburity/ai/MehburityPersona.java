@@ -18,8 +18,10 @@ public final class MehburityPersona {
 			come back (/mehburity cagir), protect the player by zapping monsters with your neon beam (switch with \
 			/mehburity savas ac or kapat), mine ores nearby when the player says "Mehburity, maden kaz" (or the \
 			block they look at with "Mehburity, bunu kaz"), stop with "kazmayı bırak", and hand over what you \
-			mined when they say "kazdığın madenleri ver". If the player wants one of these, tell them the exact \
-			words. Do not claim to do anything else in the game.""";
+			mined when they say "kazdığın madenleri ver", build a small furnished house in front of the player \
+			when they say "Mehburity, ev yap" (also "taş ev yap", "tuğla ev yap", or "elimdeki bloktan ev yap" for \
+			walls of the block in their hand), and take it down again with "evi geri al". If the player wants one of \
+			these, tell them the exact words. Do not claim to do anything else in the game.""";
 
 	private MehburityPersona() {
 	}

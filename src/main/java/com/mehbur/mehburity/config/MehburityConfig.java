@@ -25,6 +25,7 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 	public Companion companion = new Companion();
 	public Combat combat = new Combat();
 	public Mining mining = new Mining();
+	public Build build = new Build();
 	public Ai ai = new Ai();
 	public Verity verity = new Verity();
 
@@ -104,6 +105,26 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		public int maxBlocksPerTrip = 64;
 		/** How far away a block the owner points at ("Mehburity, bunu kaz") may be. */
 		public double pointRange = 24.0;
+	}
+
+	/**
+	 * Building a house for the owner ("Mehburity, ev yap"). Creative-style: no materials are used up. The last house
+	 * can be taken down again ("evi geri al"), which puts back what was there before.
+	 */
+	public static final class Build {
+		public boolean enabled = true;
+		/** Style when none is asked for: "ahsap" (wood), "tas" (stone), "tugla" (brick). */
+		public String defaultStyle = "ahsap";
+		/** Lets the owner build walls from the block in their hand ("elimdeki bloktan ev yap"). */
+		public boolean allowHeldBlock = true;
+		/** Placing speed. */
+		public double blocksPerSecond = 15.0;
+		/** Fills holes under the floor down to this depth; deeper gaps are left open. */
+		public int maxFoundationDepth = 6;
+		/** Furniture: bed, chest, crafting table, furnace. Torches are always placed (nights are dark). */
+		public boolean furnish = true;
+		/** Places blocks from this far away; it flies closer otherwise. */
+		public double reach = 8.0;
 	}
 
 	/**
@@ -189,6 +210,9 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		if (mining == null) {
 			mining = new Mining();
 		}
+		if (build == null) {
+			build = new Build();
+		}
 		if (ai == null) {
 			ai = new Ai();
 		}
@@ -228,6 +252,12 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		mining.bagSlots = Mth.clamp(mining.bagSlots, 1, 216);
 		mining.maxBlocksPerTrip = Mth.clamp(mining.maxBlocksPerTrip, 1, 4096);
 		mining.pointRange = Mth.clamp(mining.pointRange, 2.0, 64.0);
+		if (build.defaultStyle == null || build.defaultStyle.isBlank()) {
+			build.defaultStyle = new Build().defaultStyle;
+		}
+		build.blocksPerSecond = Mth.clamp(build.blocksPerSecond, 1.0, 400.0);
+		build.maxFoundationDepth = Mth.clamp(build.maxFoundationDepth, 0, 32);
+		build.reach = Mth.clamp(build.reach, 3.0, 16.0);
 		if (ai.chatPrefixes == null) {
 			ai.chatPrefixes = new ArrayList<>();
 		}

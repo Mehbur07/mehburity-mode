@@ -1,12 +1,12 @@
 # Gradle
 .gradle/
-build/
+/build/
 out/
 classes/
 
 # Loom run directories (contain local worlds, logs, options and configs with API keys)
-run/
-runs/
+/run/
+/runs/
 
 # IDE
 .idea/

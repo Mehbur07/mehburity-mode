@@ -1,6 +1,8 @@
 package com.mehbur.mehburity.command;
 
 import com.mehbur.mehburity.MehburityMod;
+import com.mehbur.mehburity.build.Building;
+import com.mehbur.mehburity.build.HouseStyle;
 import com.mehbur.mehburity.config.ConfigReloadedCallback;
 import com.mehbur.mehburity.config.JsonConfigFile;
 import com.mehbur.mehburity.config.MehburityConfig;
@@ -11,6 +13,7 @@ import com.mehbur.mehburity.entity.MehburitySpeech;
 import com.mehbur.mehburity.mining.Mining;
 import com.mehbur.mehburity.network.OpenSettingsPayload;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -53,6 +56,7 @@ public final class MehburityCommands {
 						.executes(ctx -> mining(ctx, Mining::startOres))
 						.then(Commands.literal("bunu").executes(ctx -> mining(ctx, Mining::startLookedAt)))
 						.then(Commands.literal("dur").executes(ctx -> mining(ctx, Mining::stop))))
+				.then(houseCommand())
 				.then(Commands.literal("ver").executes(ctx -> mining(ctx, Mining::give)))
 				.then(Commands.literal("canta").executes(ctx -> mining(ctx, Mining::list)))
 				.then(Commands.literal("ayarlar").executes(MehburityCommands::openSettings))
@@ -124,7 +128,19 @@ public final class MehburityCommands {
 		return 1;
 	}
 
-	/** Mining subcommands; the action itself answers the player. */
+	/** {@code /mehburity ev [ahsap|tas|tugla|elimdeki]}, {@code ev dur}, {@code ev geri}. */
+	private static LiteralArgumentBuilder<CommandSourceStack> houseCommand() {
+		LiteralArgumentBuilder<CommandSourceStack> house = Commands.literal("ev")
+				.executes(ctx -> mining(ctx, player -> Building.start(player, null)))
+				.then(Commands.literal("dur").executes(ctx -> mining(ctx, Building::stop)))
+				.then(Commands.literal("geri").executes(ctx -> mining(ctx, Building::undo)));
+		for (HouseStyle style : HouseStyle.values()) {
+			house.then(Commands.literal(style.id()).executes(ctx -> mining(ctx, player -> Building.start(player, style))));
+		}
+		return house;
+	}
+
+	/** Job subcommands (mining, building); the action itself answers the player. */
 	private static int mining(CommandContext<CommandSourceStack> ctx, Predicate<ServerPlayer> action) throws CommandSyntaxException {
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		if (CompanionRegistry.companion(player.level().getServer(), player.getUUID()) == null) {

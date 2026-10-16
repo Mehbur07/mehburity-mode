@@ -2,6 +2,7 @@ package com.mehbur.mehburity;
 
 import com.mehbur.mehburity.ai.AiRouter;
 import com.mehbur.mehburity.ai.GameEvents;
+import com.mehbur.mehburity.build.Building;
 import com.mehbur.mehburity.command.MehburityCommands;
 import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
@@ -45,6 +46,7 @@ public final class MehburityMod implements ModInitializer {
 		CompanionManager.register();
 		GameEvents.register();
 		AiRouter.register();
+		Building.register(); // before mining: "ev yap" is the more specific chat order
 		Mining.register();
 		VerityFeatures.registerAll();
 		MehburityCommands.register();
