@@ -4,8 +4,8 @@ Minecraft **26.2 / Fabric** modu. Mehburity, oyuncunun yanında süzülen neon c
 yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar ve sinirlenince
 18 blokluk bir canavara dönüşür.
 
-> Durum: **Faz 3 (savaş: Mehburity seni korur) tamamlandı.** Madencilik, ev, öfke ve canavar formu sonraki
-> fazlarda gelecek; tam README Faz 8'de.
+> Durum: **Faz 4 (madencilik) tamamlandı.** Ev, öfke ve canavar formu sonraki fazlarda gelecek;
+> tam README Faz 8'de.
 
 ## Özellikler (şu an)
 
@@ -33,6 +33,18 @@ yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar
   izin verirse (`combat.fightPlayers`) saldırır. Öldürdüğü canavarlar senin öldürmüşsün gibi **XP ve loot**
   düşürür. Öldürdükleri Gemini bağlamına eklenir ("az önce o zombiyi hallettim" diyebilir).
   `/mehburity savas kapat` ile kendi Mehburity'ni savaştan çekebilirsin (dünya kaydında hatırlanır).
+- **Madencilik:** Sohbete **"Mehburity, maden kaz"** yaz: Mehburity etrafındaki (12 blok) **açıkta görünen**
+  cevherleri bulur, yanına uçar ve alet gerekmeden **kendi kırar** (çatlama animasyonu + ses). Damar bitene kadar
+  devam eder. Taşın içine gömülü cevherleri görmez (x-ray değil). Kazdıkları **Mehburity'nin çantasına** gider
+  (27 slot). Çanta sana bağlı kaydedilir; oyundan çıkınca ya da ölünce kaybolmaz.
+  - **"Mehburity, kazdığın madenleri ver"** → çantadaki her şey envanterine (sığmayan ayağına düşer).
+  - **"Mehburity, bunu kaz"** → baktığın bloğu kazar (kırılmaz bloklar ve sandık gibi eşya tutan bloklar hariç).
+  - **"Mehburity, ne kazdın?"** → çantayı söyler. **"Mehburity, kazmayı bırak"** → durur.
+  - İngilizce de anlar: "go mining", "mine this block", "give me what you mined", "stop mining".
+
+  Elmas kazma ile kazılmış gibi düşürür (her cevher eşyasını verir, XP küreleri çıkar). Spawn korumasına,
+  macera moduna ve koruma modlarına uyar. Saldırı olursa kazmayı bırakıp savaşır, sonra devam eder.
+  Gemini çantada ne olduğunu bilir.
 - **Mehburity:** Havada süzülen, pürüzsüz neon cyan küre; yüzü baktığı yöne döner. Seni takip eder,
   uzakta kalırsa (veya başka boyuttaysan) yanına ışınlanır.
 - **Ölümsüz:** Hiçbir hasar almaz, `/kill` ile ölmez; boşluğa düşerse sahibinin yanına döner.
@@ -56,6 +68,11 @@ Alt komutlar ASCII yazılır (Minecraft'ın komut ayrıştırıcısı "ç, ğ" k
 | `/mehburity takip` | herkes | Seni takip eder |
 | `/mehburity savas` | herkes | Savaş durumunu söyler |
 | `/mehburity savas ac` / `kapat` | herkes | Mehburity seni korusun / savaşmasın |
+| `/mehburity kaz` | herkes | Etraftaki cevherleri kazar ("Mehburity, maden kaz") |
+| `/mehburity kaz bunu` | herkes | Baktığın bloğu kazar ("Mehburity, bunu kaz") |
+| `/mehburity kaz dur` | herkes | Kazmayı bırakır ("Mehburity, kazmayı bırak") |
+| `/mehburity ver` | herkes | Kazdıklarını verir ("Mehburity, kazdığın madenleri ver") |
+| `/mehburity canta` | herkes | Çantada ne olduğunu söyler ("Mehburity, ne kazdın?") |
 | `/mehburity ayarlar` | herkes | Ayarlar ekranını açar (Gemini anahtarı, ses) |
 | `/mehburity yenile` | OP | Ayar dosyasını yeniden yükler ve oyunculara gönderir |
 
@@ -103,6 +120,17 @@ Gemini ile konuşma ve ses Google'ın API kotasından düşer (ücretsiz katman�
 | `combat.chaseRadius` | 20.0 | Senden bu kadar uzaklaşan hedefi bırakır (en fazla `teleportDistance`) |
 | `combat.fightPlayers` | false | Sana saldıran (ya da senin saldırdığın) oyunculara da saldırsın mı |
 | `combat.ownerGetsDrops` | true | Öldürdükleri senin öldürmen sayılır (XP ve loot) |
+| `mining.enabled` | true | Sunucu genelinde madencilik açık mı |
+| `mining.targets` | ["#c:ores"] | Kazılacak bloklar: `#etiket` ya da blok kimliği (ör. `"minecraft:amethyst_block"`) |
+| `mining.searchRadius` | 12 | Senin etrafında bu kadar blok uzağa bakar (otur modunda kendi etrafına) |
+| `mining.exposedOnly` | true | Sadece açık bir yüzü olan cevherler (gömülüleri görmez) |
+| `mining.reach` | 4.0 | Bloğu bu uzaklıktan kırar |
+| `mining.ticksPerHardness` | 8.0 | Blok sertliği başına kırma süresi (demir cevheri ≈ 1,2 sn) |
+| `mining.minBreakTicks` / `maxBreakTicks` | 6 / 100 | Kırma süresinin alt/üst sınırı (tick) |
+| `mining.tool` | "minecraft:diamond_pickaxe" | Düşen eşyalar bu aletle kazılmış gibi hesaplanır |
+| `mining.bagSlots` | 27 | Çanta boyutu (yığın) |
+| `mining.maxBlocksPerTrip` | 64 | Bir seferde en fazla kaç blok kazar |
+| `mining.pointRange` | 24.0 | "Bunu kaz" için baktığın bloğun en uzak mesafesi |
 | `ai.enabled` | true | Mehburity sohbete cevap versin mi |
 | `ai.chatPrefixes` | ["mehburity", "mehbur"] | Mesaj bunlardan biriyle başlarsa Mehburity'ye sorulmuş sayılır |
 | `ai.hearingRadius` | 32.0 | Cevabı sohbette görebilecek oyuncuların uzaklığı (blok) |
@@ -178,7 +206,8 @@ src/main/java/com/mehbur/mehburity/
   command/  /mehburity
   config/   Tek ayar dosyası
   combat/   Savaş: hedef kuralları (CombatTargets), hedef seçimi, ışın saldırısı, hasar tipi
-  build/ mining/ anger/   Sonraki fazlar
+  mining/   Madencilik: kurallar (MiningRules), kazma hedefi (MineGoal), çanta (MiningBag), sohbet emirleri (MiningChat)
+  build/ anger/   Sonraki fazlar
 src/client/java/com/mehbur/mehburity/client/
   render/   Küre renderer'ı (+ ışın), kutu modeli
   verity/   Karanlığın istemci tarafı (lightmap mixin'i)

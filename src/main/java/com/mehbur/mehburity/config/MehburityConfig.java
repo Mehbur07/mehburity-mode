@@ -24,6 +24,7 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 	public General general = new General();
 	public Companion companion = new Companion();
 	public Combat combat = new Combat();
+	public Mining mining = new Mining();
 	public Ai ai = new Ai();
 	public Verity verity = new Verity();
 
@@ -75,6 +76,34 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		public boolean fightPlayers = false;
 		/** Kills count as the owner's: mobs drop their experience and player-only loot. */
 		public boolean ownerGetsDrops = true;
+	}
+
+	/**
+	 * Mining for the owner ("Mehburity, maden kaz"): Mehburity breaks ore blocks by itself, keeps the drops in its
+	 * bag and hands them over when asked ("kazdığın madenleri ver"). The bag is saved with the owner.
+	 */
+	public static final class Mining {
+		public boolean enabled = true;
+		/** Blocks Mehburity mines when asked to mine. "#namespace:tag" for a block tag, or a block id. */
+		public List<String> targets = new ArrayList<>(List.of("#c:ores"));
+		/** Looks for ores this far around the owner (around Mehburity itself in STAY mode). */
+		public int searchRadius = 12;
+		/** Only mines ores with an open side, so it never "sees" ores hidden inside stone. */
+		public boolean exposedOnly = true;
+		/** Breaks blocks from this far away. */
+		public double reach = 4.0;
+		/** Breaking time per point of block hardness (iron ore has 3), in ticks. */
+		public double ticksPerHardness = 8.0;
+		public int minBreakTicks = 6;
+		public int maxBreakTicks = 100;
+		/** Drops are worked out as if this tool broke the block, so every ore drops its item. */
+		public String tool = "minecraft:diamond_pickaxe";
+		/** Bag size in stacks. */
+		public int bagSlots = 27;
+		/** Stops after this many blocks in one go. */
+		public int maxBlocksPerTrip = 64;
+		/** How far away a block the owner points at ("Mehburity, bunu kaz") may be. */
+		public double pointRange = 24.0;
 	}
 
 	/**
@@ -157,6 +186,9 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		if (combat == null) {
 			combat = new Combat();
 		}
+		if (mining == null) {
+			mining = new Mining();
+		}
 		if (ai == null) {
 			ai = new Ai();
 		}
@@ -181,6 +213,21 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		combat.guardRadius = Mth.clamp(combat.guardRadius, 1.0, 64.0);
 		// Mehburity is pulled back to its owner beyond the teleport distance, so chasing farther is pointless.
 		combat.chaseRadius = Mth.clamp(combat.chaseRadius, 2.0, companion.teleportDistance);
+		if (mining.targets == null) {
+			mining.targets = new ArrayList<>();
+		}
+		mining.targets.removeIf(target -> target == null || target.isBlank());
+		if (mining.tool == null || mining.tool.isBlank()) {
+			mining.tool = new Mining().tool;
+		}
+		mining.searchRadius = Mth.clamp(mining.searchRadius, 1, 32);
+		mining.reach = Mth.clamp(mining.reach, 1.5, 6.0);
+		mining.ticksPerHardness = Mth.clamp(mining.ticksPerHardness, 0.0, 100.0);
+		mining.minBreakTicks = Mth.clamp(mining.minBreakTicks, 1, 1200);
+		mining.maxBreakTicks = Mth.clamp(mining.maxBreakTicks, mining.minBreakTicks, 1200);
+		mining.bagSlots = Mth.clamp(mining.bagSlots, 1, 216);
+		mining.maxBlocksPerTrip = Mth.clamp(mining.maxBlocksPerTrip, 1, 4096);
+		mining.pointRange = Mth.clamp(mining.pointRange, 2.0, 64.0);
 		if (ai.chatPrefixes == null) {
 			ai.chatPrefixes = new ArrayList<>();
 		}

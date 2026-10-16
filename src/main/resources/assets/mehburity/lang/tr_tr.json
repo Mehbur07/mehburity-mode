@@ -57,5 +57,22 @@
 	"death.attack.mehburity.beam": "%1$s, %2$s tarafından çarpıldı",
 	"death.attack.mehburity.beam.player": "%1$s, %3$s ile savaşırken %2$s tarafından çarpıldı",
 	"subtitles.mehburity.mehburity.beam.charge": "Mehburity ışınını dolduruyor",
-	"subtitles.mehburity.mehburity.beam.fire": "Mehburity ateş ediyor"
+	"subtitles.mehburity.mehburity.beam.fire": "Mehburity ateş ediyor",
+	"mehburity.speech.mining.start": "Hemen gidiyorum! Etraftaki madenleri kazacağım.",
+	"mehburity.speech.mining.start_one": "Hemen kazıyorum!",
+	"mehburity.speech.mining.already": "Zaten kazıyorum!",
+	"mehburity.speech.mining.no_block": "Kazmamı istediğin bloğa bak.",
+	"mehburity.speech.mining.cannot_break": "Onu kazamam. (Kırılmaz ya da içinde eşya var.)",
+	"mehburity.speech.mining.not_mining": "Şu an kazmıyorum ki.",
+	"mehburity.speech.mining.bag_empty": "Çantam boş. Maden kazmaya gideyim mi?",
+	"mehburity.speech.mining.given": "Al bakalım: %s",
+	"mehburity.speech.mining.bag": "Çantamda: %s",
+	"mehburity.speech.mining.none_found": "Buralarda hiç maden göremiyorum.",
+	"mehburity.speech.mining.nothing_left": "Buralarda maden kalmadı! %s blok kazdım.",
+	"mehburity.speech.mining.bag_full": "Çantam doldu! \"Kazdığın madenleri ver\" de, hepsini sana vereyim.",
+	"mehburity.speech.mining.trip_limit": "%s blok oldu, biraz mola veriyorum!",
+	"mehburity.speech.mining.done_one": "Tamamdır!",
+	"mehburity.speech.mining.unreachable": "O bloğa ulaşamıyorum.",
+	"mehburity.speech.mining.stopped": "Tamam, kazmayı bıraktım.",
+	"mehburity.speech.mining.server_off": "Bu sunucuda madencilik kapalı."
 }

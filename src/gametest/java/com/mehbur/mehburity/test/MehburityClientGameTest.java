@@ -23,6 +23,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -82,6 +84,7 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 			checkTalking(context, server, playerId);
 			checkSettingsAndCommands(context, server, playerId);
 			checkCombat(context, server, playerId);
+			checkMining(context, server, playerId);
 			checkDarkness(context, server);
 		}
 
@@ -194,6 +197,39 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		context.getInput().pressKey(options -> options.keyToggleGui);
 		context.runOnClient(mc -> mc.player.connection.sendCommand("mehburity takip"));
 		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.FOLLOW, 100);
+	}
+
+	/** "Mehburity, maden kaz" and "kazdığın madenleri ver" typed into the real chat. */
+	private static void checkMining(ClientGameTestContext context, TestServerContext server, UUID playerId) {
+		BlockPos ore = server.computeOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			ServerLevel level = player.level();
+			Vec3 ahead = player.position().add(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(4.0));
+			int x = (int) Math.floor(ahead.x);
+			int z = (int) Math.floor(ahead.z);
+			BlockPos ground = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z), z);
+			level.setBlockAndUpdate(ground, Blocks.IRON_ORE.defaultBlockState());
+			level.setBlockAndUpdate(ground.above(), Blocks.IRON_ORE.defaultBlockState());
+			return ground;
+		});
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.getInput().lookAt(ore);
+		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, maden kaz"));
+		server.waitFor(s -> CompanionManager.find(s, playerId).getMiningJob() != null, 100);
+		context.waitTicks(30);
+		context.takeScreenshot("mehburity-m1-mining");
+		server.waitFor(s -> s.overworld().getBlockState(ore).isAir() && s.overworld().getBlockState(ore.above()).isAir(), 600);
+		context.waitTicks(5);
+		context.takeScreenshot("mehburity-m2-mined");
+		context.getInput().pressKey(options -> options.keyToggleGui);
+
+		// Natural ores nearby could keep it busy; the test only needs ours.
+		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, kazmayı bırak"));
+		server.waitFor(s -> CompanionManager.find(s, playerId).getMiningJob() == null, 100);
+		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, kazdığın madenleri ver"));
+		context.waitFor(mc -> mc.player.getInventory().countItem(Items.RAW_IRON) >= 2, 100);
+		context.waitTicks(10);
+		context.takeScreenshot("mehburity-m3-given");
 	}
 
 	private static void assertEquals(Object expected, Object actual, String what) {

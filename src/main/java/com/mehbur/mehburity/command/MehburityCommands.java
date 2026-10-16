@@ -8,6 +8,7 @@ import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.CompanionRegistry;
 import com.mehbur.mehburity.entity.MehburitySpeech;
+import com.mehbur.mehburity.mining.Mining;
 import com.mehbur.mehburity.network.OpenSettingsPayload;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
@@ -19,6 +20,8 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+
+import java.util.function.Predicate;
 
 /**
  * Root of {@code /mehburity}. Subcommands are ASCII-only on purpose: Brigadier cannot parse
@@ -46,6 +49,12 @@ public final class MehburityCommands {
 						.executes(MehburityCommands::combatStatus)
 						.then(Commands.literal("ac").executes(ctx -> setCombat(ctx, true)))
 						.then(Commands.literal("kapat").executes(ctx -> setCombat(ctx, false))))
+				.then(Commands.literal("kaz")
+						.executes(ctx -> mining(ctx, Mining::startOres))
+						.then(Commands.literal("bunu").executes(ctx -> mining(ctx, Mining::startLookedAt)))
+						.then(Commands.literal("dur").executes(ctx -> mining(ctx, Mining::stop))))
+				.then(Commands.literal("ver").executes(ctx -> mining(ctx, Mining::give)))
+				.then(Commands.literal("canta").executes(ctx -> mining(ctx, Mining::list)))
 				.then(Commands.literal("ayarlar").executes(MehburityCommands::openSettings))
 				.then(Commands.literal("yenile")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -113,6 +122,15 @@ public final class MehburityCommands {
 			MehburitySpeech.say(player, MehburitySpeech.text("combat.server_off", "Fighting is turned off on this server."));
 		}
 		return 1;
+	}
+
+	/** Mining subcommands; the action itself answers the player. */
+	private static int mining(CommandContext<CommandSourceStack> ctx, Predicate<ServerPlayer> action) throws CommandSyntaxException {
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		if (CompanionRegistry.companion(player.level().getServer(), player.getUUID()) == null) {
+			return noCompanion(ctx);
+		}
+		return action.test(player) ? 1 : 0;
 	}
 
 	private static int noCompanion(CommandContext<CommandSourceStack> ctx) {

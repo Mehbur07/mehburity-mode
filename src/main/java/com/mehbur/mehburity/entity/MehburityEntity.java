@@ -3,6 +3,8 @@ package com.mehbur.mehburity.entity;
 import com.mehbur.mehburity.combat.BeamAttackGoal;
 import com.mehbur.mehburity.combat.DefendOwnerTargetGoal;
 import com.mehbur.mehburity.config.MehburityConfig;
+import com.mehbur.mehburity.mining.MineGoal;
+import com.mehbur.mehburity.mining.MiningJob;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -54,6 +56,8 @@ public class MehburityEntity extends PathfinderMob {
 
 	private @Nullable UUID ownerId;
 	private CompanionMode mode = CompanionMode.FOLLOW;
+	/** What the owner asked it to mine; not saved (a new Mehburity after login starts idle). */
+	private @Nullable MiningJob miningJob;
 	private int clientBeamTicks;
 	private int clientFlashTicks;
 
@@ -85,9 +89,11 @@ public class MehburityEntity extends PathfinderMob {
 		this.targetSelector.addGoal(1, targeting);
 		// Fighting comes before following; the companion manager still teleports it back if it gets too far.
 		this.goalSelector.addGoal(1, new BeamAttackGoal(this, targeting));
-		this.goalSelector.addGoal(2, new FollowOwnerFlyingGoal(this));
-		this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
-		this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
+		// Mining pauses for fights and keeps following from pulling it away from the ore.
+		this.goalSelector.addGoal(2, new MineGoal(this));
+		this.goalSelector.addGoal(3, new FollowOwnerFlyingGoal(this));
+		this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
+		this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
 	}
 
 	/** Like any mob, minus the vanilla rule that mobs never attack ghasts. */
@@ -139,6 +145,14 @@ public class MehburityEntity extends PathfinderMob {
 			this.getNavigation().stop();
 			this.setDeltaMovement(Vec3.ZERO);
 		}
+	}
+
+	public @Nullable MiningJob getMiningJob() {
+		return miningJob;
+	}
+
+	public void setMiningJob(@Nullable MiningJob job) {
+		this.miningJob = job;
 	}
 
 	// ---------------------------------------------------------------- emerge animation

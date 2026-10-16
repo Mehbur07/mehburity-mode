@@ -8,6 +8,7 @@ import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.CompanionRegistry;
 import com.mehbur.mehburity.entity.MehburityEntities;
 import com.mehbur.mehburity.entity.MehburitySounds;
+import com.mehbur.mehburity.mining.Mining;
 import com.mehbur.mehburity.network.MehburityNetwork;
 import com.mehbur.mehburity.verity.VerityFeatures;
 import net.fabricmc.api.ModInitializer;
@@ -44,6 +45,7 @@ public final class MehburityMod implements ModInitializer {
 		CompanionManager.register();
 		GameEvents.register();
 		AiRouter.register();
+		Mining.register();
 		VerityFeatures.registerAll();
 		MehburityCommands.register();
 		LOGGER.info("Mehburity {} initialized", version());

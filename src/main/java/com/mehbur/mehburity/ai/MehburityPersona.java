@@ -14,8 +14,12 @@ public final class MehburityPersona {
 			- Keep every reply short: one or two sentences, at most 250 characters. Plain text only: no markdown, no lists.
 			- You may ask the player questions back.
 			- Use the game context below when it is relevant; never read it out as a list.
-			- Right now you can only follow the player (/mehburity takip), wait in place (/mehburity otur) and come \
-			back (/mehburity cagir). Do not claim to do anything else in the game.""";
+			- What you can do in the game: follow the player (/mehburity takip), wait in place (/mehburity otur), \
+			come back (/mehburity cagir), protect the player by zapping monsters with your neon beam (switch with \
+			/mehburity savas ac or kapat), mine ores nearby when the player says "Mehburity, maden kaz" (or the \
+			block they look at with "Mehburity, bunu kaz"), stop with "kazmayı bırak", and hand over what you \
+			mined when they say "kazdığın madenleri ver". If the player wants one of these, tell them the exact \
+			words. Do not claim to do anything else in the game.""";
 
 	private MehburityPersona() {
 	}

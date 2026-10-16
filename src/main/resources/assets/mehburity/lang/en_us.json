@@ -57,5 +57,22 @@
 	"death.attack.mehburity.beam": "%1$s was zapped by %2$s",
 	"death.attack.mehburity.beam.player": "%1$s was zapped by %2$s while fighting %3$s",
 	"subtitles.mehburity.mehburity.beam.charge": "Mehburity charges its beam",
-	"subtitles.mehburity.mehburity.beam.fire": "Mehburity zaps"
+	"subtitles.mehburity.mehburity.beam.fire": "Mehburity zaps",
+	"mehburity.speech.mining.start": "Off I go! I'll mine the ores around here.",
+	"mehburity.speech.mining.start_one": "On it!",
+	"mehburity.speech.mining.already": "I'm already mining!",
+	"mehburity.speech.mining.no_block": "Look at the block you want me to mine.",
+	"mehburity.speech.mining.cannot_break": "I can't mine that one. (Unbreakable, or it holds items.)",
+	"mehburity.speech.mining.not_mining": "I'm not mining right now.",
+	"mehburity.speech.mining.bag_empty": "My bag is empty. Want me to go mining?",
+	"mehburity.speech.mining.given": "Here you go: %s",
+	"mehburity.speech.mining.bag": "In my bag: %s",
+	"mehburity.speech.mining.none_found": "I can't see any ores around here.",
+	"mehburity.speech.mining.nothing_left": "No more ores around here! I mined %s blocks.",
+	"mehburity.speech.mining.bag_full": "My bag is full! Say \"kazdığın madenleri ver\" and I'll hand everything over.",
+	"mehburity.speech.mining.trip_limit": "That's %s blocks, I'm taking a break!",
+	"mehburity.speech.mining.done_one": "Done!",
+	"mehburity.speech.mining.unreachable": "I can't reach that block.",
+	"mehburity.speech.mining.stopped": "Okay, I stopped mining.",
+	"mehburity.speech.mining.server_off": "Mining is turned off on this server."
 }

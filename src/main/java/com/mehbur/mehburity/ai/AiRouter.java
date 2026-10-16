@@ -16,8 +16,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.StringUtil;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,6 +36,7 @@ public final class AiRouter {
 	private static final Map<Integer, Pending> PENDING = new HashMap<>();
 	private static final Map<UUID, Long> LAST_QUESTION = new HashMap<>();
 	private static final Map<UUID, Long> LAST_EVENT_COMMENT = new HashMap<>();
+	private static final List<Runnable> ORDERS = new ArrayList<>();
 	private static int nextId;
 
 	private AiRouter() {
@@ -43,6 +46,7 @@ public final class AiRouter {
 		ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) -> onPlayerChat(sender, message.signedContent()));
 		ServerPlayNetworking.registerGlobalReceiver(AiReplyPayload.TYPE, (payload, context) -> onReply(context.player(), payload));
 		ServerTickEvents.END_SERVER_TICK.register(AiRouter::expireStale);
+		ServerTickEvents.END_SERVER_TICK.register(server -> runOrders());
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			UUID id = handler.player.getUUID();
 			PENDING.values().removeIf(pending -> pending.owner().equals(id));
@@ -65,6 +69,12 @@ public final class AiRouter {
 		}
 		if (question.length() > config.maxMessageLength) {
 			question = question.substring(0, config.maxMessageLength);
+		}
+		Runnable order = ChatCommandCallback.EVENT.invoker().handle(player, question);
+		if (order != null) {
+			// An order ("maden kaz"), carried out without asking Gemini once the owner's own line is in the chat.
+			ORDERS.add(order);
+			return true;
 		}
 
 		long now = System.currentTimeMillis();
@@ -122,6 +132,16 @@ public final class AiRouter {
 			return;
 		}
 		deliver(player, text, payload.fromGemini(), false);
+	}
+
+	/** Runs the chat orders received this tick. Public so tests can flush them without waiting a tick. */
+	public static void runOrders() {
+		if (ORDERS.isEmpty()) {
+			return;
+		}
+		List<Runnable> orders = List.copyOf(ORDERS);
+		ORDERS.clear();
+		orders.forEach(Runnable::run);
 	}
 
 	private static void expireStale(MinecraftServer server) {

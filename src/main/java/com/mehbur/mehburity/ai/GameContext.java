@@ -1,7 +1,9 @@
 package com.mehbur.mehburity.ai;
 
 import com.mehbur.mehburity.config.MehburityConfig;
+import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.CompanionRegistry;
+import com.mehbur.mehburity.mining.Mining;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -42,7 +44,9 @@ public final class GameContext {
 
 		CompanionRegistry.Companion companion = CompanionRegistry.companion(level.getServer(), player.getUUID());
 		if (companion != null) {
-			out.append("Mehburity mode: ").append(companion.mode().getSerializedName()).append('\n');
+			out.append("Mehburity mode: ").append(companion.mode().getSerializedName())
+					.append(", protecting the player: ").append(companion.combat() ? "yes" : "no").append('\n');
+			out.append(Mining.describeFor(player, CompanionManager.find(level.getServer(), player.getUUID())));
 		}
 		String recent = GameEvents.recent(player);
 		if (!recent.isEmpty()) {
