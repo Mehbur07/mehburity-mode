@@ -22,5 +22,17 @@
 		"sounds": [
 			{ "name": "minecraft:entity.allay.ambient_without_item", "type": "event" }
 		]
+	},
+	"mehburity.beam.charge": {
+		"subtitle": "subtitles.mehburity.mehburity.beam.charge",
+		"sounds": [
+			{ "name": "minecraft:block.beacon.power_select", "type": "event" }
+		]
+	},
+	"mehburity.beam.fire": {
+		"subtitle": "subtitles.mehburity.mehburity.beam.fire",
+		"sounds": [
+			{ "name": "minecraft:entity.firework_rocket.blast", "type": "event" }
+		]
 	}
 }

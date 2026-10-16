@@ -47,5 +47,15 @@
 	"mehburity.config.model_value": "Model: %s",
 	"mehburity.config.voice_model_value": "TTS: %s",
 	"mehburity.config.no_key": "Henüz API anahtarı yok: Mehburity yerleşik cevaplar veriyor.",
-	"mehburity.config.has_key": "API anahtarı kayıtlı. Kontrol için \"Bağlantıyı test et\"e bas."
+	"mehburity.config.has_key": "API anahtarı kayıtlı. Kontrol için \"Bağlantıyı test et\"e bas.",
+	"mehburity.command.no_companion": "Henüz bir Mehburity'in yok. Önce kutunu aç (/mehburity cagir).",
+	"mehburity.speech.combat.on": "Tamam, seni koruyacağım!",
+	"mehburity.speech.combat.off": "Peki, artık savaşmayacağım.",
+	"mehburity.speech.combat.status_on": "Seni koruyorum. (Durdurmak için /mehburity savas kapat)",
+	"mehburity.speech.combat.status_off": "Şu an savaşmıyorum. (Seni korumam için /mehburity savas ac)",
+	"mehburity.speech.combat.server_off": "Bu sunucuda savaş kapalı.",
+	"death.attack.mehburity.beam": "%1$s, %2$s tarafından çarpıldı",
+	"death.attack.mehburity.beam.player": "%1$s, %3$s ile savaşırken %2$s tarafından çarpıldı",
+	"subtitles.mehburity.mehburity.beam.charge": "Mehburity ışınını dolduruyor",
+	"subtitles.mehburity.mehburity.beam.fire": "Mehburity ateş ediyor"
 }

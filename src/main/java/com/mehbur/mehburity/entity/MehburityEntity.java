@@ -1,5 +1,7 @@
 package com.mehbur.mehburity.entity;
 
+import com.mehbur.mehburity.combat.BeamAttackGoal;
+import com.mehbur.mehburity.combat.DefendOwnerTargetGoal;
 import com.mehbur.mehburity.config.MehburityConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
@@ -9,7 +11,9 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -37,11 +41,21 @@ public class MehburityEntity extends PathfinderMob {
 	/** Ticks left of the "rising out of the box" animation; 0 when done. Synced for the renderer. */
 	private static final EntityDataAccessor<Integer> DATA_EMERGE_TICKS =
 			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.INT);
+	/** Entity id of what the beam is aimed at (charging or just fired), 0 when idle. Synced for the beam renderer. */
+	private static final EntityDataAccessor<Integer> DATA_BEAM_TARGET =
+			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.INT);
 	public static final int EMERGE_DURATION = 30;
 	private static final int VALIDATE_INTERVAL = 20;
+	/** Entity event sent when a beam shot lands; the client flashes the beam. */
+	public static final byte EVENT_BEAM_FIRED = 100;
+	public static final int BEAM_FLASH_TICKS = 5;
+	/** How long the client takes to draw the beam at full charge (just looks; the real charge is server-side). */
+	private static final float BEAM_CHARGE_VISUAL_TICKS = 12.0F;
 
 	private @Nullable UUID ownerId;
 	private CompanionMode mode = CompanionMode.FOLLOW;
+	private int clientBeamTicks;
+	private int clientFlashTicks;
 
 	public MehburityEntity(EntityType<? extends MehburityEntity> type, Level level) {
 		super(type, level);
@@ -62,13 +76,27 @@ public class MehburityEntity extends PathfinderMob {
 	protected void defineSynchedData(SynchedEntityData.Builder entityData) {
 		super.defineSynchedData(entityData);
 		entityData.define(DATA_EMERGE_TICKS, 0);
+		entityData.define(DATA_BEAM_TARGET, 0);
 	}
 
 	@Override
 	protected void registerGoals() {
-		this.goalSelector.addGoal(1, new FollowOwnerFlyingGoal(this));
-		this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 8.0F));
-		this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
+		DefendOwnerTargetGoal targeting = new DefendOwnerTargetGoal(this);
+		this.targetSelector.addGoal(1, targeting);
+		// Fighting comes before following; the companion manager still teleports it back if it gets too far.
+		this.goalSelector.addGoal(1, new BeamAttackGoal(this, targeting));
+		this.goalSelector.addGoal(2, new FollowOwnerFlyingGoal(this));
+		this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
+		this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
+	}
+
+	/** Like any mob, minus the vanilla rule that mobs never attack ghasts. */
+	@Override
+	public boolean canAttack(LivingEntity target) {
+		if (target instanceof Player && this.level().getDifficulty() == Difficulty.PEACEFUL) {
+			return false;
+		}
+		return target.canBeSeenAsEnemy();
 	}
 
 	@Override
@@ -132,10 +160,54 @@ public class MehburityEntity extends PathfinderMob {
 		return Math.min(1.0F, (EMERGE_DURATION - left + partialTicks) / EMERGE_DURATION);
 	}
 
+	// ---------------------------------------------------------------- beam
+
+	public void setBeamTarget(@Nullable LivingEntity target) {
+		this.entityData.set(DATA_BEAM_TARGET, target == null ? 0 : target.getId());
+	}
+
+	public @Nullable LivingEntity getBeamTarget() {
+		int id = this.entityData.get(DATA_BEAM_TARGET);
+		return id != 0 && this.level().getEntity(id) instanceof LivingEntity target ? target : null;
+	}
+
+	/** Client: 0 → the beam just started charging, 1 → fully charged. */
+	public float getBeamCharge(float partialTicks) {
+		return Math.min(1.0F, (clientBeamTicks + partialTicks) / BEAM_CHARGE_VISUAL_TICKS);
+	}
+
+	/** Client: 1 right after a shot landed, fading to 0. */
+	public float getBeamFlash(float partialTicks) {
+		return clientFlashTicks <= 0 ? 0.0F : Math.max(0.0F, (clientFlashTicks - partialTicks) / BEAM_FLASH_TICKS);
+	}
+
+	@Override
+	public void onSyncedDataUpdated(EntityDataAccessor<?> accessor) {
+		super.onSyncedDataUpdated(accessor);
+		if (DATA_BEAM_TARGET.equals(accessor)) {
+			clientBeamTicks = 0;
+		}
+	}
+
+	@Override
+	public void handleEntityEvent(byte id) {
+		if (id == EVENT_BEAM_FIRED) {
+			clientFlashTicks = BEAM_FLASH_TICKS;
+		} else {
+			super.handleEntityEvent(id);
+		}
+	}
+
 	@Override
 	public void tick() {
 		super.tick();
 		if (!(this.level() instanceof ServerLevel level)) {
+			if (this.entityData.get(DATA_BEAM_TARGET) != 0) {
+				clientBeamTicks++;
+			}
+			if (clientFlashTicks > 0) {
+				clientFlashTicks--;
+			}
 			return;
 		}
 

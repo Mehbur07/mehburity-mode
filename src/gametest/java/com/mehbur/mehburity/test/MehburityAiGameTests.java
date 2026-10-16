@@ -182,7 +182,7 @@ public final class MehburityAiGameTests {
 	public void question_is_answered_even_without_gemini(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		CompanionRegistry.putCompanion(helper.getLevel().getServer(), player.getUUID(),
-				new CompanionRegistry.Companion(UUID.randomUUID(), CompanionMode.STAY, false));
+				new CompanionRegistry.Companion(UUID.randomUUID(), CompanionMode.STAY));
 
 		helper.assertFalse(AiRouter.onPlayerChat(player, "hello everyone"), "normal chat is not for Mehburity");
 		helper.assertTrue(AiRouter.onPlayerChat(player, "Mehburity, hello!"), "addressed chat is handled");

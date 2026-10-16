@@ -19,6 +19,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Keeps every player's Mehburity next to them: hands out the first box, brings Mehburity along across
@@ -199,7 +200,11 @@ public final class CompanionManager {
 		mehburity.setOwnerId(ownerId);
 		mehburity.setMode(mode);
 		// Register first: the entity validates itself against the registry and must find itself there.
-		CompanionRegistry.putCompanion(level.getServer(), ownerId, new CompanionRegistry.Companion(mehburity.getUUID(), mode, false));
+		// A re-created Mehburity keeps the owner's choices (combat on/off).
+		CompanionRegistry.Companion previous = CompanionRegistry.companion(level.getServer(), ownerId);
+		CompanionRegistry.putCompanion(level.getServer(), ownerId, previous == null
+				? new CompanionRegistry.Companion(mehburity.getUUID(), mode)
+				: previous.withEntity(mehburity.getUUID()).withMode(mode).withStowed(false));
 		level.addFreshEntity(mehburity);
 		return mehburity;
 	}
@@ -239,7 +244,26 @@ public final class CompanionManager {
 
 	private static void setMode(ServerPlayer player, MehburityEntity mehburity, CompanionMode mode) {
 		mehburity.setMode(mode);
-		CompanionRegistry.putCompanion(player.level().getServer(), player.getUUID(),
-				new CompanionRegistry.Companion(mehburity.getUUID(), mode, false));
+		update(player, companion -> companion.withEntity(mehburity.getUUID()).withMode(mode).withStowed(false));
+	}
+
+	/** {@code /mehburity savas}: whether Mehburity fights for the player. Returns false without a Mehburity. */
+	public static boolean setCombat(ServerPlayer player, boolean combat) {
+		return update(player, companion -> companion.withCombat(combat));
+	}
+
+	public static boolean isCombatEnabled(MinecraftServer server, UUID owner) {
+		CompanionRegistry.Companion companion = CompanionRegistry.companion(server, owner);
+		return companion != null && companion.combat();
+	}
+
+	private static boolean update(ServerPlayer player, UnaryOperator<CompanionRegistry.Companion> change) {
+		MinecraftServer server = player.level().getServer();
+		CompanionRegistry.Companion companion = CompanionRegistry.companion(server, player.getUUID());
+		if (companion == null) {
+			return false;
+		}
+		CompanionRegistry.putCompanion(server, player.getUUID(), change.apply(companion));
+		return true;
 	}
 }

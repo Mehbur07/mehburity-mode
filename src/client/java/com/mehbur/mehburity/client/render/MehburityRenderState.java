@@ -1,6 +1,8 @@
 package com.mehbur.mehburity.client.render;
 
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 public class MehburityRenderState extends EntityRenderState {
 	/** Where the face points (head yaw/pitch), in degrees. */
@@ -8,4 +10,10 @@ public class MehburityRenderState extends EntityRenderState {
 	public float xRot;
 	/** 0 → just started rising out of the box, 1 → fully out. */
 	public float emergeProgress = 1.0F;
+	/** Middle of the beam's target, in world coordinates; null when Mehburity is not firing. */
+	public @Nullable Vec3 beamTarget;
+	/** 0..1 while charging. */
+	public float beamCharge;
+	/** 1 right after a shot, fading to 0. */
+	public float beamFlash;
 }

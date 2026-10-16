@@ -6,6 +6,7 @@ import com.mehbur.mehburity.config.JsonConfigFile;
 import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.CompanionMode;
+import com.mehbur.mehburity.entity.CompanionRegistry;
 import com.mehbur.mehburity.entity.MehburitySpeech;
 import com.mehbur.mehburity.network.OpenSettingsPayload;
 import com.mojang.brigadier.CommandDispatcher;
@@ -41,6 +42,10 @@ public final class MehburityCommands {
 				.then(Commands.literal("cagir").executes(MehburityCommands::summon))
 				.then(Commands.literal("otur").executes(ctx -> setMode(ctx, CompanionMode.STAY)))
 				.then(Commands.literal("takip").executes(ctx -> setMode(ctx, CompanionMode.FOLLOW)))
+				.then(Commands.literal("savas")
+						.executes(MehburityCommands::combatStatus)
+						.then(Commands.literal("ac").executes(ctx -> setCombat(ctx, true)))
+						.then(Commands.literal("kapat").executes(ctx -> setCombat(ctx, false))))
 				.then(Commands.literal("ayarlar").executes(MehburityCommands::openSettings))
 				.then(Commands.literal("yenile")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -75,6 +80,45 @@ public final class MehburityCommands {
 				? MehburitySpeech.text("stay", "Okay, I'll wait here.")
 				: MehburitySpeech.text("follow", "I'm right behind you."));
 		return 1;
+	}
+
+	/** {@code /mehburity savas}: tells whether Mehburity fights for the player. */
+	private static int combatStatus(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		if (CompanionRegistry.companion(player.level().getServer(), player.getUUID()) == null) {
+			return noCompanion(ctx);
+		}
+		if (!MehburityConfig.get().combat.enabled) {
+			MehburitySpeech.say(player, MehburitySpeech.text("combat.server_off", "Fighting is turned off on this server."));
+		} else if (CompanionManager.isCombatEnabled(player.level().getServer(), player.getUUID())) {
+			MehburitySpeech.say(player, MehburitySpeech.text("combat.status_on",
+					"I'm protecting you. (/mehburity savas kapat to stop me)"));
+		} else {
+			MehburitySpeech.say(player, MehburitySpeech.text("combat.status_off",
+					"I'm not fighting right now. (/mehburity savas ac to let me protect you)"));
+		}
+		return 1;
+	}
+
+	/** {@code /mehburity savas ac|kapat}: the player's own switch, saved with the world. */
+	private static int setCombat(CommandContext<CommandSourceStack> ctx, boolean combat) throws CommandSyntaxException {
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		if (!CompanionManager.setCombat(player, combat)) {
+			return noCompanion(ctx);
+		}
+		MehburitySpeech.say(player, combat
+				? MehburitySpeech.text("combat.on", "Got it, I'll protect you!")
+				: MehburitySpeech.text("combat.off", "Okay, I won't fight anymore."));
+		if (combat && !MehburityConfig.get().combat.enabled) {
+			MehburitySpeech.say(player, MehburitySpeech.text("combat.server_off", "Fighting is turned off on this server."));
+		}
+		return 1;
+	}
+
+	private static int noCompanion(CommandContext<CommandSourceStack> ctx) {
+		ctx.getSource().sendFailure(Component.translatableWithFallback(KEY + "no_companion",
+				"You don't have a Mehburity yet. Open your box first (/mehburity cagir)."));
+		return 0;
 	}
 
 	/** Opens the client settings screen (Gemini key, voice). Same screen as Mods → Mehburity → Configure. */

@@ -15,7 +15,17 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.fabricmc.fabric.api.client.gametest.v1.world.TestWorldSave;
 import net.fabricmc.loader.api.FabricLoader;
+import com.mehbur.mehburity.entity.MehburityEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -71,6 +81,7 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 
 			checkTalking(context, server, playerId);
 			checkSettingsAndCommands(context, server, playerId);
+			checkCombat(context, server, playerId);
 			checkDarkness(context, server);
 		}
 
@@ -128,6 +139,59 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 
 		context.runOnClient(mc -> mc.player.connection.sendCommand("mehburity otur"));
 		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.STAY, 100);
+		context.runOnClient(mc -> mc.player.connection.sendCommand("mehburity takip"));
+		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.FOLLOW, 100);
+	}
+
+	/** {@code /mehburity savas} through real chat, then a beam fight against a husk the player started. */
+	private static void checkCombat(ClientGameTestContext context, TestServerContext server, UUID playerId) {
+		context.runOnClient(mc -> mc.player.connection.sendCommand("mehburity savas kapat"));
+		server.waitFor(s -> !CompanionManager.isCombatEnabled(s, playerId), 100);
+		context.runOnClient(mc -> mc.player.connection.sendCommand("mehburity savas ac"));
+		server.waitFor(s -> CompanionManager.isCombatEnabled(s, playerId), 100);
+
+		server.runCommand("difficulty easy"); // peaceful would remove the husk at once
+		// Mehburity guards a spot to the right (STAY mode) and the husk stands ahead: the beam crosses the view.
+		BlockPos huskPos = server.computeOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			ServerLevel level = player.level();
+			Vec3 forward = Vec3.directionFromRotation(0.0F, player.getYRot());
+			Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+			MehburityEntity mehburity = CompanionManager.find(s, playerId);
+			CompanionManager.setMode(player, CompanionMode.STAY);
+			Vec3 post = player.position().add(forward.scale(5.0)).add(right.scale(2.5)).add(0.0, 2.0, 0.0);
+			mehburity.teleportTo(post.x, post.y, post.z);
+
+			Vec3 ahead = player.position().add(forward.scale(10.0)).add(right.scale(-1.5));
+			int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(ahead.x), (int) Math.floor(ahead.z));
+			Husk husk = EntityTypes.HUSK.create(level, EntitySpawnReason.COMMAND);
+			husk.snapTo(ahead.x, y, ahead.z, player.getYRot() + 180.0F, 0.0F);
+			husk.setNoAi(true);
+			husk.setPersistenceRequired();
+			level.addFreshEntity(husk);
+			player.setLastHurtMob(husk); // as if the player had just hit it
+			return husk.blockPosition();
+		});
+		context.getInput().pressKey(options -> options.keyToggleGui); // F1: hide the HUD and chat
+		context.getInput().lookAt(huskPos.above(2));
+
+		// The beam is visible on the client while it charges and flashes when it hits.
+		context.waitFor(mc -> {
+			for (Entity entity : mc.level.entitiesForRendering()) {
+				if (entity instanceof MehburityEntity mehburity && mehburity.getBeamTarget() instanceof Husk) {
+					return true;
+				}
+			}
+			return false;
+		}, 200);
+		for (int shot = 1; shot <= 4; shot++) {
+			context.waitTicks(4);
+			context.takeScreenshot("mehburity-c" + shot + "-beam");
+		}
+		server.waitFor(s -> s.overworld().getEntitiesOfClass(Husk.class, new AABB(huskPos).inflate(4.0)).isEmpty(), 400);
+		context.waitTicks(10);
+		context.takeScreenshot("mehburity-c5-husk-gone");
+		context.getInput().pressKey(options -> options.keyToggleGui);
 		context.runOnClient(mc -> mc.player.connection.sendCommand("mehburity takip"));
 		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.FOLLOW, 100);
 	}

@@ -47,5 +47,15 @@
 	"mehburity.config.model_value": "Model: %s",
 	"mehburity.config.voice_model_value": "TTS: %s",
 	"mehburity.config.no_key": "No API key yet: Mehburity uses built-in replies.",
-	"mehburity.config.has_key": "API key saved. Press \"Test connection\" to check it."
+	"mehburity.config.has_key": "API key saved. Press \"Test connection\" to check it.",
+	"mehburity.command.no_companion": "You don't have a Mehburity yet. Open your box first (/mehburity cagir).",
+	"mehburity.speech.combat.on": "Got it, I'll protect you!",
+	"mehburity.speech.combat.off": "Okay, I won't fight anymore.",
+	"mehburity.speech.combat.status_on": "I'm protecting you. (/mehburity savas kapat to stop me)",
+	"mehburity.speech.combat.status_off": "I'm not fighting right now. (/mehburity savas ac to let me protect you)",
+	"mehburity.speech.combat.server_off": "Fighting is turned off on this server.",
+	"death.attack.mehburity.beam": "%1$s was zapped by %2$s",
+	"death.attack.mehburity.beam.player": "%1$s was zapped by %2$s while fighting %3$s",
+	"subtitles.mehburity.mehburity.beam.charge": "Mehburity charges its beam",
+	"subtitles.mehburity.mehburity.beam.fire": "Mehburity zaps"
 }

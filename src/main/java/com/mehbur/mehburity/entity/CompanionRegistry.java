@@ -20,20 +20,36 @@ import java.util.UUID;
  * re-summon) removes itself as soon as it loads. That keeps the one-Mehburity-per-player rule.
  */
 public final class CompanionRegistry {
-	/** One player's Mehburity. {@code stowed} means it travelled with the owner when they logged out. */
-	public record Companion(UUID entityId, CompanionMode mode, boolean stowed) {
+	/**
+	 * One player's Mehburity. {@code stowed} means it travelled with the owner when they logged out;
+	 * {@code combat} is the owner's choice whether Mehburity fights for them ({@code /mehburity savas}).
+	 */
+	public record Companion(UUID entityId, CompanionMode mode, boolean stowed, boolean combat) {
 		static final Codec<Companion> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 				UUIDUtil.STRING_CODEC.fieldOf("entity").forGetter(Companion::entityId),
 				CompanionMode.CODEC.optionalFieldOf("mode", CompanionMode.FOLLOW).forGetter(Companion::mode),
-				Codec.BOOL.optionalFieldOf("stowed", false).forGetter(Companion::stowed)
+				Codec.BOOL.optionalFieldOf("stowed", false).forGetter(Companion::stowed),
+				Codec.BOOL.optionalFieldOf("combat", true).forGetter(Companion::combat)
 		).apply(instance, Companion::new));
 
+		public Companion(UUID entityId, CompanionMode mode) {
+			this(entityId, mode, false, true);
+		}
+
+		public Companion withEntity(UUID newEntityId) {
+			return new Companion(newEntityId, mode, stowed, combat);
+		}
+
 		public Companion withMode(CompanionMode newMode) {
-			return new Companion(entityId, newMode, stowed);
+			return new Companion(entityId, newMode, stowed, combat);
 		}
 
 		public Companion withStowed(boolean newStowed) {
-			return new Companion(entityId, mode, newStowed);
+			return new Companion(entityId, mode, newStowed, combat);
+		}
+
+		public Companion withCombat(boolean newCombat) {
+			return new Companion(entityId, mode, stowed, newCombat);
 		}
 	}
 

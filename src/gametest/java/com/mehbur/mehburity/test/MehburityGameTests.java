@@ -29,11 +29,11 @@ import java.util.function.Consumer;
 public final class MehburityGameTests {
 	private static final int AFTER_OPEN = MehburityConfig.get().verity.box.openTicks + 5;
 	/** Box opened and Mehburity finished rising out of it. */
-	private static final int READY = AFTER_OPEN + MehburityEntity.EMERGE_DURATION;
+	static final int READY = AFTER_OPEN + MehburityEntity.EMERGE_DURATION;
 
 	// ---------------------------------------------------------------- helpers
 
-	private static JsonConfigFile<MehburityConfig> tempConfig(String content) {
+	static JsonConfigFile<MehburityConfig> tempConfig(String content) {
 		try {
 			Path path = Files.createTempDirectory("mehburity-test").resolve(MehburityConfig.FILE_NAME);
 			if (content != null) {
@@ -46,7 +46,7 @@ public final class MehburityGameTests {
 	}
 
 	/** A mock player standing inside the test area. */
-	private static ServerPlayer owner(GameTestHelper helper) {
+	static ServerPlayer owner(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		Vec3 pos = helper.absoluteVec(new Vec3(2.5, 1.0, 2.5));
 		player.teleportTo(pos.x, pos.y, pos.z);
@@ -54,7 +54,7 @@ public final class MehburityGameTests {
 	}
 
 	/** Gives the owner a box, opens it, and runs {@code then} once Mehburity is out. */
-	private static void withCompanion(GameTestHelper helper, ServerPlayer owner, Consumer<MehburityEntity> then) {
+	static void withCompanion(GameTestHelper helper, ServerPlayer owner, Consumer<MehburityEntity> then) {
 		MehburityBoxEntity box = CompanionManager.spawnBox(owner);
 		box.skipAttackInteraction(owner);
 		helper.runAfterDelay(READY, () -> {
@@ -134,7 +134,7 @@ public final class MehburityGameTests {
 		CommandNode<CommandSourceStack> root = helper.getLevel().getServer().getCommands().getDispatcher()
 				.getRoot().getChild(MehburityCommands.ROOT);
 		helper.assertTrue(root != null, "/mehburity must be registered");
-		for (String sub : new String[]{"yenile", "cagir", "otur", "takip", "ayarlar"}) {
+		for (String sub : new String[]{"yenile", "cagir", "otur", "takip", "ayarlar", "savas"}) {
 			helper.assertTrue(root.getChild(sub) != null, "/mehburity " + sub + " must be registered");
 		}
 		helper.succeed();

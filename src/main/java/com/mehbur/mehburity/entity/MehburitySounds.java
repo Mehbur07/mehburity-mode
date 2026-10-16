@@ -15,6 +15,8 @@ public final class MehburitySounds {
 	public static final SoundEvent EMERGE = register("mehburity.emerge");
 	/** Played instead of a voice when there is no Gemini key or text-to-speech failed. */
 	public static final SoundEvent SPEAK = register("mehburity.speak");
+	public static final SoundEvent BEAM_CHARGE = register("mehburity.beam.charge");
+	public static final SoundEvent BEAM_FIRE = register("mehburity.beam.fire");
 
 	private MehburitySounds() {
 	}

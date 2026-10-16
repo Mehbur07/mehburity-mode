@@ -23,6 +23,7 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 	public int configVersion = CURRENT_VERSION;
 	public General general = new General();
 	public Companion companion = new Companion();
+	public Combat combat = new Combat();
 	public Ai ai = new Ai();
 	public Verity verity = new Verity();
 
@@ -41,6 +42,39 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		public double teleportDistance = 20.0;
 		/** Multiplier on the base flying speed while following. */
 		public double followSpeed = 2.0;
+	}
+
+	/**
+	 * Defending the owner with a neon beam. Each owner can also switch it off for their own Mehburity with
+	 * {@code /mehburity savas kapat}. Distances are in blocks, times in ticks (20 ticks = 1 second).
+	 */
+	public static final class Combat {
+		/** Server-wide switch; off means no Mehburity ever fights. */
+		public boolean enabled = true;
+		/** Damage of one beam shot (a zombie has 20 health). */
+		public double damage = 6.0;
+		/** Longest beam; Mehburity flies closer when the target is farther than this. */
+		public double beamRange = 12.0;
+		/** How long the beam charges before it hits. */
+		public int chargeTicks = 12;
+		/** Pause between two shots. */
+		public int cooldownTicks = 16;
+		/** Attacks whatever hurts the owner. */
+		public boolean defendOwner = true;
+		/** Attacks whatever the owner hits. */
+		public boolean helpOwnerAttack = true;
+		/** Attacks hostile mobs that are hunting the owner, before they strike. */
+		public boolean guardAgainstHostiles = true;
+		/** Attacks every hostile mob near the owner, even the ones that have not noticed them. */
+		public boolean attackAllHostiles = false;
+		/** Hostile mobs this close to the owner are noticed. */
+		public double guardRadius = 16.0;
+		/** Gives up on targets farther than this from the owner, so Mehburity never wanders off. */
+		public double chaseRadius = 20.0;
+		/** Lets Mehburity fight players who attack its owner (or whom the owner attacks). */
+		public boolean fightPlayers = false;
+		/** Kills count as the owner's: mobs drop their experience and player-only loot. */
+		public boolean ownerGetsDrops = true;
 	}
 
 	/**
@@ -120,6 +154,9 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		if (companion == null) {
 			companion = new Companion();
 		}
+		if (combat == null) {
+			combat = new Combat();
+		}
 		if (ai == null) {
 			ai = new Ai();
 		}
@@ -137,6 +174,13 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		companion.followStartDistance = Mth.clamp(companion.followStartDistance, companion.followStopDistance, 32.0);
 		companion.teleportDistance = Mth.clamp(companion.teleportDistance, companion.followStartDistance + 1.0, 128.0);
 		companion.followSpeed = Mth.clamp(companion.followSpeed, 0.1, 10.0);
+		combat.damage = Mth.clamp(combat.damage, 0.0, 1000.0);
+		combat.beamRange = Mth.clamp(combat.beamRange, 2.0, 32.0);
+		combat.chargeTicks = Mth.clamp(combat.chargeTicks, 1, 200);
+		combat.cooldownTicks = Mth.clamp(combat.cooldownTicks, 0, 200);
+		combat.guardRadius = Mth.clamp(combat.guardRadius, 1.0, 64.0);
+		// Mehburity is pulled back to its owner beyond the teleport distance, so chasing farther is pointless.
+		combat.chaseRadius = Mth.clamp(combat.chaseRadius, 2.0, companion.teleportDistance);
 		if (ai.chatPrefixes == null) {
 			ai.chatPrefixes = new ArrayList<>();
 		}

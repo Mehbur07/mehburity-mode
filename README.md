@@ -4,8 +4,8 @@ Minecraft **26.2 / Fabric** modu. Mehburity, oyuncunun yanında süzülen neon c
 yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar ve sinirlenince
 18 blokluk bir canavara dönüşür.
 
-> Durum: **Faz 2 (Gemini bağlantısı, ses ve ayarlar ekranı) tamamlandı.** Savaş, madencilik, ev, öfke ve
-> canavar formu sonraki fazlarda gelecek; tam README Faz 8'de.
+> Durum: **Faz 3 (savaş: Mehburity seni korur) tamamlandı.** Madencilik, ev, öfke ve canavar formu sonraki
+> fazlarda gelecek; tam README Faz 8'de.
 
 ## Özellikler (şu an)
 
@@ -21,6 +21,18 @@ yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar
   diske önbelleklenir (`config/mehburity/voice-cache`). Anahtar yoksa küçük bir "cıvıltı" sesi çalar.
 - **Gemini yoksa çökmez:** Anahtar yoksa, internet yoksa, kota dolduysa veya 30 sn'de cevap gelmezse Mehburity
   basit yerleşik cevaplarla (Türkçe/İngilizce) devam eder ve sohbette bağlantı durumunu bildirir.
+- **Savaş (seni korur):** Mehburity neon cyan bir **ışınla** savaşır: kısa bir şarjdan sonra (ince ışın + ses)
+  hedefe parlak bir atış yapar. Öncelik sırası:
+  1. Sana **vuran** her şey,
+  2. Senin **vurduğun** canavar (yardım eder),
+  3. Seni **avlayan** düşmanlar (sana saldırmadan önce vurur).
+
+  Hedef menzil dışındaysa yaklaşır, duvar arkasındakine ateş etmez; senden 20 bloktan uzaklaşan hedefi bırakır.
+  **Otur** modunda yerinden ayrılmadan **nöbet tutar**: menzilindeki her düşman canavara ateş eder.
+  Seni, evcil hayvanlarını, köylüleri ve başka Mehburity'leri **asla** vurmaz; oyunculara ancak sunucu
+  izin verirse (`combat.fightPlayers`) saldırır. Öldürdüğü canavarlar senin öldürmüşsün gibi **XP ve loot**
+  düşürür. Öldürdükleri Gemini bağlamına eklenir ("az önce o zombiyi hallettim" diyebilir).
+  `/mehburity savas kapat` ile kendi Mehburity'ni savaştan çekebilirsin (dünya kaydında hatırlanır).
 - **Mehburity:** Havada süzülen, pürüzsüz neon cyan küre; yüzü baktığı yöne döner. Seni takip eder,
   uzakta kalırsa (veya başka boyuttaysan) yanına ışınlanır.
 - **Ölümsüz:** Hiçbir hasar almaz, `/kill` ile ölmez; boşluğa düşerse sahibinin yanına döner.
@@ -42,6 +54,8 @@ Alt komutlar ASCII yazılır (Minecraft'ın komut ayrıştırıcısı "ç, ğ" k
 | `/mehburity cagir` | herkes | Mehburity'yi yanına getirir; hiç kutu açmadıysan yeni kutu verir |
 | `/mehburity otur` | herkes | Olduğu yerde bekler |
 | `/mehburity takip` | herkes | Seni takip eder |
+| `/mehburity savas` | herkes | Savaş durumunu söyler |
+| `/mehburity savas ac` / `kapat` | herkes | Mehburity seni korusun / savaşmasın |
 | `/mehburity ayarlar` | herkes | Ayarlar ekranını açar (Gemini anahtarı, ses) |
 | `/mehburity yenile` | OP | Ayar dosyasını yeniden yükler ve oyunculara gönderir |
 
@@ -76,6 +90,19 @@ Gemini ile konuşma ve ses Google'ın API kotasından düşer (ücretsiz katman�
 | `companion.followStopDistance` | 2.5 | Bu kadar yaklaşınca durur |
 | `companion.teleportDistance` | 20.0 | Bundan uzaksan yanına ışınlanır |
 | `companion.followSpeed` | 2.0 | Takip hızı çarpanı |
+| `combat.enabled` | true | Sunucu genelinde savaş açık mı |
+| `combat.damage` | 6.0 | Bir ışın atışının hasarı (zombinin 20 canı var) |
+| `combat.beamRange` | 12.0 | Işın menzili; hedef daha uzaksa yaklaşır |
+| `combat.chargeTicks` | 12 | Işının şarj süresi (tick) |
+| `combat.cooldownTicks` | 16 | İki atış arası bekleme (tick) |
+| `combat.defendOwner` | true | Sana vurana saldırır |
+| `combat.helpOwnerAttack` | true | Senin vurduğuna saldırır |
+| `combat.guardAgainstHostiles` | true | Seni hedef alan düşmanlara saldırır |
+| `combat.attackAllHostiles` | false | Yakındaki **tüm** düşmanlara saldırır (seni fark etmemiş olsalar bile) |
+| `combat.guardRadius` | 16.0 | Bu mesafedeki düşmanları fark eder |
+| `combat.chaseRadius` | 20.0 | Senden bu kadar uzaklaşan hedefi bırakır (en fazla `teleportDistance`) |
+| `combat.fightPlayers` | false | Sana saldıran (ya da senin saldırdığın) oyunculara da saldırsın mı |
+| `combat.ownerGetsDrops` | true | Öldürdükleri senin öldürmen sayılır (XP ve loot) |
 | `ai.enabled` | true | Mehburity sohbete cevap versin mi |
 | `ai.chatPrefixes` | ["mehburity", "mehbur"] | Mesaj bunlardan biriyle başlarsa Mehburity'ye sorulmuş sayılır |
 | `ai.hearingRadius` | 32.0 | Cevabı sohbette görebilecek oyuncuların uzaklığı (blok) |
@@ -109,7 +136,8 @@ Yer tutucuları yeniden üretmek için: `python tools/gen_textures.py`
 Sesler şimdilik vanilla seslere yönlendirilmiş (`assets/mehburity/sounds.json`). Kendi seslerin için
 `.ogg` dosyalarını `src/main/resources/assets/mehburity/sounds/` klasörüne koy ve `sounds.json`'da
 `{"name": "minecraft:...", "type": "event"}` yerine `"mehburity:dosya_adi"` yaz.
-Ses olayları: `box.shake`, `box.open`, `mehburity.emerge`, `mehburity.speak` (anahtar yokken çalan "cıvıltı").
+Ses olayları: `box.shake`, `box.open`, `mehburity.emerge`, `mehburity.speak` (anahtar yokken çalan "cıvıltı"),
+`mehburity.beam.charge` (ışın şarjı), `mehburity.beam.fire` (atış).
 Mehburity'nin konuşma sesi dosya değil, Gemini TTS ile üretilir.
 
 ## Kurulum (geliştirme)
@@ -149,9 +177,10 @@ src/main/java/com/mehbur/mehburity/
   network/  Sunucu ↔ istemci paketleri
   command/  /mehburity
   config/   Tek ayar dosyası
-  build/ combat/ mining/ anger/   Sonraki fazlar
+  combat/   Savaş: hedef kuralları (CombatTargets), hedef seçimi, ışın saldırısı, hasar tipi
+  build/ mining/ anger/   Sonraki fazlar
 src/client/java/com/mehbur/mehburity/client/
-  render/   Küre renderer'ı, kutu modeli
+  render/   Küre renderer'ı (+ ışın), kutu modeli
   verity/   Karanlığın istemci tarafı (lightmap mixin'i)
   ai/       İstemcide Gemini çağrısı (ClientAi) ve ses (VoicePlayer)
   screen/   Ayarlar ekranı + Mod Menu entegrasyonu
