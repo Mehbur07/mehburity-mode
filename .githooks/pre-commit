@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks commits that contain API keys or other secrets. Enable once with:
+#   git config core.hooksPath .githooks
+exec python -I "$(git rev-parse --show-toplevel)/tools/scan_secrets.py"

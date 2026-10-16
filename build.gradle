@@ -1,0 +1,81 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+repositories {
+	// Loom adds Mojang and Fabric repositories automatically.
+	maven {
+		name = 'TerraformersMC'
+		url = 'https://maven.terraformersmc.com/releases/'
+		content { includeGroup 'com.terraformersmc' }
+	}
+	maven {
+		// Hosts placeholder-api, which Mod Menu needs at runtime.
+		name = 'Nucleoid'
+		url = 'https://maven.nucleoid.xyz/'
+		content { includeGroup 'eu.pb4' }
+	}
+}
+
+loom {
+	// Keeps client-only code (screens, rendering, audio) out of the common source set,
+	// so the dedicated server can never load client classes by accident.
+	splitEnvironmentSourceSets()
+
+	mods {
+		"mehburity" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+fabricApi {
+	// Server game tests (src/gametest) run headless as part of `gradlew build`;
+	// the client test opens a real game window and runs with `gradlew runClientGameTest`.
+	configureTests {
+		createSourceSet = true
+		modId = "mehburity-test"
+		enableGameTests = true
+		enableClientGameTests = true
+		eula = true // Accepted by the project owner for the local game-test server (build/run/gameTest).
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Compile against Mod Menu's API only; players do not need it installed.
+	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	localRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+	it.options.encoding = "UTF-8"
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}

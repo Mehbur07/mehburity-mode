@@ -1,0 +1,5 @@
+{
+	"mehburity.command.info": "Mehburity %s is running.",
+	"mehburity.command.reloaded": "Mehburity config reloaded.",
+	"mehburity.command.reload_failed": "The config file had a problem, defaults are in use. See the log."
+}

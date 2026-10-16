@@ -1,0 +1,5 @@
+{
+	"mehburity.command.info": "Mehburity %s çalışıyor.",
+	"mehburity.command.reloaded": "Mehburity ayarları yeniden yüklendi.",
+	"mehburity.command.reload_failed": "Ayar dosyasında bir sorun vardı, varsayılan değerler kullanılıyor. Loga bak."
+}

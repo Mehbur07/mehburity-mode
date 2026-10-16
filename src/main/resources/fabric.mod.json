@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "mehburity",
+	"version": "${version}",
+	"name": "Mehburity",
+	"description": "A floating neon-cyan AI companion that chats through Gemini, fights for you, mines, builds houses - and turns into an 18-block monster when angered.",
+	"authors": [
+		"Mehbur07"
+	],
+	"license": "All-Rights-Reserved",
+	"icon": "assets/mehburity/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.mehbur.mehburity.MehburityMod"
+		],
+		"client": [
+			"com.mehbur.mehburity.client.MehburityClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"modmenu": "*"
+	}
+}
