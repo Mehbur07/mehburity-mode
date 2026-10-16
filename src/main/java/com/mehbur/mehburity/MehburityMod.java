@@ -1,5 +1,7 @@
 package com.mehbur.mehburity;
 
+import com.mehbur.mehburity.ai.AiRouter;
+import com.mehbur.mehburity.ai.GameEvents;
 import com.mehbur.mehburity.command.MehburityCommands;
 import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
@@ -40,6 +42,8 @@ public final class MehburityMod implements ModInitializer {
 		CompanionRegistry.register();
 		MehburityNetwork.register();
 		CompanionManager.register();
+		GameEvents.register();
+		AiRouter.register();
 		VerityFeatures.registerAll();
 		MehburityCommands.register();
 		LOGGER.info("Mehburity {} initialized", version());

@@ -16,6 +16,9 @@
 		],
 		"client": [
 			"com.mehbur.mehburity.client.MehburityClient"
+		],
+		"modmenu": [
+			"com.mehbur.mehburity.client.screen.ModMenuIntegration"
 		]
 	},
 	"mixins": [

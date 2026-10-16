@@ -7,10 +7,12 @@ import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.MehburitySpeech;
+import com.mehbur.mehburity.network.OpenSettingsPayload;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -39,6 +41,7 @@ public final class MehburityCommands {
 				.then(Commands.literal("cagir").executes(MehburityCommands::summon))
 				.then(Commands.literal("otur").executes(ctx -> setMode(ctx, CompanionMode.STAY)))
 				.then(Commands.literal("takip").executes(ctx -> setMode(ctx, CompanionMode.FOLLOW)))
+				.then(Commands.literal("ayarlar").executes(MehburityCommands::openSettings))
 				.then(Commands.literal("yenile")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(MehburityCommands::reload)));
@@ -71,6 +74,16 @@ public final class MehburityCommands {
 		MehburitySpeech.say(player, mode == CompanionMode.STAY
 				? MehburitySpeech.text("stay", "Okay, I'll wait here.")
 				: MehburitySpeech.text("follow", "I'm right behind you."));
+		return 1;
+	}
+
+	/** Opens the client settings screen (Gemini key, voice). Same screen as Mods → Mehburity → Configure. */
+	private static int openSettings(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		if (!ServerPlayNetworking.canSend(player, OpenSettingsPayload.TYPE)) {
+			return 0;
+		}
+		ServerPlayNetworking.send(player, OpenSettingsPayload.INSTANCE);
 		return 1;
 	}
 

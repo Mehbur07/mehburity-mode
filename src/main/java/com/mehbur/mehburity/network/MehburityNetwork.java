@@ -9,5 +9,9 @@ public final class MehburityNetwork {
 
 	public static void register() {
 		PayloadTypeRegistry.clientboundPlay().register(DarknessSettingsPayload.TYPE, DarknessSettingsPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(AiRequestPayload.TYPE, AiRequestPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(SpeakPayload.TYPE, SpeakPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(OpenSettingsPayload.TYPE, OpenSettingsPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(AiReplyPayload.TYPE, AiReplyPayload.CODEC);
 	}
 }

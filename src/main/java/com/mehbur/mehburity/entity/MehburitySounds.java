@@ -13,6 +13,8 @@ public final class MehburitySounds {
 	public static final SoundEvent BOX_SHAKE = register("box.shake");
 	public static final SoundEvent BOX_OPEN = register("box.open");
 	public static final SoundEvent EMERGE = register("mehburity.emerge");
+	/** Played instead of a voice when there is no Gemini key or text-to-speech failed. */
+	public static final SoundEvent SPEAK = register("mehburity.speak");
 
 	private MehburitySounds() {
 	}

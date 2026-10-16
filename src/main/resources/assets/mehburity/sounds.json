@@ -16,5 +16,11 @@
 		"sounds": [
 			{ "name": "minecraft:entity.allay.item_given", "type": "event" }
 		]
+	},
+	"mehburity.speak": {
+		"subtitle": "subtitles.mehburity.mehburity.speak",
+		"sounds": [
+			{ "name": "minecraft:entity.allay.ambient_without_item", "type": "event" }
+		]
 	}
 }

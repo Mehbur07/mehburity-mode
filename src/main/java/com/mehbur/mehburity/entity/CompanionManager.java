@@ -1,11 +1,14 @@
 package com.mehbur.mehburity.entity;
 
 import com.mehbur.mehburity.MehburityMod;
+import com.mehbur.mehburity.ai.GameEvents;
+import com.mehbur.mehburity.config.MehburityConfig;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -98,7 +101,7 @@ public final class CompanionManager {
 		if (companion.mode() == CompanionMode.FOLLOW || companion.stowed()) {
 			MehburityEntity created = spawnCompanion(player, companion.mode());
 			if (created != null && joining) {
-				MehburitySpeech.say(player, MehburitySpeech.text("welcome_back", "Welcome back, %s!", player.getDisplayName()));
+				MehburitySpeech.speak(player, MehburitySpeech.text("welcome_back", "Welcome back, %s!", player.getDisplayName()));
 			}
 		}
 	}
@@ -168,8 +171,9 @@ public final class CompanionManager {
 		level.sendParticles(ParticleTypes.END_ROD, start.x, start.y + 0.6, start.z, 25, 0.2, 0.4, 0.2, 0.08);
 		level.playSound(null, start.x, start.y, start.z, MehburitySounds.EMERGE, SoundSource.NEUTRAL, 1.0F, 1.0F);
 		if (owner != null) {
-			MehburitySpeech.say(owner, MehburitySpeech.text("hello",
-					"Hi %s! I'm Mehburity. From now on I'll always be by your side.", owner.getDisplayName()));
+			// Verity's line, word for word; spoken with Mehburity's voice. Editable in the config (ai.greeting).
+			MehburitySpeech.speak(owner, Component.literal(MehburityConfig.get().ai.greeting));
+			GameEvents.record(owner, "Mehburity came out of its box and met the player for the first time");
 		}
 	}
 

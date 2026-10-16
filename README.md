@@ -4,13 +4,23 @@ Minecraft **26.2 / Fabric** modu. Mehburity, oyuncunun yanında süzülen neon c
 yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar ve sinirlenince
 18 blokluk bir canavara dönüşür.
 
-> Durum: **Faz 1 (Mehburity, kutu ve karanlık) tamamlandı.** Gemini, savaş, madencilik, ev, öfke ve
+> Durum: **Faz 2 (Gemini bağlantısı, ses ve ayarlar ekranı) tamamlandı.** Savaş, madencilik, ev, öfke ve
 > canavar formu sonraki fazlarda gelecek; tam README Faz 8'de.
 
 ## Özellikler (şu an)
 
 - **Kutu:** Dünyaya ilk girişte önüne bir karton kutu bırakılır. Kutuya **sol tık** yapınca kutu sallanır,
   kapakları açılır (partikül + ses) ve Mehburity içinden dönerek yükselir. Kutuyu sadece sahibi açabilir.
+  Çıkınca Verity gibi *"Hello! I'm Mehburity. Your personal helper friend. Ask me anything. I know everything."*
+  der (yazılı ve sesli).
+- **Konuşma (Gemini):** Sohbete **"Mehburity, ..."** (veya "mehbur ...", "@mehburity ...") diye yaz; Mehburity
+  Gemini ile cevap verir. Konumunu, canını, saati, yakındaki düşmanları ve son olayları bilir; konuşmayı hatırlar
+  (son 10 mesaj). Saldırıya uğrayınca veya ölünce kendiliğinden yorum yapar (90 sn'de bir en fazla).
+- **Ses:** Mehburity söylediklerini sesli okur (Gemini TTS). Varsayılan ses **Puck** ("upbeat"), Verity'nin
+  enerjik/neşeli sesine en yakın hazır ses; ayarlardan 30 sesten biri seçilebilir. Sık söylenen kısa cümleler
+  diske önbelleklenir (`config/mehburity/voice-cache`). Anahtar yoksa küçük bir "cıvıltı" sesi çalar.
+- **Gemini yoksa çökmez:** Anahtar yoksa, internet yoksa, kota dolduysa veya 30 sn'de cevap gelmezse Mehburity
+  basit yerleşik cevaplarla (Türkçe/İngilizce) devam eder ve sohbette bağlantı durumunu bildirir.
 - **Mehburity:** Havada süzülen, pürüzsüz neon cyan küre; yüzü baktığı yöne döner. Seni takip eder,
   uzakta kalırsa (veya başka boyuttaysan) yanına ışınlanır.
 - **Ölümsüz:** Hiçbir hasar almaz, `/kill` ile ölmez; boşluğa düşerse sahibinin yanına döner.
@@ -32,7 +42,24 @@ Alt komutlar ASCII yazılır (Minecraft'ın komut ayrıştırıcısı "ç, ğ" k
 | `/mehburity cagir` | herkes | Mehburity'yi yanına getirir; hiç kutu açmadıysan yeni kutu verir |
 | `/mehburity otur` | herkes | Olduğu yerde bekler |
 | `/mehburity takip` | herkes | Seni takip eder |
+| `/mehburity ayarlar` | herkes | Ayarlar ekranını açar (Gemini anahtarı, ses) |
 | `/mehburity yenile` | OP | Ayar dosyasını yeniden yükler ve oyunculara gönderir |
+
+## Gemini kurulumu
+
+1. https://aistudio.google.com/apikey adresinden ücretsiz bir Gemini API anahtarı al.
+2. Oyunda **Modlar → Mehburity → Yapılandır** (Mod Menu) veya sohbete `/mehburity ayarlar` yaz.
+3. Anahtarı yapıştır, **Bağlantıyı test et**'e bas, **Bitti** ile kaydet.
+
+Ayarlar ekranında: model (`gemini-3.5-flash-lite` hızlı/ucuz, `gemini-3.8-flash` daha akıllı), sesli konuşma
+açık/kapalı, ses seçimi, TTS modeli, ses yüksekliği ve **▶ Dinle** (seçili sesi dener).
+
+**Anahtar nerede durur?** Sadece kendi bilgisayarında, `config/mehburity-client.json` içinde. Sunucuya hiç
+gönderilmez: sunucu soruyu senin istemcine yollar, istemci Gemini'ye sorar, cevabı geri yollar. Bu yüzden
+sunucularda da çalışır; herkes kendi anahtarını kullanır. Yakındaki oyuncular cevabı sohbette görür, sesi sadece
+Mehburity'nin sahibi duyar.
+
+Gemini ile konuşma ve ses Google'ın API kotasından düşer (ücretsiz katmanın günlük sınırları vardır).
 
 ## Ayar dosyaları
 
@@ -49,6 +76,16 @@ Alt komutlar ASCII yazılır (Minecraft'ın komut ayrıştırıcısı "ç, ğ" k
 | `companion.followStopDistance` | 2.5 | Bu kadar yaklaşınca durur |
 | `companion.teleportDistance` | 20.0 | Bundan uzaksan yanına ışınlanır |
 | `companion.followSpeed` | 2.0 | Takip hızı çarpanı |
+| `ai.enabled` | true | Mehburity sohbete cevap versin mi |
+| `ai.chatPrefixes` | ["mehburity", "mehbur"] | Mesaj bunlardan biriyle başlarsa Mehburity'ye sorulmuş sayılır |
+| `ai.hearingRadius` | 32.0 | Cevabı sohbette görebilecek oyuncuların uzaklığı (blok) |
+| `ai.requestTimeoutSeconds` | 30 | Bu süre içinde cevap gelmezse yerleşik cevap verilir |
+| `ai.cooldownSeconds` | 2.0 | Aynı oyuncunun iki sorusu arasındaki en kısa süre |
+| `ai.maxMessageLength` / `ai.maxReplyLength` | 256 / 400 | Soru/cevap uzunluk sınırı (karakter) |
+| `ai.commentOnEvents` | true | Saldırı/ölüm gibi olaylarda kendiliğinden yorum |
+| `ai.eventCommentCooldownSeconds` | 90 | İki olay yorumu arasındaki en kısa süre |
+| `ai.greeting` | "Hello! I'm Mehburity. ..." | Kutudan çıkınca söylediği cümle |
+| `ai.extraPersona` | "" | Kişiliğe ek not (ör. "Korsan gibi konuş.") |
 | `verity.box.enabled` | true | İlk girişte kutu verilsin mi |
 | `verity.box.openTicks` | 40 | Kutu açılma animasyonu (tick, 20 = 1 sn) |
 | `verity.darkness.enabled` | true | Verity karanlığı |
@@ -72,7 +109,8 @@ Yer tutucuları yeniden üretmek için: `python tools/gen_textures.py`
 Sesler şimdilik vanilla seslere yönlendirilmiş (`assets/mehburity/sounds.json`). Kendi seslerin için
 `.ogg` dosyalarını `src/main/resources/assets/mehburity/sounds/` klasörüne koy ve `sounds.json`'da
 `{"name": "minecraft:...", "type": "event"}` yerine `"mehburity:dosya_adi"` yaz.
-Ses olayları: `box.shake`, `box.open`, `mehburity.emerge`.
+Ses olayları: `box.shake`, `box.open`, `mehburity.emerge`, `mehburity.speak` (anahtar yokken çalan "cıvıltı").
+Mehburity'nin konuşma sesi dosya değil, Gemini TTS ile üretilir.
 
 ## Kurulum (geliştirme)
 
@@ -106,16 +144,19 @@ Masaüstündeki **Mehburity Kur** kısayolu bunu çalıştırır.
 ```
 src/main/java/com/mehbur/mehburity/
   entity/   Mehburity, kutu, sahiplik kaydı (CompanionRegistry), CompanionManager
+  ai/       GeminiClient (Interactions API), AiRouter, kişilik, oyun bağlamı ve olaylar, yerleşik cevaplar
   verity/   Verity özellikleri (VerityFeature arayüzü): kutu, karanlık
   network/  Sunucu ↔ istemci paketleri
   command/  /mehburity
   config/   Tek ayar dosyası
-  ai/ build/ combat/ mining/ anger/   Sonraki fazlar
+  build/ combat/ mining/ anger/   Sonraki fazlar
 src/client/java/com/mehbur/mehburity/client/
   render/   Küre renderer'ı, kutu modeli
   verity/   Karanlığın istemci tarafı (lightmap mixin'i)
-  config/ screen/
-src/gametest/   Sunucu ve istemci oyun testleri
+  ai/       İstemcide Gemini çağrısı (ClientAi) ve ses (VoicePlayer)
+  screen/   Ayarlar ekranı + Mod Menu entegrasyonu
+  config/
+src/gametest/   Sunucu ve istemci oyun testleri (FakeGemini: testler için yerel sahte Gemini sunucusu)
 tools/          gen_textures.py, scan_secrets.py
 ```
 

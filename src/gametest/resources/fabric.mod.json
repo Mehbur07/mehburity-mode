@@ -6,7 +6,8 @@
 	"environment": "*",
 	"entrypoints": {
 		"fabric-gametest": [
-			"com.mehbur.mehburity.test.MehburityGameTests"
+			"com.mehbur.mehburity.test.MehburityGameTests",
+			"com.mehbur.mehburity.test.MehburityAiGameTests"
 		],
 		"fabric-client-gametest": [
 			"com.mehbur.mehburity.test.MehburityClientGameTest"

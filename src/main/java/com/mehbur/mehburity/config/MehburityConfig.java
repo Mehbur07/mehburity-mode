@@ -4,6 +4,9 @@ import com.mehbur.mehburity.MehburityMod;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Mth;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * All gameplay numbers and word lists, stored in {@code config/mehburity.json}.
  * Each feature adds its own section here, so there is exactly one file to edit.
@@ -20,6 +23,7 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 	public int configVersion = CURRENT_VERSION;
 	public General general = new General();
 	public Companion companion = new Companion();
+	public Ai ai = new Ai();
 	public Verity verity = new Verity();
 
 	public static final class General {
@@ -37,6 +41,31 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		public double teleportDistance = 20.0;
 		/** Multiplier on the base flying speed while following. */
 		public double followSpeed = 2.0;
+	}
+
+	/**
+	 * Talking to Mehburity. The Gemini key itself is a client setting: the server sends each question to the
+	 * owner's client, which asks Gemini and sends the answer back.
+	 */
+	public static final class Ai {
+		public boolean enabled = true;
+		/** A chat message starting with one of these words (case-insensitive) is a question for Mehburity. */
+		public List<String> chatPrefixes = new ArrayList<>(List.of("mehburity", "mehbur"));
+		/** Players this close to the owner see Mehburity's answers. */
+		public double hearingRadius = 32.0;
+		/** After this, the server answers with a built-in reply instead. */
+		public int requestTimeoutSeconds = 30;
+		/** Minimum time between two questions from the same player. */
+		public double cooldownSeconds = 2.0;
+		public int maxMessageLength = 256;
+		public int maxReplyLength = 400;
+		/** Mehburity comments on things that happen to its owner (getting hurt, dying...). */
+		public boolean commentOnEvents = true;
+		public int eventCommentCooldownSeconds = 90;
+		/** Said (and spoken) when Mehburity comes out of its box. */
+		public String greeting = "Hello! I'm Mehburity. Your personal helper friend. Ask me anything. I know everything.";
+		/** Extra personality notes added to Mehburity's instructions, e.g. "Talk like a pirate." */
+		public String extraPersona = "";
 	}
 
 	/** Features adapted from Verity. Each one can be switched off on its own. */
@@ -91,6 +120,9 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		if (companion == null) {
 			companion = new Companion();
 		}
+		if (ai == null) {
+			ai = new Ai();
+		}
 		if (verity == null) {
 			verity = new Verity();
 		}
@@ -105,6 +137,22 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		companion.followStartDistance = Mth.clamp(companion.followStartDistance, companion.followStopDistance, 32.0);
 		companion.teleportDistance = Mth.clamp(companion.teleportDistance, companion.followStartDistance + 1.0, 128.0);
 		companion.followSpeed = Mth.clamp(companion.followSpeed, 0.1, 10.0);
+		if (ai.chatPrefixes == null) {
+			ai.chatPrefixes = new ArrayList<>();
+		}
+		ai.chatPrefixes.removeIf(prefix -> prefix == null || prefix.isBlank());
+		if (ai.greeting == null || ai.greeting.isBlank()) {
+			ai.greeting = new Ai().greeting;
+		}
+		if (ai.extraPersona == null) {
+			ai.extraPersona = "";
+		}
+		ai.hearingRadius = Mth.clamp(ai.hearingRadius, 0.0, 256.0);
+		ai.requestTimeoutSeconds = Mth.clamp(ai.requestTimeoutSeconds, 5, 120);
+		ai.cooldownSeconds = Mth.clamp(ai.cooldownSeconds, 0.0, 60.0);
+		ai.maxMessageLength = Mth.clamp(ai.maxMessageLength, 16, 1000);
+		ai.maxReplyLength = Mth.clamp(ai.maxReplyLength, 32, 1000);
+		ai.eventCommentCooldownSeconds = Mth.clamp(ai.eventCommentCooldownSeconds, 5, 3600);
 		verity.box.openTicks = Mth.clamp(verity.box.openTicks, 1, 400);
 		verity.darkness.strength = Mth.clamp(verity.darkness.strength, 0.0, 1.0);
 	}
