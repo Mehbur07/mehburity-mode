@@ -1,5 +1,23 @@
 {
+	"entity.mehburity.mehburity": "Mehburity",
+	"entity.mehburity.box": "Mehburity's Box",
+
 	"mehburity.command.info": "Mehburity %s is running.",
 	"mehburity.command.reloaded": "Mehburity config reloaded.",
-	"mehburity.command.reload_failed": "The config file had a problem, defaults are in use. See the log."
+	"mehburity.command.reload_failed": "The config file had a problem, defaults are in use. See the log.",
+	"mehburity.command.not_nearby": "Your Mehburity is not nearby. Use /mehburity cagir first.",
+
+	"mehburity.speech.box.appeared": "A box appeared next to you... Hit it (left click) to open it.",
+	"mehburity.speech.box.not_yours": "This box belongs to %s.",
+	"mehburity.speech.box.not_yours_unknown": "This box is not yours.",
+	"mehburity.speech.hello": "Hi %s! I'm Mehburity. From now on I'll always be by your side.",
+	"mehburity.speech.already_have": "You already have me!",
+	"mehburity.speech.welcome_back": "Welcome back, %s!",
+	"mehburity.speech.coming": "I'm here!",
+	"mehburity.speech.stay": "Okay, I'll wait here.",
+	"mehburity.speech.follow": "I'm right behind you.",
+
+	"subtitles.mehburity.box.shake": "Box rustles",
+	"subtitles.mehburity.box.open": "Box opens",
+	"subtitles.mehburity.mehburity.emerge": "Mehburity appears"
 }

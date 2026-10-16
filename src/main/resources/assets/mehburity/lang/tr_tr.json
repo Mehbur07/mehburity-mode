@@ -1,5 +1,23 @@
 {
+	"entity.mehburity.mehburity": "Mehburity",
+	"entity.mehburity.box": "Mehburity'nin Kutusu",
+
 	"mehburity.command.info": "Mehburity %s çalışıyor.",
 	"mehburity.command.reloaded": "Mehburity ayarları yeniden yüklendi.",
-	"mehburity.command.reload_failed": "Ayar dosyasında bir sorun vardı, varsayılan değerler kullanılıyor. Loga bak."
+	"mehburity.command.reload_failed": "Ayar dosyasında bir sorun vardı, varsayılan değerler kullanılıyor. Loga bak.",
+	"mehburity.command.not_nearby": "Mehburity yakınında değil. Önce /mehburity cagir yaz.",
+
+	"mehburity.speech.box.appeared": "Yanında bir kutu belirdi... Açmak için ona vur (sol tık).",
+	"mehburity.speech.box.not_yours": "Bu kutu %s adlı oyuncuya ait.",
+	"mehburity.speech.box.not_yours_unknown": "Bu kutu senin değil.",
+	"mehburity.speech.hello": "Merhaba %s! Ben Mehburity. Artık hep yanındayım.",
+	"mehburity.speech.already_have": "Ben zaten seninleyim!",
+	"mehburity.speech.welcome_back": "Tekrar hoş geldin, %s!",
+	"mehburity.speech.coming": "Geldim!",
+	"mehburity.speech.stay": "Tamam, burada bekliyorum.",
+	"mehburity.speech.follow": "Hemen arkandayım.",
+
+	"subtitles.mehburity.box.shake": "Kutu hışırdıyor",
+	"subtitles.mehburity.box.open": "Kutu açılıyor",
+	"subtitles.mehburity.mehburity.emerge": "Mehburity beliriyor"
 }

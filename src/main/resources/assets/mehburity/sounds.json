@@ -1,0 +1,20 @@
+{
+	"box.shake": {
+		"subtitle": "subtitles.mehburity.box.shake",
+		"sounds": [
+			{ "name": "minecraft:item.bundle.insert", "type": "event" }
+		]
+	},
+	"box.open": {
+		"subtitle": "subtitles.mehburity.box.open",
+		"sounds": [
+			{ "name": "minecraft:block.barrel.open", "type": "event" }
+		]
+	},
+	"mehburity.emerge": {
+		"subtitle": "subtitles.mehburity.mehburity.emerge",
+		"sounds": [
+			{ "name": "minecraft:entity.allay.item_given", "type": "event" }
+		]
+	}
+}

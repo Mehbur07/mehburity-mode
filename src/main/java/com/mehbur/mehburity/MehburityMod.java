@@ -2,6 +2,12 @@ package com.mehbur.mehburity;
 
 import com.mehbur.mehburity.command.MehburityCommands;
 import com.mehbur.mehburity.config.MehburityConfig;
+import com.mehbur.mehburity.entity.CompanionManager;
+import com.mehbur.mehburity.entity.CompanionRegistry;
+import com.mehbur.mehburity.entity.MehburityEntities;
+import com.mehbur.mehburity.entity.MehburitySounds;
+import com.mehbur.mehburity.network.MehburityNetwork;
+import com.mehbur.mehburity.verity.VerityFeatures;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.Identifier;
@@ -29,6 +35,12 @@ public final class MehburityMod implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		MehburityConfig.load();
+		MehburitySounds.register();
+		MehburityEntities.register();
+		CompanionRegistry.register();
+		MehburityNetwork.register();
+		CompanionManager.register();
+		VerityFeatures.registerAll();
 		MehburityCommands.register();
 		LOGGER.info("Mehburity {} initialized", version());
 	}
