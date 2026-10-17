@@ -43,6 +43,8 @@ public final class VoicePlayer {
 	});
 	/** Each line waits for the previous one, so they play in the order they were asked for. */
 	private static CompletableFuture<Void> queue = CompletableFuture.completedFuture(null);
+	/** Bumped by {@link #hush()}: lines asked for before it are cut off or skipped. */
+	private static volatile int generation;
 
 	private VoicePlayer() {
 	}
@@ -63,6 +65,7 @@ public final class VoicePlayer {
 			chirp();
 			return;
 		}
+		int asked = generation;
 		CompletableFuture<byte[]> audio = fetch(config.voiceModel, voice, style, text);
 		queue = queue.thenCombineAsync(audio.handle((wav, error) -> {
 			if (error != null) {
@@ -72,8 +75,8 @@ public final class VoicePlayer {
 			}
 			return wav;
 		}), (ignored, wav) -> {
-			if (wav != null) {
-				play(wav);
+			if (wav != null && asked == generation) {
+				play(wav, asked);
 			}
 			return null;
 		}, AUDIO);
@@ -96,8 +99,13 @@ public final class VoicePlayer {
 		});
 	}
 
+	/** Stops Mehburity mid-sentence and drops queued lines (push-to-talk starts, so the microphone hears only you). */
+	public static void hush() {
+		generation++;
+	}
+
 	/** Blocking playback on the audio thread, scaled by our volume × Minecraft's voice/master volume. */
-	private static void play(byte[] wav) {
+	private static void play(byte[] wav, int asked) {
 		try (AudioInputStream stream = AudioSystem.getAudioInputStream(new ByteArrayInputStream(wav))) {
 			AudioFormat format = stream.getFormat();
 			try (SourceDataLine line = AudioSystem.getSourceDataLine(format)) {
@@ -107,6 +115,10 @@ public final class VoicePlayer {
 				byte[] buffer = new byte[4096];
 				int read;
 				while ((read = stream.read(buffer)) > 0) {
+					if (asked != generation) {
+						line.flush(); // hushed
+						return;
+					}
 					line.write(buffer, 0, read);
 				}
 				line.drain();

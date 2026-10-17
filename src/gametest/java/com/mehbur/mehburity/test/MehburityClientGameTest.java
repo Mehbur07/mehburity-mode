@@ -1,6 +1,8 @@
 package com.mehbur.mehburity.test;
 
 import com.mehbur.mehburity.MehburityMod;
+import com.mehbur.mehburity.client.ai.MicRecorder;
+import com.mehbur.mehburity.client.ai.VoiceInput;
 import com.mehbur.mehburity.client.config.MehburityClientConfig;
 import com.mehbur.mehburity.client.screen.MehburityConfigScreen;
 import com.mehbur.mehburity.config.ConfigReloadedCallback;
@@ -46,6 +48,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * End-to-end client test (run with {@code gradlew runClientGameTest}). A real client: finds the first-join box,
@@ -97,6 +101,7 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 			checkAnger(context, server, playerId);
 			checkDarkness(context, server);
 			checkVerity(context, server, playerId);
+			checkPushToTalk(context, server, playerId);
 		}
 
 		// Leaving and coming back: Mehburity travels with the player and greets them again.
@@ -445,6 +450,59 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		context.takeScreenshot("mehburity-v4-scared");
 		context.getInput().pressKey(options -> options.keyToggleGui);
 		server.runCommand("time set noon");
+	}
+
+	/**
+	 * Push-to-talk: the key is bound through the settings screen with a real key press, holding it starts the
+	 * microphone (or says there is none, on machines without one), and a recording sent to (fake) Gemini comes back
+	 * as a chat line for Mehburity that Mehburity then answers.
+	 */
+	private static void checkPushToTalk(ClientGameTestContext context, TestServerContext server, UUID playerId) {
+		context.runOnClient(mc -> mc.player.connection.sendCommand("mehburity ayarlar"));
+		context.waitForScreen(MehburityConfigScreen.class);
+		context.runOnClient(mc -> ((MehburityConfigScreen) mc.gui.screen()).captureTalkKey());
+		context.getInput().pressKey(GLFW.GLFW_KEY_V);
+		context.waitTicks(2);
+		String bound = context.computeOnClient(mc -> VoiceInput.PUSH_TO_TALK.saveString());
+		assertEquals("key.keyboard.v", bound, "the talk key set in Mehburity's settings");
+		context.takeScreenshot("mehburity-p1-talk-key");
+		context.setScreen(() -> null);
+
+		Map<UUID, List<String>> replies = MehburityAiGameTests.REPLIES;
+		try (FakeGemini fake = new FakeGemini()) {
+			context.runOnClient(mc -> {
+				MehburityClientConfig.get().geminiApiKey = "test-key-123";
+				MehburityClientConfig.get().apiBaseUrl = fake.baseUri().toString();
+			});
+			// Holding the real key: records if this machine has a microphone. Silence comes back as "nothing said".
+			fake.chatAnswer("");
+			context.getInput().holdKey(VoiceInput.PUSH_TO_TALK);
+			context.waitTicks(15);
+			boolean recorded = context.computeOnClient(mc -> VoiceInput.isRecording());
+			MehburityMod.LOGGER.info("Push-to-talk microphone available: {}", recorded);
+			context.takeScreenshot("mehburity-p2-listening");
+			context.getInput().releaseKey(VoiceInput.PUSH_TO_TALK);
+			context.waitFor(mc -> !VoiceInput.isBusy(), 200);
+
+			// A finished recording: Gemini hears a question, it goes to chat, Mehburity answers it.
+			fake.chatAnswer("Neon cyan, of course!");
+			fake.enqueue(200, FakeGemini.textInteraction("what is your favourite colour?"));
+			int before = replies.getOrDefault(playerId, List.of()).size();
+			int requestsBefore = fake.requests().size();
+			CompletableFuture<String> sent = context.computeOnClient(mc -> VoiceInput.submit(new byte[MicRecorder.SAMPLE_RATE * 2]));
+			context.waitFor(mc -> sent.isDone(), 200);
+			assertEquals("Mehburity, what is your favourite colour?", sent.join(), "the transcript goes to chat for Mehburity");
+			FakeGemini.Request transcription = fake.requests().get(requestsBefore);
+			String audioType = transcription.body().getAsJsonArray("input").get(0).getAsJsonObject()
+					.getAsJsonArray("content").get(1).getAsJsonObject().get("mime_type").getAsString();
+			assertEquals("audio/wav", audioType, "the recording is sent as WAV");
+			server.waitFor(s -> replies.getOrDefault(playerId, List.of()).size() > before, 200);
+			assertEquals("Neon cyan, of course!", replies.get(playerId).getLast(), "Mehburity answers what was said");
+			context.waitTicks(10);
+			context.takeScreenshot("mehburity-p3-voice-chat");
+		} finally {
+			context.runOnClient(mc -> MehburityClientConfig.load());
+		}
 	}
 
 	/** Compares the same midnight view with Verity darkness on and off. */

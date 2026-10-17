@@ -7,12 +7,13 @@ Gemini ile seninle konuşur, sesli cevap verir, seni ışınıyla korur, maden k
 iblise dönüşüp suçluyu avlar. ThatMob'un **Verity**'sinden esinlenmiştir: bir kutudan çıkar, dünya zifiri karanlıktır,
 elinde bir el feneri vardır ve karanlıkta… bazen yalnız değilsindir.
 
-> **Durum:** Faz 8 tamamlandı (Verity modülü + bu belge). Sırada Faz 9 var: bas-konuş ile sesli konuşma.
+> **Durum:** Tüm fazlar (0–9) tamamlandı. Son eklenen: bas-konuş ile sesli konuşma.
 
 ## İçindekiler
 
 1. [Hızlı başlangıç](#hızlı-başlangıç)
 2. [Mehburity ile konuşmak](#mehburity-ile-konuşmak)
+   - [Sesli konuşma (bas-konuş)](#sesli-konuşma-bas-konuş)
 3. [Sohbet emirleri](#sohbet-emirleri)
 4. [Özellikler](#özellikler)
    - [Yoldaş: takip, ölümsüzlük](#yoldaş-takip-ölümsüzlük)
@@ -44,6 +45,8 @@ Mod Menu.
 3. Mehburity sana bir **el feneri** verir. Sağ tıkla açarsın, çünkü geceler ve mağaralar zifiri karanlıktır.
 4. Sohbete **`Mehburity, merhaba!`** yaz. Gemini anahtarı olmadan da basit cevaplar verir. Gerçek sohbet ve ses için
    [Gemini kurulumu](#gemini-kurulumu)'na bak (ücretsiz, 2 dakika).
+5. İstersen ayarlardan bir **Konuşma tuşu** ata. Tuşu basılı tutup sesli konuşursun; bkz.
+   [Sesli konuşma](#sesli-konuşma-bas-konuş).
 
 Kutuyu kaybettiysen `/mehburity cagir` yeni bir kutu verir (hiç açmadıysan) ya da Mehburity'yi yanına getirir.
 
@@ -58,6 +61,27 @@ Kutuyu kaybettiysen `/mehburity cagir` yeni bir kutu verir (hiç açmadıysan) y
   önbelleğe alınır.
 - **Gemini yoksa da çalışır:** anahtar, internet ya da kota yoksa veya cevap 30 sn'de gelmezse yerleşik Türkçe/İngilizce
   cevaplarla devam eder ve bağlantı sorununu söyler. Ses yerine kısa bir "cıvıltı" çalar.
+
+### Sesli konuşma (bas-konuş)
+
+Yazmak yerine Mehburity'ye sesli de konuşabilirsin.
+
+1. **Tuşu ata.** Varsayılan olarak atanmamıştır. **Modlar → Mehburity → Yapılandır** (ya da `/mehburity ayarlar`) →
+   **Konuşma tuşu** düğmesine bas, sonra istediğin tuşa ya da fare tuşuna bas. Esc tuşu kaldırır. Aynı tuş
+   **Seçenekler → Kontroller → Tuş Atamaları → Mehburity** altında da görünür.
+2. **🎙 Mikrofonu dene** düğmesi 2 saniye kaydeder ve ses seviyesini gösterir. Mikrofon bulunamazsa ya da çok sessizse
+   söyler.
+3. Oyunda **tuşu basılı tut ve konuş**. Ekranın altında *"🎙 Dinliyorum… (bırakınca gönderilir)"* yazar. Tuşu
+   bırakınca kayıt Gemini'ye gider, yazıya çevrilir ve sohbete **"Mehburity, …"** olarak yazılır.
+
+Sohbete yazılmış gibi işlendiği için her şey aynen çalışır: sorular, "maden kaz", "ev yap", "özür dilerim"… Adını
+kendin söylersen ("Mehburity, ev yap") tekrar eklenmez. Kayıt başlayınca Mehburity o an konuşuyorsa susar, mikrofon
+onu duymasın diye.
+
+- Kayıt en fazla 15 saniye sürer, ayarlardan 3–30 saniye arası seçilebilir. Çok kısa basışlar (0,3 sn altı) yok sayılır.
+- Gemini anahtarı gerekir; yazıya çevirme ayarlardaki sohbet modeliyle yapılır ve kotadan düşer.
+- Ses kaydı yalnızca senin bilgisayarından Google'a gider; sunucuya ses gitmez, sadece çıkan metin sohbete yazılır.
+- Gemini konuşmayı anlayamazsa *"Anlayamadım. Bir daha söyler misin?"* der, sohbete hiçbir şey yazılmaz.
 
 ## Sohbet emirleri
 
@@ -225,8 +249,12 @@ Alt komutlar ASCII yazılır (komut ayrıştırıcısı "ç, ğ" gibi harfleri k
 2. Oyunda **Modlar → Mehburity → Yapılandır** (Mod Menu) ya da sohbete `/mehburity ayarlar` yaz.
 3. Anahtarı yapıştır, **Bağlantıyı test et**'e bas, **Bitti** ile kaydet.
 
-Ayarlar ekranında şunlar da var: model (`gemini-3.5-flash-lite` hızlı ve ucuz, `gemini-3.8-flash` daha akıllı), sesli
-konuşma açık/kapalı, 30 ses arasından seçim, TTS modeli, ses yüksekliği ve **▶ Dinle** (seçili sesi dener).
+Ayarlar ekranında şunlar da var:
+
+- model: `gemini-3.5-flash-lite` hızlı ve ucuz, `gemini-3.8-flash` daha akıllı,
+- sesli konuşma açık/kapalı, 30 ses arasından seçim, TTS modeli ve ses yüksekliği,
+- **▶ Dinle**: seçili sesi dener,
+- bas-konuş için **Konuşma tuşu**, **🎙 Mikrofonu dene** ve **En uzun kayıt**.
 
 **Anahtar nerede durur?** Yalnızca kendi bilgisayarında, `config/mehburity-client.json` içinde; sunucuya hiç gönderilmez.
 Sunucu soruyu senin istemcine yollar, istemci Gemini'ye sorar ve cevabı geri gönderir. Bu sayede sunucularda da çalışır
@@ -383,8 +411,9 @@ Bozuk bir dosya silinmez: `mehburity.json.broken` adıyla saklanır ve varsayıl
 | `verity.events.sounds` / `whispers` / `watcher` | true | Hangi olaylar olabilir |
 </details>
 
-İstemcinin kendi ayarları (Gemini anahtarı, model, ses) `config/mehburity-client.json` içindedir; ayarlar ekranından
-değiştirilir. **Bu dosyayı kimseyle paylaşma.**
+İstemcinin kendi ayarları `config/mehburity-client.json` içindedir ve ayarlar ekranından değiştirilir: Gemini anahtarı,
+model, ses ve `pushToTalkMaxSeconds` (en uzun kayıt, 3–30 sn). Konuşma tuşu Minecraft'ın `options.txt` dosyasında
+`key_key.mehburity.push_to_talk` olarak saklanır. **`mehburity-client.json` dosyasını kimseyle paylaşma.**
 
 ## Sorun giderme
 
@@ -392,6 +421,9 @@ değiştirilir. **Bu dosyayı kimseyle paylaşma.**
 |---|---|
 | Mehburity hep aynı basit cevapları veriyor | Gemini anahtarı girilmemiş ya da geçersiz: `/mehburity ayarlar` → **Bağlantıyı test et** |
 | Ses gelmiyor | Ayarlarda "Sesli konuşma" açık mı? Ses yüksekliği? Ücretsiz kota dolmuş olabilir |
+| Konuşma tuşu bir şey yapmıyor | Tuş atanmamış olabilir (varsayılan yok): ayarlar → **Konuşma tuşu** |
+| "Mikrofon bulunamadı" | Windows → Ayarlar → Gizlilik → **Mikrofon**: masaüstü uygulamalarının (Java) erişimine izin ver; varsayılan kayıt aygıtını kontrol et. **🎙 Mikrofonu dene** ile sına |
+| Söylediklerimi yanlış anlıyor | Net ve yakından konuş, adını başta söyle ("Mehburity, …"); oyun dilin konuştuğun dille aynı olsun |
 | Mehburity kayboldu | `/mehburity cagir` |
 | Mehburity bana kızgın | Pasta ile sağ tıkla ya da "Mehburity, özür dilerim" yaz; OP isen `/mehburity sakin` |
 | Çok karanlık | El feneri ya da meşale kullan. Sunucu `verity.darkness.strength` değerini düşürebilir |
@@ -455,7 +487,7 @@ src/main/java/com/mehbur/mehburity/
 src/client/java/com/mehbur/mehburity/client/
   render/   Küre (+ ışın, yüz ifadeleri), canavar modeli, izleyen, kutu
   verity/   Karanlığın istemci tarafı (lightmap mixin'i)
-  ai/       İstemcide Gemini çağrısı (ClientAi) ve ses (VoicePlayer)
+  ai/       İstemcide Gemini çağrısı (ClientAi), ses (VoicePlayer), bas-konuş (VoiceInput, MicRecorder)
   screen/   Ayarlar ekranı + Mod Menu entegrasyonu
 src/gametest/   Sunucu ve istemci oyun testleri (FakeGemini: testler için yerel sahte Gemini sunucusu)
 tools/          gen_textures.py (doku ve logo üretici), scan_secrets.py
@@ -477,9 +509,6 @@ anahtarı gibi hassas bilgi içeren commit'leri engeller.
 | Fabric Loom | 1.18-SNAPSHOT |
 | Mod Menu (isteğe bağlı) | 20.0.3 |
 | Java | 25 |
-
-**Yol haritası:** Faz 9'da bas-konuş ile sesli konuşma gelecek. Tuşa basıp konuşacaksın, Mehburity duyacak. Tuş
-varsayılan olarak atanmamış olacak; ayarlar ekranından seçilecek.
 
 Mehburity, ThatMob'un **Verity** karakterinden esinlenmiştir. Verity JE modunun hiçbir modeli, dokusu ya da sesi
 kullanılmamıştır (o mod "All Rights Reserved"); tüm görseller bu projede sıfırdan üretilmiştir. Lisans: All Rights

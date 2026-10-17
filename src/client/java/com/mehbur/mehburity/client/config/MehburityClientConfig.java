@@ -36,6 +36,9 @@ public final class MehburityClientConfig implements JsonConfigFile.Sanitizable {
 	/** 0-1, multiplied with Minecraft's master and voice volume. */
 	public double voiceVolume = 1.0;
 
+	/** Push-to-talk: a recording stops (and is sent) after this many seconds even if the key is still held. */
+	public double pushToTalkMaxSeconds = 15.0;
+
 	/** Advanced: only change this for a proxy. */
 	public String apiBaseUrl = GeminiClient.DEFAULT_BASE_URI.toString();
 
@@ -74,6 +77,7 @@ public final class MehburityClientConfig implements JsonConfigFile.Sanitizable {
 		voiceName = blankToDefault(voiceName, defaults.voiceName);
 		voiceStyle = voiceStyle == null ? "" : voiceStyle.strip();
 		voiceVolume = Mth.clamp(voiceVolume, 0.0, 1.0);
+		pushToTalkMaxSeconds = Mth.clamp(pushToTalkMaxSeconds, 3.0, 30.0);
 		historyMessages = Mth.clamp(historyMessages, 0, 40);
 		try {
 			baseUri();

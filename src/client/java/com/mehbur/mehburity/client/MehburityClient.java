@@ -2,6 +2,7 @@ package com.mehbur.mehburity.client;
 
 import com.mehbur.mehburity.MehburityMod;
 import com.mehbur.mehburity.client.ai.ClientAi;
+import com.mehbur.mehburity.client.ai.VoiceInput;
 import com.mehbur.mehburity.client.config.MehburityClientConfig;
 import com.mehbur.mehburity.client.render.MehburityBoxModel;
 import com.mehbur.mehburity.client.render.MehburityBoxRenderer;
@@ -29,6 +30,7 @@ public final class MehburityClient implements ClientModInitializer {
 
 		DarknessClient.register();
 		ClientAi.register();
+		VoiceInput.register();
 		// /mehburity ayarlar (server command) asks us to open the settings screen.
 		ClientPlayNetworking.registerGlobalReceiver(OpenSettingsPayload.TYPE,
 				(payload, context) -> context.client().gui.setScreen(new MehburityConfigScreen(null)));

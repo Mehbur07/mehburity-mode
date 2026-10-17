@@ -25,8 +25,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * Minimal client for the Gemini Interactions API ({@code POST /v1beta/interactions}), used for chat and for
- * text-to-speech. Plain Java (java.net.http + Gson) so it can be tested against a fake server.
+ * Minimal client for the Gemini Interactions API ({@code POST /v1beta/interactions}), used for chat, for
+ * text-to-speech and for transcribing push-to-talk recordings. Plain Java (java.net.http + Gson) so it can be tested against a fake server.
  *
  * <p>Retries follow the usual exponential backoff with jitter: rate limits (429), Google-side errors (5xx)
  * and network failures are retried up to {@link #MAX_RETRIES} times, honouring {@code Retry-After}.
@@ -41,6 +41,8 @@ public final class GeminiClient {
 	/** Gemini TTS returns 24 kHz, 16-bit, mono PCM when asked for raw audio. */
 	private static final int TTS_SAMPLE_RATE = 24000;
 	private static final Gson GSON = new Gson();
+	/** A push-to-talk sentence never needs more. */
+	private static final int TRANSCRIPT_TOKENS = 200;
 
 	private final HttpClient http;
 	private final URI baseUri;
@@ -114,6 +116,40 @@ public final class GeminiClient {
 		body.add("generation_config", generation);
 
 		return post("v1beta/interactions", body, 0).thenApply(response -> extractAudio(response.requireSuccess()));
+	}
+
+	/**
+	 * Speech to text: sends a WAV recording inline and asks {@code model} for exactly what was said. Completes with the
+	 * transcript, or an empty string when nothing intelligible was said. {@code language} is a hint such as "tr_tr".
+	 */
+	public CompletableFuture<String> transcribe(String model, byte[] wav, String language) {
+		JsonObject audio = new JsonObject();
+		audio.addProperty("type", "audio");
+		audio.addProperty("mime_type", "audio/wav");
+		audio.addProperty("data", Base64.getEncoder().encodeToString(wav));
+		String prompt = "Transcribe the speech in this recording exactly as spoken, in the language it is spoken in "
+				+ "(most likely the language of the game locale \"" + language + "\"). The speaker is talking to a "
+				+ "Minecraft companion called Mehburity. Reply with the transcript only: no quotes, notes or translation. "
+				+ "If there is no clear speech, reply with an empty message.";
+		JsonArray input = new JsonArray();
+		input.add(step("user_input", textBlock(prompt), audio));
+
+		JsonObject body = new JsonObject();
+		body.addProperty("model", model);
+		body.add("input", input);
+		body.addProperty("store", false);
+		JsonObject generation = new JsonObject();
+		generation.addProperty("max_output_tokens", TRANSCRIPT_TOKENS);
+		generation.addProperty("thinking_level", "minimal");
+		body.add("generation_config", generation);
+
+		return post("v1beta/interactions", body, 0).thenCompose(response -> {
+			if (response.isThinkingRejection()) {
+				generation.remove("thinking_level");
+				return post("v1beta/interactions", body, 0);
+			}
+			return CompletableFuture.completedFuture(response);
+		}).thenApply(response -> textOrEmpty(response.requireSuccess()));
 	}
 
 	/** Cheap call that only checks that the key works (lists one model). */
@@ -252,13 +288,27 @@ public final class GeminiClient {
 		return block;
 	}
 
-	private static JsonObject step(String type, JsonObject content) {
+	private static JsonObject step(String type, JsonObject... content) {
 		JsonObject step = new JsonObject();
 		step.addProperty("type", type);
 		JsonArray blocks = new JsonArray();
-		blocks.add(content);
+		for (JsonObject block : content) {
+			blocks.add(block);
+		}
 		step.add("content", blocks);
 		return step;
+	}
+
+	/** Like {@link #extractText}, but "no text" means nothing was said rather than an error. */
+	static String textOrEmpty(JsonObject interaction) {
+		try {
+			return extractText(interaction);
+		} catch (GeminiException e) {
+			if (e.kind() == GeminiException.Kind.BAD_RESPONSE && e.getMessage().startsWith("Gemini returned no text")) {
+				return "";
+			}
+			throw e;
+		}
 	}
 
 	/** Text of the last {@code model_output} step. */

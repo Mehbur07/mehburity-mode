@@ -9,6 +9,7 @@ import com.mehbur.mehburity.ai.ChatTurn;
 import com.mehbur.mehburity.ai.GeminiClient;
 import com.mehbur.mehburity.ai.GeminiException;
 import com.mehbur.mehburity.ai.MehburityReplyCallback;
+import com.mehbur.mehburity.ai.VoiceTranscript;
 import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.CompanionRegistry;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -16,6 +17,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.io.ByteArrayInputStream;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -108,6 +110,45 @@ public final class MehburityAiGameTests {
 			helper.assertValueEqual(3, input.size(), "history + new message");
 			helper.assertValueEqual("user_input", input.get(0).getAsJsonObject().get("type").getAsString(), "player turn");
 			helper.assertValueEqual("model_output", input.get(1).getAsJsonObject().get("type").getAsString(), "Mehburity turn");
+		}
+		helper.succeed();
+	}
+
+	// ---------------------------------------------------------------- push-to-talk
+
+	@GameTest
+	public void voice_transcripts_become_chat_for_mehburity(GameTestHelper helper) {
+		helper.assertValueEqual("Mehburity, maden kaz", VoiceTranscript.toChat("maden kaz", PREFIXES), "addressed by name");
+		helper.assertValueEqual("Mehburity ev yap", VoiceTranscript.toChat("Mehburity ev yap", PREFIXES), "already addressed");
+		helper.assertValueEqual("Mehburity, Hello there!", VoiceTranscript.toChat("  \"Hello there!\"\n", PREFIXES), "quotes and lines go");
+		helper.assertValueEqual("Mehbur, ne kazdın?", VoiceTranscript.toChat("ne kazdın?", List.of("mehbur")), "the server's first prefix");
+		helper.assertValueEqual("", VoiceTranscript.toChat("[silence]", PREFIXES), "silence is nothing");
+		helper.assertValueEqual("", VoiceTranscript.toChat("(no speech)", PREFIXES), "no speech is nothing");
+		helper.assertValueEqual("", VoiceTranscript.toChat("   ", PREFIXES), "blank is nothing");
+		helper.assertTrue(VoiceTranscript.toChat("a".repeat(400), PREFIXES).length() <= VoiceTranscript.MAX_CHAT_LENGTH, "fits in chat");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void gemini_transcribe_sends_inline_audio(GameTestHelper helper) throws Exception {
+		byte[] wav = GeminiClient.wavFromPcm(new byte[16000], 16000, 1);
+		try (FakeGemini fake = new FakeGemini()) {
+			fake.chatAnswer("maden kaz");
+			helper.assertValueEqual("maden kaz", await(fake.client("test-key").transcribe("gemini-3.5-flash-lite", wav, "tr_tr")),
+					"the transcript");
+			JsonObject body = fake.requests().getFirst().body();
+			JsonArray content = body.getAsJsonArray("input").get(0).getAsJsonObject().getAsJsonArray("content");
+			helper.assertValueEqual(2, content.size(), "instructions + recording");
+			JsonObject audio = content.get(1).getAsJsonObject();
+			helper.assertValueEqual("audio", audio.get("type").getAsString(), "audio block");
+			helper.assertValueEqual("audio/wav", audio.get("mime_type").getAsString(), "as WAV");
+			helper.assertTrue(java.util.Arrays.equals(wav, Base64.getDecoder().decode(audio.get("data").getAsString())),
+					"the recording goes inline, unchanged");
+			helper.assertTrue(content.get(0).getAsJsonObject().get("text").getAsString().contains("tr_tr"), "language hint");
+
+			fake.enqueue(200, "{\"status\": \"completed\", \"steps\": [{\"type\": \"model_output\", \"content\": []}]}");
+			helper.assertValueEqual("", await(fake.client("test-key").transcribe("gemini-3.5-flash-lite", wav, "tr_tr")),
+					"no speech: an empty transcript, not an error");
 		}
 		helper.succeed();
 	}

@@ -99,7 +99,11 @@ public final class MehburityVerityGameTests {
 	public void the_watcher_vanishes_when_the_player_comes_close(GameTestHelper helper) {
 		ServerPlayer player = owner(helper);
 		withCompanion(helper, player, mehburity -> {
-			WatcherEntity watcher = EventsFeature.spawnWatcher(player, 8.0);
+			// Facing into the test area (+X +Z): within the ±60° spread the demon always lands inside it, where
+			// entities tick. Outside, in a chunk that does not tick, it would never get the chance to vanish.
+			player.setYRot(-45.0F);
+			player.setYHeadRot(-45.0F);
+			WatcherEntity watcher = EventsFeature.spawnWatcher(player, 5.0);
 			helper.assertTrue(watcher != null && watcher.isAlive(), "the demon appears");
 			helper.assertFalse(watcher.isPickable() || watcher.isAttackable(), "it cannot be touched");
 			helper.succeedWhen(() -> {
