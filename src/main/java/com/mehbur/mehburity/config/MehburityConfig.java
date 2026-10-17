@@ -223,6 +223,8 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 	public static final class Verity {
 		public Box box = new Box();
 		public Darkness darkness = new Darkness();
+		public Flashlight flashlight = new Flashlight();
+		public Events events = new Events();
 
 		public static final class Box {
 			/** Gives every player a box with their Mehburity inside on their first join. */
@@ -236,6 +238,38 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 			public boolean enabled = true;
 			/** 0 = vanilla lighting, 1 = pitch black without a light source. */
 			public double strength = 0.85;
+		}
+
+		/**
+		 * The flashlight: switched on (right click) and held in a hand, it lights up what the player looks at.
+		 * Off: the item still exists, but it gives no light.
+		 */
+		public static final class Flashlight {
+			public boolean enabled = true;
+			/** Mehburity hands one over when it comes out of its box. */
+			public boolean giveWithBox = true;
+			/** How far the beam reaches, in blocks. */
+			public int range = 24;
+			/** Light level where the beam lands (a dimmer one lights the middle of the beam). */
+			public int lightLevel = 15;
+			/** Minutes of light from a full battery; 0 = never runs out. Recharged with redstone in an anvil. */
+			public double batteryMinutes = 20.0;
+		}
+
+		/**
+		 * Scripted scares, now and then while the player is in the dark: sounds behind them, Mehburity whispering,
+		 * and rarely a tall demon watching from far away that vanishes when looked at.
+		 */
+		public static final class Events {
+			public boolean enabled = true;
+			/** Time between two events, picked at random between these (minutes of play). */
+			public double minMinutes = 6.0;
+			public double maxMinutes = 15.0;
+			/** Only when the player stands in the dark (nights outside, caves). */
+			public boolean onlyInDarkness = true;
+			public boolean sounds = true;
+			public boolean whispers = true;
+			public boolean watcher = true;
 		}
 	}
 
@@ -294,6 +328,12 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		}
 		if (verity.box == null) {
 			verity.box = new Verity.Box();
+		}
+		if (verity.flashlight == null) {
+			verity.flashlight = new Verity.Flashlight();
+		}
+		if (verity.events == null) {
+			verity.events = new Verity.Events();
 		}
 		if (verity.darkness == null) {
 			verity.darkness = new Verity.Darkness();
@@ -374,5 +414,10 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		ai.eventCommentCooldownSeconds = Mth.clamp(ai.eventCommentCooldownSeconds, 5, 3600);
 		verity.box.openTicks = Mth.clamp(verity.box.openTicks, 1, 400);
 		verity.darkness.strength = Mth.clamp(verity.darkness.strength, 0.0, 1.0);
+		verity.flashlight.range = Mth.clamp(verity.flashlight.range, 4, 64);
+		verity.flashlight.lightLevel = Mth.clamp(verity.flashlight.lightLevel, 1, 15);
+		verity.flashlight.batteryMinutes = Mth.clamp(verity.flashlight.batteryMinutes, 0.0, 600.0);
+		verity.events.minMinutes = Mth.clamp(verity.events.minMinutes, 0.5, 240.0);
+		verity.events.maxMinutes = Mth.clamp(verity.events.maxMinutes, verity.events.minMinutes, 240.0);
 	}
 }

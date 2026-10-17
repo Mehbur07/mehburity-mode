@@ -12,7 +12,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 /**
- * The rage form: a tall, skinny demon built from boxes, with Mehburity's red, angry sphere as its head. Modelled
+ * The rage form (and the watcher of the scripted scares): a tall, skinny demon built from boxes, with a sphere as its head. Modelled
  * 18 blocks tall with the feet at y = 0 and the face towards +Z; other heights are the same model scaled.
  * Hunched, with long legs, arms hanging down to its knees, three claws per hand and two horns.
  */
@@ -36,8 +36,11 @@ final class MehburityMonsterModel {
 	private MehburityMonsterModel() {
 	}
 
-	/** Draws the demon at {@code scale} (1 = 18 blocks tall), in the entity's local space (feet at the origin). */
-	static void submit(MehburityRenderState state, PoseStack poseStack, SubmitNodeCollector collector, float scale) {
+	/**
+	 * Draws the demon at {@code scale} (1 = 18 blocks tall), in the entity's local space (feet at the origin), with
+	 * {@code head} as the sphere's texture.
+	 */
+	static void submit(MehburityRenderState state, PoseStack poseStack, SubmitNodeCollector collector, float scale, RenderType head) {
 		int light = state.lightCoords;
 		float walk = state.walkPosition * 0.25F;
 		float stride = Math.min(1.0F, state.walkSpeed);
@@ -100,7 +103,7 @@ final class MehburityMonsterModel {
 			poseStack.popPose();
 		}
 		poseStack.scale(HEAD_RADIUS / MehburityRenderer.RADIUS, HEAD_RADIUS / MehburityRenderer.RADIUS, HEAD_RADIUS / MehburityRenderer.RADIUS);
-		collector.submitCustomGeometry(poseStack, MehburityRenderer.ANGRY_RENDER_TYPE,
+		collector.submitCustomGeometry(poseStack, head,
 				(pose, buffer) -> MehburityRenderer.buildSphere(pose, buffer, light, OverlayTexture.NO_OVERLAY));
 		poseStack.popPose();
 

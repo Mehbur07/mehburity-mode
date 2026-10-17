@@ -24,6 +24,11 @@ public final class MehburitySounds {
 	public static final SoundEvent MONSTER_STEP = register("mehburity.monster.step");
 	public static final SoundEvent MONSTER_SWIPE = register("mehburity.monster.swipe");
 	public static final SoundEvent MONSTER_SHRINK = register("mehburity.monster.shrink");
+	/** Scripted scares: footsteps, a rumble and a snapping twig behind the player, and the demon vanishing. */
+	public static final SoundEvent EVENT_FOOTSTEP = register("verity.footstep");
+	public static final SoundEvent EVENT_AMBIENCE = register("verity.ambience");
+	public static final SoundEvent EVENT_SNAP = register("verity.snap");
+	public static final SoundEvent WATCHER_VANISH = register("verity.watcher_vanish");
 
 	private MehburitySounds() {
 	}

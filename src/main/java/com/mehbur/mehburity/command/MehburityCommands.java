@@ -14,6 +14,7 @@ import com.mehbur.mehburity.entity.MehburityEntity;
 import com.mehbur.mehburity.entity.MehburitySpeech;
 import com.mehbur.mehburity.mining.Mining;
 import com.mehbur.mehburity.network.OpenSettingsPayload;
+import com.mehbur.mehburity.verity.EventsFeature;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -67,6 +68,11 @@ public final class MehburityCommands {
 				.then(Commands.literal("sakin")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(MehburityCommands::calmAll))
+				.then(Commands.literal("olay")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.then(Commands.literal("ses").executes(ctx -> scare(ctx, EventsFeature.Kind.SOUND)))
+						.then(Commands.literal("fisilti").executes(ctx -> scare(ctx, EventsFeature.Kind.WHISPER)))
+						.then(Commands.literal("izleyen").executes(ctx -> scare(ctx, EventsFeature.Kind.WATCHER))))
 				.then(Commands.literal("ayarlar").executes(MehburityCommands::openSettings))
 				.then(Commands.literal("yenile")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -170,6 +176,19 @@ public final class MehburityCommands {
 		ctx.getSource().sendSuccess(() -> Component.translatableWithFallback(KEY + "calmed",
 				"Calmed %s Mehburity.", count), true);
 		return count;
+	}
+
+	/** {@code /mehburity olay ses|fisilti|izleyen} (operators): one of Verity's scripted scares, right now. */
+	private static int scare(CommandContext<CommandSourceStack> ctx, EventsFeature.Kind kind) throws CommandSyntaxException {
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		String name = kind.name().toLowerCase(java.util.Locale.ROOT);
+		if (!EventsFeature.trigger(player, kind)) {
+			ctx.getSource().sendFailure(Component.translatableWithFallback(KEY + "event_failed",
+					"That scare cannot happen here right now: %s", name));
+			return 0;
+		}
+		ctx.getSource().sendSuccess(() -> Component.translatableWithFallback(KEY + "event_done", "Scare started: %s", name), false);
+		return 1;
 	}
 
 	/** {@code /mehburity ev [ahsap|tas|tugla|elimdeki]}, {@code ev dur}, {@code ev geri}. */

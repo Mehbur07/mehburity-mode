@@ -3,6 +3,7 @@ package com.mehbur.mehburity.entity;
 import com.mehbur.mehburity.MehburityMod;
 import com.mehbur.mehburity.ai.GameEvents;
 import com.mehbur.mehburity.config.MehburityConfig;
+import com.mehbur.mehburity.verity.FlashlightItem;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.core.BlockPos;
@@ -184,6 +185,7 @@ public final class CompanionManager {
 			// Verity's line, word for word; spoken with Mehburity's voice. Editable in the config (ai.greeting).
 			MehburitySpeech.speak(owner, Component.literal(MehburityConfig.get().ai.greeting));
 			GameEvents.record(owner, "Mehburity came out of its box and met the player for the first time");
+			FlashlightItem.gift(owner);
 		}
 	}
 

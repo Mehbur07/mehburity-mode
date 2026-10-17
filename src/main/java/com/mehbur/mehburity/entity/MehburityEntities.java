@@ -1,6 +1,7 @@
 package com.mehbur.mehburity.entity;
 
 import com.mehbur.mehburity.MehburityMod;
+import com.mehbur.mehburity.verity.WatcherEntity;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -27,6 +28,20 @@ public final class MehburityEntities {
 					.noSummon()
 					.clientTrackingRange(10)
 					.updateInterval(5));
+
+	/**
+	 * The demon of the scripted scares: stands far away in the dark watching the player, never moves, cannot be
+	 * touched, and is never saved. Same size as Mehburity's rage form.
+	 */
+	public static final EntityType<WatcherEntity> WATCHER = register("watcher",
+			EntityType.Builder.<WatcherEntity>of(WatcherEntity::new, MobCategory.MISC)
+					.sized(2.0F, 18.0F)
+					.eyeHeight(16.5F)
+					.fireImmune()
+					.noSummon()
+					.noSave()
+					.clientTrackingRange(16)
+					.updateInterval(20));
 
 	private MehburityEntities() {
 	}

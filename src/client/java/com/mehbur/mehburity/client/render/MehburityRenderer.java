@@ -32,7 +32,13 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	/** The face during a rage. Replace the PNG (same size) to change it. */
 	private static final Identifier ANGRY_TEXTURE = MehburityMod.id("textures/entity/mehburity/mehburity_angry.png");
 	static final RenderType ANGRY_RENDER_TYPE = RenderTypes.entityCutout(ANGRY_TEXTURE);
-	/** From this anger on, the sphere flashes red now and then as a warning. */
+	/** Expressions, same layout: a flat mouth when annoyed, a cross face when angry, wide eyes when scared. */
+	private static final RenderType ANNOYED_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_annoyed.png"));
+	private static final RenderType MAD_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_mad.png"));
+	private static final RenderType SCARED_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_scared.png"));
+	/** From this anger on it looks annoyed (a third of the default rage threshold). */
+	private static final float ANNOYED_ANGER = 33.0F;
+	/** From this anger on, it looks cross and the sphere flashes red now and then as a warning. */
 	private static final float WARNING_ANGER = 66.0F;
 	static final float RADIUS = 0.4F;
 	private static final int STACKS = 16;
@@ -66,6 +72,7 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		state.emergeProgress = entity.getEmergeProgress(partialTicks);
 		state.anger = entity.getAnger();
 		state.raging = entity.isRaging();
+		state.scared = entity.isScared();
 		state.monsterHeight = entity.getMonsterHeight();
 		state.transformProgress = entity.getTransformProgress(partialTicks);
 		state.swipeProgress = entity.getSwipeProgress(partialTicks);
@@ -135,13 +142,26 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		// Very angry: a red flash every second, like a mob being hit.
 		boolean flash = !state.raging && state.anger >= WARNING_ANGER && ((int) state.ageInTicks / 5) % 4 == 0;
 		int overlay = OverlayTexture.pack(0.0F, flash);
-		collector.submitCustomGeometry(poseStack, state.raging ? ANGRY_RENDER_TYPE : RENDER_TYPE,
-				(pose, buffer) -> buildSphere(pose, buffer, light, overlay));
+		collector.submitCustomGeometry(poseStack, face(state), (pose, buffer) -> buildSphere(pose, buffer, light, overlay));
 		poseStack.popPose();
 		if (state.beamTarget != null) {
 			submitBeam(state, poseStack, collector, bob);
 		}
 		super.submit(state, poseStack, collector, camera);
+	}
+
+	/** The face for its mood: anger wins over fear, fear over the usual smile. */
+	private static RenderType face(MehburityRenderState state) {
+		if (state.raging) {
+			return ANGRY_RENDER_TYPE;
+		}
+		if (state.anger >= WARNING_ANGER) {
+			return MAD_RENDER_TYPE;
+		}
+		if (state.anger >= ANNOYED_ANGER) {
+			return ANNOYED_RENDER_TYPE;
+		}
+		return state.scared ? SCARED_RENDER_TYPE : RENDER_TYPE;
 	}
 
 	/**
@@ -167,7 +187,7 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 			float grow = (progress - TRANSFORM_SPHERE_PART) / (1.0F - TRANSFORM_SPHERE_PART);
 			grow = grow * grow * (3.0F - 2.0F * grow);
 			float size = state.monsterHeight / MehburityMonsterModel.MODEL_HEIGHT;
-			MehburityMonsterModel.submit(state, poseStack, collector, size * (0.1F + 0.9F * grow));
+			MehburityMonsterModel.submit(state, poseStack, collector, size * (0.1F + 0.9F * grow), ANGRY_RENDER_TYPE);
 		}
 		poseStack.popPose();
 	}

@@ -4,11 +4,13 @@ import com.mehbur.mehburity.MehburityMod;
 
 import java.util.List;
 
-/** All Verity features in registration order. Later phases add the personality, scripted events and more. */
+/** All Verity features in registration order: box, darkness, flashlight and scripted scares. */
 public final class VerityFeatures {
 	public static final List<VerityFeature> ALL = List.of(
 			new BoxFeature(),
-			new DarknessFeature());
+			new DarknessFeature(),
+			new FlashlightFeature(),
+			new EventsFeature());
 
 	private VerityFeatures() {
 	}

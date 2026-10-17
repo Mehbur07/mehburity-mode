@@ -19,6 +19,8 @@ public class MehburityRenderState extends EntityRenderState {
 	/** Temper 0-100, and whether it is in a rage (red face, red beam). */
 	public float anger;
 	public boolean raging;
+	/** Shows the scared face (scripted scares). */
+	public boolean scared;
 	/** Rage form: its height (0 = a sphere), 0..1 while it grows, and the claw swipe (1 = none). */
 	public float monsterHeight;
 	public float transformProgress = 1.0F;

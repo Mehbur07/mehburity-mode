@@ -6,6 +6,7 @@ import com.mehbur.mehburity.client.config.MehburityClientConfig;
 import com.mehbur.mehburity.client.render.MehburityBoxModel;
 import com.mehbur.mehburity.client.render.MehburityBoxRenderer;
 import com.mehbur.mehburity.client.render.MehburityRenderer;
+import com.mehbur.mehburity.client.render.WatcherRenderer;
 import com.mehbur.mehburity.client.screen.MehburityConfigScreen;
 import com.mehbur.mehburity.client.verity.DarknessClient;
 import com.mehbur.mehburity.entity.MehburityEntities;
@@ -24,6 +25,7 @@ public final class MehburityClient implements ClientModInitializer {
 		ModelLayerRegistry.registerModelLayer(MehburityBoxModel.LAYER, MehburityBoxModel::createLayer);
 		EntityRenderers.register(MehburityEntities.MEHBURITY, MehburityRenderer::new);
 		EntityRenderers.register(MehburityEntities.BOX, MehburityBoxRenderer::new);
+		EntityRenderers.register(MehburityEntities.WATCHER, WatcherRenderer::new);
 
 		DarknessClient.register();
 		ClientAi.register();

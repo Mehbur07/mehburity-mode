@@ -59,6 +59,30 @@
 			{ "name": "minecraft:entity.enderman.teleport", "type": "event" }
 		]
 	},
+	"verity.footstep": {
+		"subtitle": "subtitles.mehburity.verity.footstep",
+		"sounds": [
+			{ "name": "minecraft:block.gravel.step", "type": "event" }
+		]
+	},
+	"verity.ambience": {
+		"subtitle": "subtitles.mehburity.verity.ambience",
+		"sounds": [
+			{ "name": "minecraft:ambient.cave", "type": "event" }
+		]
+	},
+	"verity.snap": {
+		"subtitle": "subtitles.mehburity.verity.snap",
+		"sounds": [
+			{ "name": "minecraft:block.wood.break", "type": "event" }
+		]
+	},
+	"verity.watcher_vanish": {
+		"subtitle": "subtitles.mehburity.verity.watcher_vanish",
+		"sounds": [
+			{ "name": "minecraft:entity.warden.sonic_charge", "type": "event" }
+		]
+	},
 	"mehburity.beam.fire": {
 		"subtitle": "subtitles.mehburity.mehburity.beam.fire",
 		"sounds": [

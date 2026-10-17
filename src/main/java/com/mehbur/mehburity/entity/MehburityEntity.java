@@ -68,6 +68,9 @@ public class MehburityEntity extends PathfinderMob {
 			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> DATA_TRANSFORM_DURATION =
 			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.INT);
+	/** Ticks left of looking scared (wide eyes, small mouth), e.g. after a scripted scare. Synced for the face. */
+	private static final EntityDataAccessor<Integer> DATA_SCARED_TICKS =
+			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.INT);
 	public static final int EMERGE_DURATION = 30;
 	private static final int VALIDATE_INTERVAL = 20;
 	/** Entity event sent when a beam shot lands; the client flashes the beam. */
@@ -117,6 +120,7 @@ public class MehburityEntity extends PathfinderMob {
 		entityData.define(DATA_MONSTER_HEIGHT, 0.0F);
 		entityData.define(DATA_TRANSFORM_TICKS, 0);
 		entityData.define(DATA_TRANSFORM_DURATION, 0);
+		entityData.define(DATA_SCARED_TICKS, 0);
 	}
 
 	@Override
@@ -228,6 +232,17 @@ public class MehburityEntity extends PathfinderMob {
 			this.setTarget(null);
 			setMonster(0.0F, 0);
 		}
+	}
+
+	// ---------------------------------------------------------------- expressions
+
+	/** Shows the scared face for {@code ticks} (the anger faces still win while it is angry). */
+	public void setScared(int ticks) {
+		this.entityData.set(DATA_SCARED_TICKS, Math.max(0, ticks));
+	}
+
+	public boolean isScared() {
+		return this.entityData.get(DATA_SCARED_TICKS) > 0;
 	}
 
 	// ---------------------------------------------------------------- rage form
@@ -380,6 +395,16 @@ public class MehburityEntity extends PathfinderMob {
 			rageTicks++;
 		}
 		Anger.tick(this);
+
+		int scared = this.entityData.get(DATA_SCARED_TICKS);
+		if (scared > 0) {
+			this.entityData.set(DATA_SCARED_TICKS, scared - 1);
+			// Scared, it keeps looking at its owner.
+			ServerPlayer owner = getOwnerPlayer();
+			if (owner != null && owner.level() == level && !isMonster()) {
+				this.getLookControl().setLookAt(owner, 30.0F, 30.0F);
+			}
+		}
 
 		int transform = this.entityData.get(DATA_TRANSFORM_TICKS);
 		if (transform > 0) {

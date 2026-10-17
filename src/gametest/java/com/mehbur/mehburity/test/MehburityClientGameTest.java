@@ -16,6 +16,9 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.fabricmc.fabric.api.client.gametest.v1.world.TestWorldSave;
 import net.fabricmc.loader.api.FabricLoader;
 import com.mehbur.mehburity.entity.MehburityEntity;
+import com.mehbur.mehburity.verity.EventsFeature;
+import com.mehbur.mehburity.verity.FlashlightItem;
+import com.mehbur.mehburity.verity.WatcherEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -93,6 +96,7 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 			checkBuilding(context, server, playerId);
 			checkAnger(context, server, playerId);
 			checkDarkness(context, server);
+			checkVerity(context, server, playerId);
 		}
 
 		// Leaving and coming back: Mehburity travels with the player and greets them again.
@@ -369,6 +373,78 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		if (!expected.equals(actual)) {
 			throw new AssertionError(what + ": expected <" + expected + "> but was <" + actual + ">");
 		}
+	}
+
+	/**
+	 * The Verity module at midnight: a real right click switches the flashlight on (the view must get brighter, and
+	 * no light blocks may stay behind once it is off), then the watcher stands on the horizon until it is looked at,
+	 * and Mehburity shows its scared face.
+	 */
+	private static void checkVerity(ClientGameTestContext context, TestServerContext server, UUID playerId) {
+		// Calm, so the scared face is not hidden behind an annoyed one.
+		server.runCommand("mehburity sakin");
+		server.runCommand("time set midnight");
+		context.getInput().lookAt(0.0F, 25.0F);
+		context.waitTicks(30);
+		double dark = luminance(context.takeScreenshot("mehburity-v1-dark"));
+
+		server.runOnServer(s -> s.getPlayerList().getPlayer(playerId).setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(FlashlightItem.ITEM)));
+		context.waitTicks(5);
+		context.getInput().pressKey(options -> options.keyUse);
+		server.waitFor(s -> FlashlightItem.isOn(s.getPlayerList().getPlayer(playerId).getMainHandItem()), 100);
+		context.waitTicks(30);
+		double lit = luminance(context.takeScreenshot("mehburity-v2-flashlight"));
+		MehburityMod.LOGGER.info("Flashlight luminance: off={} on={}", dark, lit);
+		if (!(lit > dark * 1.3 + 2.0)) {
+			throw new AssertionError("the flashlight must light up the dark (off=" + dark + ", on=" + lit + ")");
+		}
+		context.getInput().pressKey(options -> options.keyUse);
+		server.waitFor(s -> !FlashlightItem.isOn(s.getPlayerList().getPlayer(playerId).getMainHandItem()), 100);
+		context.waitTicks(5);
+		int leftover = server.computeOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			int count = 0;
+			for (BlockPos pos : BlockPos.betweenClosed(player.blockPosition().offset(-30, -30, -30), player.blockPosition().offset(30, 30, 30))) {
+				if (player.level().getBlockState(pos).is(Blocks.LIGHT)) {
+					count++;
+				}
+			}
+			return count;
+		});
+		assertEquals(0, leftover, "light blocks left behind by the flashlight");
+
+		// The watcher: photographed looking a little to the side of it, then looked at until it vanishes.
+		Vec3 watcher = server.computeOnServer(s -> {
+			WatcherEntity entity = EventsFeature.spawnWatcher(s.getPlayerList().getPlayer(playerId), 40.0);
+			return entity == null ? null : entity.position();
+		});
+		if (watcher == null) {
+			throw new AssertionError("the watcher must find a spot 40 blocks away");
+		}
+		Vec3 eye = server.computeOnServer(s -> s.getPlayerList().getPlayer(playerId).getEyePosition());
+		Vec3 toHead = watcher.add(0.0, 16.5, 0.0).subtract(eye);
+		float yaw = (float) (Math.atan2(toHead.z, toHead.x) * 180.0 / Math.PI) - 90.0F;
+		float pitch = (float) -(Math.atan2(toHead.y, Math.sqrt(toHead.x * toHead.x + toHead.z * toHead.z)) * 180.0 / Math.PI);
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.getInput().lookAt(yaw + 25.0F, pitch * 0.5F);
+		context.waitTicks(20);
+		context.takeScreenshot("mehburity-v3-watcher");
+		context.getInput().lookAt(yaw, pitch);
+		server.waitFor(s -> s.overworld().getEntitiesOfClass(WatcherEntity.class, new AABB(BlockPos.containing(watcher)).inflate(4.0)).isEmpty(), 100);
+		if (!server.computeOnServer(s -> CompanionManager.find(s, playerId).isScared())) {
+			throw new AssertionError("Mehburity must look scared once the watcher vanished");
+		}
+		server.runOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			Vec3 front = player.getEyePosition().add(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(2.0)).subtract(0.0, 0.4, 0.0);
+			CompanionManager.find(s, playerId).teleportTo(front.x, front.y, front.z);
+		});
+		context.getInput().lookAt(yaw, 0.0F);
+		context.waitTicks(15); // it turns to look at the player
+		context.takeScreenshot("mehburity-v4-scared");
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		server.runCommand("time set noon");
 	}
 
 	/** Compares the same midnight view with Verity darkness on and off. */

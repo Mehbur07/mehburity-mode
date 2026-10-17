@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "src" / "main" / "resources" / "assets" / "mehburity"
 ENTITY = ASSETS / "textures" / "entity" / "mehburity"
+ITEMS = ASSETS / "textures" / "item"
 
 NEON_CYAN = (0, 240, 255, 255)
 RAGE_RED = (235, 25, 35, 255)
@@ -65,6 +66,46 @@ def angry_face_ink(fx: float, fy: float) -> bool:
     frown_r = 0.5
     d = math.hypot(fx, fy - 0.62)
     return abs(d - frown_r) < 0.035 and fy < 0.3 and abs(fx) < 0.38
+
+
+def annoyed_face_ink(fx: float, fy: float) -> bool:
+    """Annoyed: half-closed eyes (the top cut flat) and a straight mouth."""
+    for ex in (-0.28, 0.28):
+        if ((fx - ex) / 0.075) ** 2 + ((fy + 0.25) / 0.16) ** 2 <= 1.0 and fy > -0.27:
+            return True
+    return abs(fy - 0.33) < 0.035 and abs(fx) < 0.3
+
+
+def scared_face_ink(fx: float, fy: float) -> bool:
+    """Scared: big round eyes with a light spot, and a small round open mouth."""
+    for ex in (-0.29, 0.29):
+        in_eye = ((fx - ex) / 0.11) ** 2 + ((fy + 0.24) / 0.19) ** 2 <= 1.0
+        shine = ((fx - ex + 0.035) / 0.035) ** 2 + ((fy + 0.31) / 0.05) ** 2 <= 1.0
+        if in_eye and not shine:
+            return True
+    d = math.hypot(fx / 0.9, fy - 0.4)
+    return abs(d - 0.13) < 0.045
+
+
+def flashlight(size: int, on: bool):
+    """16x16 item: a flashlight lying diagonally, lens at the top right; switched on, the lens glows."""
+
+    def px(x, y):
+        u = (x + (size - 1 - y)) / 2.0  # along the flashlight, bottom left -> top right
+        v = (x - (size - 1 - y)) / 2.0  # across it
+        if 0.5 <= u <= 8.5 and abs(v) <= 1.0:
+            if 4.5 <= u <= 5.5 and v < -0.4:
+                return (200, 40, 40, 255)  # the switch
+            return (44, 44, 52, 255) if abs(v) > 0.6 else (70, 70, 80, 255)
+        if 8.5 < u <= 12.0 and abs(v) <= 1.8:
+            return (120, 122, 132, 255) if abs(v) > 1.3 else (165, 168, 178, 255)
+        if 12.0 < u <= 13.0 and abs(v) <= 1.6:
+            return (255, 246, 190, 255) if on else (150, 170, 190, 255)
+        if on and 13.0 < u <= 14.5 and abs(v) <= 2.2:
+            return (255, 240, 150, 150)
+        return (0, 0, 0, 0)
+
+    return px
 
 
 def icon(size: int, samples: int = 4):
@@ -150,7 +191,7 @@ def monster_skin(width: int, height: int):
     return px
 
 
-def sphere(width: int, height: int, color=NEON_CYAN, ink=face_ink):
+def sphere(width: int, height: int, color=NEON_CYAN, ink=face_ink, ink_color=INK):
     """Equirectangular sphere texture: u = longitude (0.5 = front), v = latitude (0 = top).
 
     The face is drawn by projecting each texel straight onto the front plane, so it looks
@@ -166,7 +207,7 @@ def sphere(width: int, height: int, color=NEON_CYAN, ink=face_ink):
         dy = math.cos(theta)
         dz = math.sin(theta) * math.cos(phi)
         if dz > 0.0 and ink(dx, -dy):
-            return INK
+            return ink_color
         # Slightly brighter towards the front so the face side reads as "the front".
         glow = 0.85 + 0.15 * max(0.0, dz)
         return tuple(int(c * glow) for c in color[:3]) + (255,)
@@ -223,7 +264,14 @@ if __name__ == "__main__":
         (ASSETS / "icon.png", 128, 128, icon(128)),
         (ENTITY / "mehburity.png", 128, 64, sphere(128, 64)),
         (ENTITY / "mehburity_angry.png", 128, 64, sphere(128, 64, RAGE_RED, angry_face_ink)),
+        (ENTITY / "mehburity_annoyed.png", 128, 64, sphere(128, 64, NEON_CYAN, annoyed_face_ink)),
+        (ENTITY / "mehburity_mad.png", 128, 64, sphere(128, 64, NEON_CYAN, angry_face_ink)),
+        (ENTITY / "mehburity_scared.png", 128, 64, sphere(128, 64, NEON_CYAN, scared_face_ink)),
         (ENTITY / "mehburity_monster.png", 64, 64, monster_skin(64, 64)),
+        # The watcher: Mehburity's smile, glowing white on a near-black head.
+        (ENTITY / "watcher.png", 128, 64, sphere(128, 64, (22, 12, 16, 255), face_ink, (245, 240, 235, 255))),
+        (ITEMS / "flashlight.png", 16, 16, flashlight(16, False)),
+        (ITEMS / "flashlight_on.png", 16, 16, flashlight(16, True)),
         (ENTITY / "box.png", 64, 64, box(64, 64)),
     ]
     for path, w, h, fn in outputs:

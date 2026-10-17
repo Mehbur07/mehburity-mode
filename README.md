@@ -1,157 +1,256 @@
 # Mehburity
 
-Minecraft **26.2 / Fabric** modu. Mehburity, oyuncunun yanında süzülen neon cyan, gülen yüzlü bir
-yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar ve sinirlenince
-18 blokluk bir canavara dönüşür.
+<img src="src/main/resources/assets/mehburity/icon.png" alt="Mehburity" width="96" align="right">
 
-> Durum: **Faz 7 (canavar formu) tamamlandı.** Tam README Faz 8'de, sesli konuşma (bas-konuş) Faz 9'da.
+**Minecraft 26.2 / Fabric** için bir yapay zeka yoldaşı. Mehburity, yanında süzülen neon cyan, gülen yüzlü bir küre.
+Gemini ile seninle konuşur, sesli cevap verir, seni ışınıyla korur, maden kazar ve ev yapar. Kızdırılırsa 18 blokluk bir
+iblise dönüşüp suçluyu avlar. ThatMob'un **Verity**'sinden esinlenmiştir: bir kutudan çıkar, dünya zifiri karanlıktır,
+elinde bir el feneri vardır ve karanlıkta… bazen yalnız değilsindir.
 
-## Özellikler (şu an)
+> **Durum:** Faz 8 tamamlandı (Verity modülü + bu belge). Sırada Faz 9 var: bas-konuş ile sesli konuşma.
 
-- **Kutu:** Dünyaya ilk girişte önüne bir karton kutu bırakılır. Kutuya **sol tık** yapınca kutu sallanır,
-  kapakları açılır (partikül + ses) ve Mehburity içinden dönerek yükselir. Kutuyu sadece sahibi açabilir.
-  Çıkınca Verity gibi *"Hello! I'm Mehburity. Your personal helper friend. Ask me anything. I know everything."*
-  der (yazılı ve sesli).
-- **Konuşma (Gemini):** Sohbete **"Mehburity, ..."** (veya "mehbur ...", "@mehburity ...") diye yaz; Mehburity
-  Gemini ile cevap verir. Konumunu, canını, saati, yakındaki düşmanları ve son olayları bilir; konuşmayı hatırlar
-  (son 10 mesaj). Saldırıya uğrayınca veya ölünce kendiliğinden yorum yapar (90 sn'de bir en fazla).
-- **Ses:** Mehburity söylediklerini sesli okur (Gemini TTS). Varsayılan ses **Puck** ("upbeat"), Verity'nin
-  enerjik/neşeli sesine en yakın hazır ses; ayarlardan 30 sesten biri seçilebilir. Sık söylenen kısa cümleler
-  diske önbelleklenir (`config/mehburity/voice-cache`). Anahtar yoksa küçük bir "cıvıltı" sesi çalar.
-- **Gemini yoksa çökmez:** Anahtar yoksa, internet yoksa, kota dolduysa veya 30 sn'de cevap gelmezse Mehburity
-  basit yerleşik cevaplarla (Türkçe/İngilizce) devam eder ve sohbette bağlantı durumunu bildirir.
-- **Savaş (seni korur):** Mehburity neon cyan bir **ışınla** savaşır: kısa bir şarjdan sonra (ince ışın + ses)
-  hedefe parlak bir atış yapar. Öncelik sırası:
-  1. Sana **vuran** her şey,
-  2. Senin **vurduğun** canavar (yardım eder),
-  3. Seni **avlayan** düşmanlar (sana saldırmadan önce vurur).
+## İçindekiler
 
-  Hedef menzil dışındaysa yaklaşır, duvar arkasındakine ateş etmez; senden 20 bloktan uzaklaşan hedefi bırakır.
-  **Otur** modunda yerinden ayrılmadan **nöbet tutar**: menzilindeki her düşman canavara ateş eder.
-  Seni, evcil hayvanlarını, köylüleri ve başka Mehburity'leri **asla** vurmaz; oyunculara ancak sunucu
-  izin verirse (`combat.fightPlayers`) saldırır. Öldürdüğü canavarlar senin öldürmüşsün gibi **XP ve loot**
-  düşürür. Öldürdükleri Gemini bağlamına eklenir ("az önce o zombiyi hallettim" diyebilir).
-  `/mehburity savas kapat` ile kendi Mehburity'ni savaştan çekebilirsin (dünya kaydında hatırlanır).
-- **Madencilik:** Sohbete **"Mehburity, maden kaz"** yaz: Mehburity etrafındaki (12 blok) **açıkta görünen**
-  cevherleri bulur, yanına uçar ve alet gerekmeden **kendi kırar** (çatlama animasyonu + ses). Damar bitene kadar
-  devam eder. Taşın içine gömülü cevherleri görmez (x-ray değil). Kazdıkları **Mehburity'nin çantasına** gider
-  (27 slot). Çanta sana bağlı kaydedilir; oyundan çıkınca ya da ölünce kaybolmaz.
-  - **"Mehburity, kazdığın madenleri ver"** → çantadaki her şey envanterine (sığmayan ayağına düşer).
-  - **"Mehburity, bunu kaz"** → baktığın bloğu kazar (kırılmaz bloklar ve sandık gibi eşya tutan bloklar hariç).
-  - **"Mehburity, ne kazdın?"** → çantayı söyler. **"Mehburity, kazmayı bırak"** → durur.
-  - İngilizce de anlar: "go mining", "mine this block", "give me what you mined", "stop mining".
+1. [Hızlı başlangıç](#hızlı-başlangıç)
+2. [Mehburity ile konuşmak](#mehburity-ile-konuşmak)
+3. [Sohbet emirleri](#sohbet-emirleri)
+4. [Özellikler](#özellikler)
+   - [Yoldaş: takip, ölümsüzlük](#yoldaş-takip-ölümsüzlük)
+   - [Savaş](#savaş)
+   - [Madencilik](#madencilik)
+   - [Ev yapma](#ev-yapma)
+   - [Öfke](#öfke)
+   - [Canavar formu](#canavar-formu)
+   - [Verity modülü](#verity-modülü): kutu, karanlık, el feneri, korku olayları, yüz ifadeleri
+5. [Komutlar](#komutlar)
+6. [Gemini kurulumu](#gemini-kurulumu)
+7. [Sunucu sahipleri için](#sunucu-sahipleri-için)
+8. [Ayarlar (`config/mehburity.json`)](#ayarlar)
+9. [Sorun giderme](#sorun-giderme)
+10. [Doku ve sesleri değiştirmek](#doku-ve-sesleri-değiştirmek)
+11. [Geliştirme](#geliştirme)
+12. [Sürümler ve notlar](#sürümler-ve-notlar)
 
-  Elmas kazma ile kazılmış gibi düşürür (her cevher eşyasını verir, XP küreleri çıkar). Spawn korumasına,
-  macera moduna ve koruma modlarına uyar. Saldırı olursa kazmayı bırakıp savaşır, sonra devam eder.
-  Gemini çantada ne olduğunu bilir.
-- **Ev yapma (yaratıcı mod gibi, malzeme harcamaz):** Sohbete **"Mehburity, ev yap"** yaz: Mehburity önüne,
-  kapısı sana bakan küçük bir ev kurar. 7×7 gövde, köşe direkleri, kapı, camlar, basamaklı piramit çatı, gerekiyorsa
-  zemin altına temel; içinde yatak, sandık, çalışma masası, fırın ve meşaleler (Verity karanlığında önemli).
-  Mehburity inşaat alanında süzülüp blokları tek tek yerleştirir.
-  - Stiller: **"taş ev yap"**, **"tuğla ev yap"**, **"ahşap ev yap"** (varsayılan), ve
-    **"elimdeki bloktan ev yap"**: duvarlar elindeki bloktan olur. Her tam blok olur; kırılmaz bloklar (ana kaya,
-    bariyer...), operatör blokları (komut bloğu...) ve tam olmayan bloklar (meşale, basamak...) olmaz.
-  - **"Mehburity, evi geri al"** → evi kaldırır, oradaki her şeyi eski haline getirir (son ev, sunucu kapanana kadar).
-  - **"Mehburity, inşaatı durdur"** → yarıda bırakır (yine geri alınabilir).
-  - İngilizce: "build me a house", "build a stone house", "remove the house", "stop building".
+---
 
-  Kırılmaz bloklara, eşya tutan bloklara (sandık, fırın...) ve korunan alanlara asla dokunmaz; önünde böyle bir şey
-  varsa sağına, arkasına ya da soluna kurar, hiçbir yöne sığmazsa söyler. Kazma ile aynı anda yapılmaz; saldırı
-  olursa önce savaşır. İnşaat sürerken Mehburity sahasından ayrılmaz.
-- **Öfke:** Mehburity'nin 0–100 arası bir **öfke göstergesi** var. Onu sinirlendiren şeyler:
-  - Bir oyuncunun ona vurması (sahibi dahil): **+25**, bir canavarın vurması: **+5** (ok, atanın sayılır),
-  - Sohbette ona hakaret ("Mehburity, aptalsın", "salak", "I hate you"...): **+15**,
-  - **Sahibini öldürmek: +100**, yani katil anında öfkenin hedefi olur.
+## Hızlı başlangıç
 
-  Hasar almaz, sadece fark eder. **33**'te "Hey, yapma şunu!", **66**'da "Beni gerçekten kızdırıyorsun..." der ve
-  üstünden kızgın partiküller çıkar, küre ara ara kırmızı yanıp söner. **100**'de **öfke nöbetine** girer:
-  kükrer, kazmayı/inşaatı bırakır ve **canavar formuna** geçer (aşağıda), sonra **sadece suçluyu** kovalar
-  (24 bloktan uzaklaşırsa yanına ışınlanır). Başka kimseye dokunmaz. Nöbet şöyle biter:
-  - Suçlu **ölürse** → sakinleşir (öfke 0),
-  - **Pasta** veya **özür** göstergeyi 40'ın altına indirirse,
-  - Suçlu kaçarsa (oyundan çıkar, başka boyuta geçer) ya da **90 sn** dolarsa.
+**Gerekenler:** Minecraft 26.2, Fabric Loader 0.19.5+, Fabric API, Java 25. Ayarlar ekranı için isteğe bağlı olarak
+Mod Menu.
 
-  Her durumda sonra sahibinin yanına ışınlanır. Sakinleştirmek için:
-  - Mehburity'ye **pasta ile sağ tık**: **−60** (bir pasta harcanır, yaratıcı modda harcanmaz),
-  - **"Mehburity, özür dilerim"** / "affet", "pardon", "sorry": **−25** (oyuncu başına 30 sn'de bir sayılır).
-    Sahibi olmayan biri (genelde suçlu) de yazabilir; ona en yakın, öncelikle ona kızgın olan Mehburity duyar.
-  - Kendi kendine soğur: kimse dokunmazsa dakikada **−10** (her sinirlendirmeden sonra 5 sn bekler).
+1. `mehburity-<sürüm>.jar` dosyasını `.minecraft/mods` klasörüne at (Fabric API de orada olmalı).
+2. Dünyaya gir. Önünde bir **karton kutu** durur. **Sol tıkla**: kutu sallanır, kapakları açılır ve Mehburity içinden
+   dönerek yükselir: *"Hello! I'm Mehburity. Your personal helper friend. Ask me anything. I know everything."*
+3. Mehburity sana bir **el feneri** verir. Sağ tıkla açarsın, çünkü geceler ve mağaralar zifiri karanlıktır.
+4. Sohbete **`Mehburity, merhaba!`** yaz. Gemini anahtarı olmadan da basit cevaplar verir. Gerçek sohbet ve ses için
+   [Gemini kurulumu](#gemini-kurulumu)'na bak (ücretsiz, 2 dakika).
 
-  Öfke dünya kaydında saklanır: oyundan çıkıp girmek sıfırlamaz. Gemini öfkesini bilir ve ona göre konuşur.
-  Sunucu isterse oyunculara (`anger.rageAtPlayers`) ya da sahibine (`anger.rageAtOwner`) öfkelenmesini kapatabilir;
-  o zaman o kişiye en fazla küser, nöbete girmez.
-- **Canavar formu:** Öfke nöbetinde Mehburity **18 blok boyunda, sıska bir iblise** dönüşür. Kükrer, titrer, kırmızı
-  küre olarak yere iner ve dumanlar içinde 2 saniyede büyür (bu, suçlunun kaçmak için kazandığı süredir). Uzun bacaklar,
-  dizlerine kadar inen kollar, her elde üç pençe ve iki boynuz. Kafası Mehburity'nin kırmızı, kızgın yüzlü küresidir
-  ve suçluya döner. Gövdesi koyu, kırmızı parlayan damarlıdır. Verity karanlığında da görünür.
-  - **Yürüyerek** kovalar (saniyede 6,5 blok, koşan oyuncudan hızlı), ağır ayak sesleriyle. **Blokların içinden
-    geçer**: mağarada sıkışmaz, hiçbir bloğu kırmaz. Ayakları yüzeydedir; suçlu yerin altına saklanırsa onun hizasına iner.
-  - 5 blok yakına gelince kolunu kaldırıp **pençesiyle** vurur (24 hasar, zırh azaltır), suçluyu savurur. Kule yapmak
-    kurtarmaz: ayağından başına kadar her yere uzanır.
-  - Ölüm mesajı: "… Mehburity tarafından parçalandı".
-  - Nöbet bitince dumanla tekrar küreye döner, sahibinin yanına ışınlanır (sahibi yoksa yüzeye çıkar).
-  - `monster.enabled: false` ile kapatılırsa öfke nöbeti kırmızı bir küre olarak kalır: daha hızlı uçar ve kırmızı,
-    daha güçlü bir ışınla (10 hasar) vurur.
-- **Mehburity:** Havada süzülen, pürüzsüz neon cyan küre; yüzü baktığı yöne döner. Seni takip eder,
-  uzakta kalırsa (veya başka boyuttaysan) yanına ışınlanır.
-- **Ölümsüz:** Hiçbir hasar almaz, `/kill` ile ölmez; boşluğa düşerse sahibinin yanına döner.
-- **Oyuncu başına tek Mehburity:** Sunucu, kimin hangi Mehburity'ye sahip olduğunu dünya kaydında tutar.
-  Kaybolan bir kopya (çökme, yeniden çağırma) yüklendiği anda kendini siler.
-- **Seninle gelir:** Oyundan çıkınca Mehburity de seninle "gider", girince yanında belirir.
-  "Otur" modundaysa bıraktığın yerde bekler.
-- **Verity karanlığı (her zaman açık):** Parlaklık ayarı işe yaramaz, ortam ışığı ve ay ışığı söner;
-  gece ve mağaralar ışık kaynağı olmadan zifiri karanlıktır. Meşaleler normal çalışır. Mehburity neon
-  olduğu için karanlıkta parlar. Ayar sunucudan oyunculara gönderilir.
+Kutuyu kaybettiysen `/mehburity cagir` yeni bir kutu verir (hiç açmadıysan) ya da Mehburity'yi yanına getirir.
+
+## Mehburity ile konuşmak
+
+- Sohbete **"Mehburity, …"**, "mehbur …" ya da "@mehburity …" diye başlayan bir mesaj yaz. Mehburity Gemini ile cevap
+  verir. Yakındaki oyuncular cevabı sohbette görür.
+- **Ne bildiği:** konumun, boyut ve biyom, canın ve açlığın, gündüz/gece ve hava, yakındaki düşmanlar, çantasındakiler,
+  inşaat durumu, öfkesi ve son olaylar (savaştıkları, kazdıkları, gördüğün iblis…). Konuşmayı hatırlar (son 10 mesaj).
+- **Kendiliğinden yorum yapar:** saldırıya uğrayınca ya da ölünce (en fazla 90 saniyede bir).
+- **Sesli okur** (Gemini TTS, varsayılan ses *Puck*). Sesi yalnızca sahibi duyar. Sık söylenen kısa cümleler
+  önbelleğe alınır.
+- **Gemini yoksa da çalışır:** anahtar, internet ya da kota yoksa veya cevap 30 sn'de gelmezse yerleşik Türkçe/İngilizce
+  cevaplarla devam eder ve bağlantı sorununu söyler. Ses yerine kısa bir "cıvıltı" çalar.
+
+## Sohbet emirleri
+
+Emirler Gemini'ye gitmeden anlaşılır, büyük/küçük harf ve Türkçe karakter fark etmez. Hepsi "Mehburity, …" ile başlar.
+
+| Söyle | Ne olur | Komut karşılığı |
+|---|---|---|
+| maden kaz / go mining | Etraftaki açıkta görünen cevherleri kazar | `/mehburity kaz` |
+| bunu kaz / mine this block | Baktığın bloğu kazar | `/mehburity kaz bunu` |
+| kazmayı bırak / stop mining | Kazmayı bırakır | `/mehburity kaz dur` |
+| kazdığın madenleri ver / give me what you mined | Çantasındakileri verir | `/mehburity ver` |
+| ne kazdın? | Çantada ne olduğunu söyler | `/mehburity canta` |
+| ev yap / build me a house | Önüne ahşap bir ev kurar | `/mehburity ev` |
+| taş ev yap, tuğla ev yap, ahşap ev yap | Seçilen stilde ev | `/mehburity ev tas` … |
+| elimdeki bloktan ev yap | Duvarları elindeki bloktan | `/mehburity ev elimdeki` |
+| inşaatı durdur / stop building | Yarıda bırakır | `/mehburity ev dur` |
+| evi geri al / remove the house | Evi kaldırır, araziyi eski haline getirir | `/mehburity ev geri` |
+| özür dilerim, affet, pardon, sorry | Öfkesini azaltır (−25) | – |
+| aptal, salak, I hate you… | Kızdırır (+15) | – |
+
+## Özellikler
+
+### Yoldaş: takip, ölümsüzlük
+
+- Havada süzülür, seni takip eder, yüzü baktığı yöne döner. 20 bloktan uzak kalırsan ya da başka boyuta geçersen
+  yanına ışınlanır. `/mehburity otur` ile bulunduğu yerde bekler, `/mehburity takip` ile yeniden peşine düşer.
+- **Ölümsüzdür:** hasar almaz, `/kill` ile ölmez, boşluğa düşerse sana döner. Ama vurulduğunu fark eder (bkz. [Öfke](#öfke)).
+- **Oyuncu başına bir Mehburity.** Sahiplik dünya kaydında tutulur. Oyundan çıkınca seninle "gider", girince yanında
+  belirir. "Otur" modundaysa bıraktığın yerde bekler.
+
+### Savaş
+
+Mehburity neon cyan bir **ışınla** savaşır: kısa bir şarj (ince ışın, ses), sonra parlak bir atış. Hedef seçerken
+önceliği şöyledir:
+
+1. sana **vuran** her şey,
+2. senin **vurduğun** canavar,
+3. seni **avlayan** düşmanlar (sana saldırmadan önce vurur).
+
+Menzil dışındaki hedefe yaklaşır, duvar arkasındakine ateş etmez, senden 20 bloktan uzaklaşan hedefi bırakır. Otur
+modunda **nöbet tutar**: menzilindeki her düşmana ateş eder. Seni, evcil hayvanlarını, köylüleri ve başka Mehburity'leri
+**asla** vurmaz. Oyunculara ancak sunucu izin verirse (`combat.fightPlayers`) saldırır. Öldürdükleri senin öldürmen
+sayılır (XP ve loot düşer). `/mehburity savas kapat` ile kendi Mehburity'ni savaştan çekebilirsin.
+
+### Madencilik
+
+"Mehburity, maden kaz" dediğinde etrafındaki (12 blok) **açıkta görünen** cevherleri bulur, yanlarına uçar ve alet
+gerekmeden kendisi kırar. Damar bitene kadar devam eder. Taşa gömülü cevherleri görmez, x-ray yapmaz. Kazdıkları
+**Mehburity'nin çantasına** gider (27 yığın). Çanta sana bağlıdır; oyundan çıkınca ya da ölünce kaybolmaz.
+"Kazdığın madenleri ver" deyince her şey envanterine geçer, sığmayanlar ayağına düşer. Kırdığı bloklar elmas kazmayla
+kırılmış gibi eşya düşürür (XP dahil). Spawn korumasına, macera moduna ve koruma modlarına uyar. Saldırı olursa önce
+savaşır, sonra kazmaya devam eder.
+
+### Ev yapma
+
+"Mehburity, ev yap" dediğinde önüne, kapısı sana bakan küçük bir ev kurar. Yaratıcı modda olduğu gibi **malzeme
+harcamaz**. Ev 7×7'lik bir gövde, köşe direkleri, camlar, kapı ve basamaklı çatıdan oluşur; gerekirse altına temel atar.
+İçinde yatak, sandık, çalışma masası, fırın ve meşaleler vardır. Blokları tek tek, sesleriyle yerleştirir.
+
+- **Stiller:** ahşap (varsayılan), taş, tuğla, ya da **elindeki blok**. Elindeki blok kırılmaz, operatör bloğu ya da
+  tam olmayan bir blok (meşale, basamak…) olamaz.
+- **"Evi geri al"** son evi kaldırır ve araziyi eski haline getirir (sunucu kapanana kadar).
+- Kırılmaz bloklara, eşya tutan bloklara ve korunan alanlara dokunmaz. Önü doluysa sağa, arkaya ya da sola kurar.
+
+### Öfke
+
+Mehburity'nin 0–100 arası bir **öfke göstergesi** var.
+
+| Ne kızdırır | Öfke |
+|---|---|
+| Bir oyuncunun ona vurması (sahibi dahil) | +25 |
+| Bir canavarın vurması (oklar atanın sayılır) | +5 |
+| Sohbette hakaret | +15 |
+| Sahibini öldürmek | +100 (anında nöbet) |
+
+**33**'te "Hey, yapma şunu!" der, yüzü sinirli bir ifadeye döner. **66**'da "Beni gerçekten kızdırıyorsun…" der; yüzü
+kızgınlaşır, üstünde kızgın partiküller çıkar ve ara ara kırmızı yanıp söner. **100**'de **öfke nöbetine** girer:
+kükrer, işini bırakır, [canavar formuna](#canavar-formu) geçer ve **yalnızca suçluyu** kovalar.
+
+Nöbet dört şekilde biter: suçlu ölünce, pasta veya özür göstergeyi 40'ın altına indirince, suçlu kaçınca (oyundan çıkar,
+başka boyuta geçer) ya da 90 saniye dolunca. Sonra Mehburity sahibinin yanına döner.
+
+**Sakinleştirmek için:**
+
+- **Pasta ile sağ tık:** −60 (bir pasta harcanır).
+- **"Mehburity, özür dilerim"** (affet, pardon, sorry): −25, oyuncu başına 30 saniyede bir sayılır. Kendi Mehburity'si
+  olmayan biri de söyleyebilir; ona en yakın Mehburity (öncelikle ona kızgın olan) duyar.
+- **Zamanla:** kimse dokunmazsa dakikada −10.
+
+Öfke dünya kaydında saklanır, oyundan çıkıp girmek sıfırlamaz. Gemini öfkesini bilir ve ona göre konuşur.
+
+### Canavar formu
+
+Öfke nöbetinde Mehburity **18 blok boyunda, sıska bir iblise** dönüşür. Önce kırmızı küre olarak yere iner, titrer ve
+dumanlar içinde 2 saniyede büyür. Bu iki saniye, suçlunun kaçmak için kazandığı süredir. İblisin uzun bacakları,
+dizlerine inen kolları, üç pençeli elleri ve iki boynuzu var. Kafası Mehburity'nin kırmızı, kızgın küresidir. Koyu
+gövdesindeki kırmızı damarlar karanlıkta parlar.
+
+- **Yürüyerek** kovalar: saniyede 6,5 blok, yani koşan bir oyuncudan hızlıdır. Blokların **içinden geçer**, hiçbir
+  şeyi kırmaz. Ayakları yüzeydedir; suçlu yerin altına saklanırsa onun hizasına iner.
+- 5 blok yakına gelince **pençesiyle** vurur: 24 hasar (zırh azaltır) ve savurma. Kuleye çıkmak kurtarmaz.
+- Ölüm mesajı: *"… Mehburity tarafından parçalandı"*.
+- Nöbet bitince dumanlar içinde küçülüp küreye döner.
+- `monster.enabled: false` yapılırsa öfke nöbeti kırmızı bir küre olarak kalır; daha hızlı uçar ve daha güçlü bir
+  ışınla vurur.
+
+### Verity modülü
+
+Verity'den uyarlanan, her biri ayardan kapatılabilen özellikler (`verity.*`):
+
+**Kutu.** Her oyuncu ilk girişinde bir kutu alır. Kutuyu yalnızca sahibi açabilir.
+
+**Verity karanlığı (her zaman açık).** Parlaklık ayarı işe yaramaz, ay ışığı ve ortam ışığı söner; gece ve mağaralar
+ışık kaynağı olmadan zifiri karanlıktır. Meşaleler normal çalışır. Gücü `verity.darkness.strength` ile ayarlanır.
+
+**El feneri** (`mehburity:flashlight`)
+
+- **Sağ tıkla** açılır ve kapanır. Ana elde ya da sol elde tutarken **baktığın yeri aydınlatır**: ışık 24 blok uzağa
+  kadar düşer, uzun ışınların ortası da aydınlanır. Işık bakışınla birlikte hareket eder; elinden bırakınca, kapatınca
+  ya da oyundan çıkınca hiçbir iz kalmaz.
+- **Pil:** dayanıklılık çubuğu pildir; tam pil 20 dakika yeter. Pil bitince fener kendiliğinden söner. **Örste
+  kızıltaşla** doldurulur (her kızıltaş %25). Yaratıcı modda pil bitmez.
+- **Tarif:** üstte cam panel, ortada demir külçe, altta kızıltaş (tek sütun).
+- Mehburity kutudan çıkınca bir tane hediye eder. Yaratıcı modda *Araçlar* sekmesinde bulunur.
+
+**Korku olayları.** Mehburity'si olan her oyuncunun başına, **karanlıktayken**, ortalama 6–15 dakikada bir şunlardan
+biri gelir:
+
+| Olay | Ne olur |
+|---|---|
+| **Sesler** | Arkandan yaklaşan ayak sesleri, karanlıkta bir gürleme ya da kırılan bir dal. Bu sesleri yalnızca sen duyarsın. |
+| **Fısıltı** | Mehburity korkar (yüzü değişir, sana döner) ve tedirgin bir şey söyler: *"Bunu duydun mu?"*, *"Bir şey bizi izliyor."*… |
+| **İzleyen** (nadir) | 36–52 blok uzakta, ufukta 18 blokluk bir iblis durup seni izler. Kafası koyu, yüzünde Mehburity'nin beyaz, parlayan gülümsemesi var. Ona doğrudan bakınca ya da yaklaşınca kaybolur. Mehburity korkar: *"…Sen de gördün, değil mi?"* |
+
+Bu olaylar Gemini bağlamına da eklenir, yani ona ne gördüğünü sorabilirsin. OP'ler `/mehburity olay ses|fisilti|izleyen`
+ile istedikleri olayı hemen başlatabilir.
+
+**Yüz ifadeleri.** Mehburity'nin yüzü duruma göre değişir: **mutlu** (normal), **sinirli** (düz ağız, öfke 33+),
+**kızgın** (öfke 66+), **öfke nöbeti** (kırmızı) ve **korkmuş** (kocaman gözler, korku olaylarında).
 
 ## Komutlar
 
-Alt komutlar ASCII yazılır (Minecraft'ın komut ayrıştırıcısı "ç, ğ" kabul etmez).
+Alt komutlar ASCII yazılır (komut ayrıştırıcısı "ç, ğ" gibi harfleri kabul etmez).
 
 | Komut | Yetki | Ne yapar |
 |---|---|---|
 | `/mehburity` | herkes | Sürüm ve durum |
 | `/mehburity cagir` | herkes | Mehburity'yi yanına getirir; hiç kutu açmadıysan yeni kutu verir |
-| `/mehburity otur` | herkes | Olduğu yerde bekler |
-| `/mehburity takip` | herkes | Seni takip eder |
+| `/mehburity otur` / `takip` | herkes | Olduğu yerde bekler / seni takip eder |
 | `/mehburity savas` | herkes | Savaş durumunu söyler |
 | `/mehburity savas ac` / `kapat` | herkes | Mehburity seni korusun / savaşmasın |
-| `/mehburity kaz` | herkes | Etraftaki cevherleri kazar ("Mehburity, maden kaz") |
-| `/mehburity kaz bunu` | herkes | Baktığın bloğu kazar ("Mehburity, bunu kaz") |
-| `/mehburity kaz dur` | herkes | Kazmayı bırakır ("Mehburity, kazmayı bırak") |
-| `/mehburity ev` | herkes | Ev yapar ("Mehburity, ev yap"); stil: `/mehburity ev ahsap\|tas\|tugla\|elimdeki` |
-| `/mehburity ev dur` | herkes | İnşaatı durdurur ("Mehburity, inşaatı durdur") |
-| `/mehburity ev geri` | herkes | Son evi kaldırır, araziyi eski haline getirir ("Mehburity, evi geri al") |
-| `/mehburity ver` | herkes | Kazdıklarını verir ("Mehburity, kazdığın madenleri ver") |
-| `/mehburity canta` | herkes | Çantada ne olduğunu söyler ("Mehburity, ne kazdın?") |
-| `/mehburity ofke` | herkes | Mehburity'nin ne kadar kızgın olduğunu söyler |
-| `/mehburity sakin` | OP | Yüklü tüm Mehburity'leri sakinleştirir, öfke nöbetlerini bitirir |
+| `/mehburity kaz` / `kaz bunu` / `kaz dur` | herkes | Cevher kazar / baktığın bloğu kazar / durur |
+| `/mehburity ver` / `canta` | herkes | Kazdıklarını verir / çantayı söyler |
+| `/mehburity ev [ahsap\|tas\|tugla\|elimdeki]` | herkes | Ev yapar |
+| `/mehburity ev dur` / `ev geri` | herkes | İnşaatı durdurur / son evi kaldırır |
+| `/mehburity ofke` | herkes | Ne kadar kızgın olduğunu söyler |
 | `/mehburity ayarlar` | herkes | Ayarlar ekranını açar (Gemini anahtarı, ses) |
-| `/mehburity yenile` | OP | Ayar dosyasını yeniden yükler ve oyunculara gönderir |
+| `/mehburity sakin` | OP | Yüklü tüm Mehburity'leri sakinleştirir, öfke nöbetlerini bitirir |
+| `/mehburity olay ses\|fisilti\|izleyen` | OP | Bir korku olayını hemen başlatır |
+| `/mehburity yenile` | OP | `config/mehburity.json`'u yeniden yükler ve oyunculara gönderir |
 
 ## Gemini kurulumu
 
 1. https://aistudio.google.com/apikey adresinden ücretsiz bir Gemini API anahtarı al.
-2. Oyunda **Modlar → Mehburity → Yapılandır** (Mod Menu) veya sohbete `/mehburity ayarlar` yaz.
+2. Oyunda **Modlar → Mehburity → Yapılandır** (Mod Menu) ya da sohbete `/mehburity ayarlar` yaz.
 3. Anahtarı yapıştır, **Bağlantıyı test et**'e bas, **Bitti** ile kaydet.
 
-Ayarlar ekranında: model (`gemini-3.5-flash-lite` hızlı/ucuz, `gemini-3.8-flash` daha akıllı), sesli konuşma
-açık/kapalı, ses seçimi, TTS modeli, ses yüksekliği ve **▶ Dinle** (seçili sesi dener).
+Ayarlar ekranında şunlar da var: model (`gemini-3.5-flash-lite` hızlı ve ucuz, `gemini-3.8-flash` daha akıllı), sesli
+konuşma açık/kapalı, 30 ses arasından seçim, TTS modeli, ses yüksekliği ve **▶ Dinle** (seçili sesi dener).
 
-**Anahtar nerede durur?** Sadece kendi bilgisayarında, `config/mehburity-client.json` içinde. Sunucuya hiç
-gönderilmez: sunucu soruyu senin istemcine yollar, istemci Gemini'ye sorar, cevabı geri yollar. Bu yüzden
-sunucularda da çalışır; herkes kendi anahtarını kullanır. Yakındaki oyuncular cevabı sohbette görür, sesi sadece
-Mehburity'nin sahibi duyar.
+**Anahtar nerede durur?** Yalnızca kendi bilgisayarında, `config/mehburity-client.json` içinde; sunucuya hiç gönderilmez.
+Sunucu soruyu senin istemcine yollar, istemci Gemini'ye sorar ve cevabı geri gönderir. Bu sayede sunucularda da çalışır
+ve herkes kendi anahtarını kullanır. Konuşma ve ses Google'ın API kotasından düşer; ücretsiz katmanın günlük sınırları
+vardır.
 
-Gemini ile konuşma ve ses Google'ın API kotasından düşer (ücretsiz katmanın günlük sınırları vardır).
+## Sunucu sahipleri için
 
-## Ayar dosyaları
+- Mod **hem sunucuda hem istemcide** kurulu olmalı (yeni varlıklar, eşya ve ağ paketleri var).
+- Sunucunun Gemini anahtarına ihtiyacı yoktur; her oyuncu kendi anahtarını kullanır.
+- Ayarlar `config/mehburity.json` içindedir. Değiştirdikten sonra `/mehburity yenile` yeterli, yeniden başlatmak gerekmez.
+- Oyunculara karşı davranışı ayarlardan sınırlayabilirsin: `combat.fightPlayers` (varsayılan kapalı), öfke nöbetinin
+  oyunculara (`anger.rageAtPlayers`) ya da sahibine (`anger.rageAtOwner`) yönelmesi, canavar formu (`monster.enabled`).
+- Korku olaylarını `verity.events.enabled: false` ile, karanlığı `verity.darkness.enabled: false` ile kapatabilirsin.
+- El feneri ışığı için görünmez `minecraft:light` blokları kullanılır; bunlar fener kapanınca ya da sunucu düzgün
+  kapanınca kaldırılır. Bkz. [Sorun giderme](#sorun-giderme).
 
-| Dosya | İçerik |
-|---|---|
-| `config/mehburity.json` | Tüm sayısal değerler ve kelime listeleri (tek dosya) |
-| `config/mehburity-client.json` | Sadece istemci: Gemini API anahtarı. **Asla paylaşma**, git'e girmez |
+## Ayarlar
 
-`config/mehburity.json` alanları:
+Tüm değerler `config/mehburity.json` içindedir. Dosya ilk açılışta oluşturulur. Aralık dışı değerler otomatik düzeltilir.
+Bozuk bir dosya silinmez: `mehburity.json.broken` adıyla saklanır ve varsayılanlar kullanılır.
+
+<details>
+<summary><b>companion</b>: takip</summary>
 
 | Alan | Varsayılan | Açıklama |
 |---|---|---|
@@ -159,119 +258,216 @@ Gemini ile konuşma ve ses Google'ın API kotasından düşer (ücretsiz katman�
 | `companion.followStopDistance` | 2.5 | Bu kadar yaklaşınca durur |
 | `companion.teleportDistance` | 20.0 | Bundan uzaksan yanına ışınlanır |
 | `companion.followSpeed` | 2.0 | Takip hızı çarpanı |
+</details>
+
+<details>
+<summary><b>combat</b>: savaş</summary>
+
+| Alan | Varsayılan | Açıklama |
+|---|---|---|
 | `combat.enabled` | true | Sunucu genelinde savaş açık mı |
 | `combat.damage` | 6.0 | Bir ışın atışının hasarı (zombinin 20 canı var) |
 | `combat.beamRange` | 12.0 | Işın menzili; hedef daha uzaksa yaklaşır |
-| `combat.chargeTicks` | 12 | Işının şarj süresi (tick) |
-| `combat.cooldownTicks` | 16 | İki atış arası bekleme (tick) |
+| `combat.chargeTicks` / `cooldownTicks` | 12 / 16 | Şarj süresi / iki atış arası (tick, 20 = 1 sn) |
 | `combat.defendOwner` | true | Sana vurana saldırır |
 | `combat.helpOwnerAttack` | true | Senin vurduğuna saldırır |
 | `combat.guardAgainstHostiles` | true | Seni hedef alan düşmanlara saldırır |
-| `combat.attackAllHostiles` | false | Yakındaki **tüm** düşmanlara saldırır (seni fark etmemiş olsalar bile) |
+| `combat.attackAllHostiles` | false | Yakındaki **tüm** düşmanlara saldırır |
 | `combat.guardRadius` | 16.0 | Bu mesafedeki düşmanları fark eder |
-| `combat.chaseRadius` | 20.0 | Senden bu kadar uzaklaşan hedefi bırakır (en fazla `teleportDistance`) |
-| `combat.fightPlayers` | false | Sana saldıran (ya da senin saldırdığın) oyunculara da saldırsın mı |
+| `combat.chaseRadius` | 20.0 | Senden bu kadar uzaklaşan hedefi bırakır |
+| `combat.fightPlayers` | false | Oyunculara da saldırsın mı |
 | `combat.ownerGetsDrops` | true | Öldürdükleri senin öldürmen sayılır (XP ve loot) |
+</details>
+
+<details>
+<summary><b>mining</b>: madencilik</summary>
+
+| Alan | Varsayılan | Açıklama |
+|---|---|---|
 | `mining.enabled` | true | Sunucu genelinde madencilik açık mı |
-| `mining.targets` | ["#c:ores"] | Kazılacak bloklar: `#etiket` ya da blok kimliği (ör. `"minecraft:amethyst_block"`) |
-| `mining.searchRadius` | 12 | Senin etrafında bu kadar blok uzağa bakar (otur modunda kendi etrafına) |
-| `mining.exposedOnly` | true | Sadece açık bir yüzü olan cevherler (gömülüleri görmez) |
+| `mining.targets` | ["#c:ores"] | Kazılacak bloklar: `#etiket` ya da blok kimliği |
+| `mining.searchRadius` | 12 | Arama yarıçapı (blok) |
+| `mining.exposedOnly` | true | Yalnızca açık bir yüzü olan cevherler |
 | `mining.reach` | 4.0 | Bloğu bu uzaklıktan kırar |
-| `mining.ticksPerHardness` | 8.0 | Blok sertliği başına kırma süresi (demir cevheri ≈ 1,2 sn) |
+| `mining.ticksPerHardness` | 8.0 | Sertlik başına kırma süresi (tick) |
 | `mining.minBreakTicks` / `maxBreakTicks` | 6 / 100 | Kırma süresinin alt/üst sınırı (tick) |
 | `mining.tool` | "minecraft:diamond_pickaxe" | Düşen eşyalar bu aletle kazılmış gibi hesaplanır |
-| `mining.bagSlots` | 27 | Çanta boyutu (yığın) |
-| `mining.maxBlocksPerTrip` | 64 | Bir seferde en fazla kaç blok kazar |
-| `mining.pointRange` | 24.0 | "Bunu kaz" için baktığın bloğun en uzak mesafesi |
+| `mining.bagSlots` | 27 | Çanta boyutu |
+| `mining.maxBlocksPerTrip` | 64 | Bir seferde en fazla kaç blok |
+| `mining.pointRange` | 24.0 | "Bunu kaz" için en uzak mesafe |
+</details>
+
+<details>
+<summary><b>build</b>: ev yapma</summary>
+
+| Alan | Varsayılan | Açıklama |
+|---|---|---|
 | `build.enabled` | true | Sunucu genelinde ev yapma açık mı |
-| `build.defaultStyle` | "ahsap" | Stil söylenmezse: `ahsap`, `tas`, `tugla` |
+| `build.defaultStyle` | "ahsap" | `ahsap`, `tas`, `tugla` |
 | `build.allowHeldBlock` | true | "Elimdeki bloktan ev yap"a izin |
 | `build.blocksPerSecond` | 15.0 | İnşaat hızı |
 | `build.maxFoundationDepth` | 6 | Zemin altındaki boşlukları bu derinliğe kadar doldurur |
-| `build.furnish` | true | Yatak, sandık, çalışma masası, fırın (meşaleler her zaman konur) |
+| `build.furnish` | true | Yatak, sandık, çalışma masası, fırın |
 | `build.reach` | 8.0 | Blokları bu uzaklıktan yerleştirir |
+</details>
+
+<details>
+<summary><b>anger</b>: öfke</summary>
+
+| Alan | Varsayılan | Açıklama |
+|---|---|---|
 | `anger.enabled` | true | Sunucu genelinde öfke açık mı |
-| `anger.playerHitAnger` / `mobHitAnger` | 25 / 5 | Bir oyuncu / canavar vurunca eklenen öfke |
+| `anger.playerHitAnger` / `mobHitAnger` | 25 / 5 | Oyuncu / canavar vurunca eklenen öfke |
 | `anger.insultAnger` | 15 | Hakaret başına öfke |
-| `anger.ownerKilledAnger` | 100 | Sahibi öldürülünce katile öfke (100 = anında nöbet) |
+| `anger.ownerKilledAnger` | 100 | Sahibi öldürülünce katile öfke |
 | `anger.decayPerMinute` | 10 | Dakikada soğuma |
-| `anger.rageThreshold` | 100 | Bu seviyede öfke nöbeti başlar |
+| `anger.rageThreshold` | 100 | Öfke nöbetinin başladığı seviye |
 | `anger.calmBelow` | 40 | Pasta/özür göstergeyi buna indirince nöbet biter |
 | `anger.cakeCalm` / `apologyCalm` | 60 / 25 | Pastanın / özrün düşürdüğü öfke |
 | `anger.apologyCooldownSeconds` | 30 | Aynı oyuncunun özrü bu sürede bir sayılır |
-| `anger.rageDamage` | 10.0 | Nöbetteki ışının hasarı (canavar formu kapalıyken) |
-| `anger.rageCooldownTicks` | 10 | Nöbette iki atış arası bekleme (tick, canavar formu kapalıyken) |
-| `anger.rageSpeed` | 3.0 | Suçluyu kovalarken uçuş hız çarpanı (canavar formu kapalıyken) |
+| `anger.rageDamage` / `rageCooldownTicks` / `rageSpeed` | 10 / 10 / 3.0 | Canavar formu kapalıyken nöbetteki ışın ve uçuş |
 | `anger.maxRageSeconds` | 90 | Bu süreden sonra kovalamayı bırakır |
-| `anger.rageAtPlayers` | true | Oyunculara öfke nöbeti (kapalıyken sadece canavarlar suçlu olabilir) |
-| `anger.rageAtOwner` | true | Sahibine de öfke nöbeti (Verity gibi) |
-| `anger.insults` | ["aptal", "salak", ...] | Hakaret sayılan kelimeler (büyük/küçük harf ve Türkçe karakter fark etmez; "aptalsın" da sayılır) |
+| `anger.rageAtPlayers` / `rageAtOwner` | true / true | Oyunculara / sahibine öfke nöbeti |
+| `anger.insults` | ["aptal", "salak", …] | Hakaret sayılan kelimeler ("aptalsın" da sayılır) |
+</details>
+
+<details>
+<summary><b>monster</b>: canavar formu</summary>
+
+| Alan | Varsayılan | Açıklama |
+|---|---|---|
 | `monster.enabled` | true | Öfke nöbetinde canavar formu |
 | `monster.height` | 18.0 | İblisin boyu (4–32 blok) |
-| `monster.transformTicks` | 40 | Dönüşüm süresi (tick, 20 = 1 sn) |
-| `monster.blocksPerSecond` | 6.5 | Yürüme hızı (koşan oyuncu ≈ 5,6) |
-| `monster.reach` | 5.0 | Pençe menzili (blok) |
-| `monster.damage` | 24.0 | Bir pençe darbesinin hasarı |
-| `monster.attackCooldownTicks` | 30 | İki pençe darbesi arası bekleme (tick) |
-| `monster.knockback` | 1.2 | Darbenin savurma gücü |
-| `ai.enabled` | true | Mehburity sohbete cevap versin mi |
-| `ai.chatPrefixes` | ["mehburity", "mehbur"] | Mesaj bunlardan biriyle başlarsa Mehburity'ye sorulmuş sayılır |
-| `ai.hearingRadius` | 32.0 | Cevabı sohbette görebilecek oyuncuların uzaklığı (blok) |
-| `ai.requestTimeoutSeconds` | 30 | Bu süre içinde cevap gelmezse yerleşik cevap verilir |
-| `ai.cooldownSeconds` | 2.0 | Aynı oyuncunun iki sorusu arasındaki en kısa süre |
-| `ai.maxMessageLength` / `ai.maxReplyLength` | 256 / 400 | Soru/cevap uzunluk sınırı (karakter) |
+| `monster.transformTicks` | 40 | Dönüşüm süresi (tick) |
+| `monster.blocksPerSecond` | 6.5 | Yürüme hızı |
+| `monster.reach` | 5.0 | Pençe menzili |
+| `monster.damage` | 24.0 | Pençe darbesinin hasarı |
+| `monster.attackCooldownTicks` | 30 | İki darbe arası (tick) |
+| `monster.knockback` | 1.2 | Savurma gücü |
+</details>
+
+<details>
+<summary><b>ai</b>: konuşma</summary>
+
+| Alan | Varsayılan | Açıklama |
+|---|---|---|
+| `ai.enabled` | true | Sohbete cevap versin mi |
+| `ai.chatPrefixes` | ["mehburity", "mehbur"] | Bu kelimelerle başlayan mesajlar Mehburity'ye sorulmuş sayılır |
+| `ai.hearingRadius` | 32.0 | Cevabı sohbette görebilecek oyuncuların uzaklığı |
+| `ai.requestTimeoutSeconds` | 30 | Bu sürede cevap gelmezse yerleşik cevap |
+| `ai.cooldownSeconds` | 2.0 | Aynı oyuncunun iki sorusu arası |
+| `ai.maxMessageLength` / `maxReplyLength` | 256 / 400 | Soru / cevap uzunluk sınırı |
 | `ai.commentOnEvents` | true | Saldırı/ölüm gibi olaylarda kendiliğinden yorum |
-| `ai.eventCommentCooldownSeconds` | 90 | İki olay yorumu arasındaki en kısa süre |
-| `ai.greeting` | "Hello! I'm Mehburity. ..." | Kutudan çıkınca söylediği cümle |
+| `ai.eventCommentCooldownSeconds` | 90 | İki olay yorumu arası |
+| `ai.greeting` | "Hello! I'm Mehburity. …" | Kutudan çıkınca söylediği cümle |
 | `ai.extraPersona` | "" | Kişiliğe ek not (ör. "Korsan gibi konuş.") |
-| `verity.box.enabled` | true | İlk girişte kutu verilsin mi |
-| `verity.box.openTicks` | 40 | Kutu açılma animasyonu (tick, 20 = 1 sn) |
+</details>
+
+<details>
+<summary><b>verity</b>: Verity modülü</summary>
+
+| Alan | Varsayılan | Açıklama |
+|---|---|---|
+| `verity.box.enabled` | true | İlk girişte kutu |
+| `verity.box.openTicks` | 40 | Kutu açılma animasyonu (tick) |
 | `verity.darkness.enabled` | true | Verity karanlığı |
 | `verity.darkness.strength` | 0.85 | 0 = normal ışık, 1 = ışıksız yerler tamamen siyah |
+| `verity.flashlight.enabled` | true | El feneri ışık versin mi |
+| `verity.flashlight.giveWithBox` | true | Mehburity kutudan çıkınca el feneri hediye etsin |
+| `verity.flashlight.range` | 24 | Işının menzili (4–64 blok) |
+| `verity.flashlight.lightLevel` | 15 | Işığın düştüğü yerin ışık seviyesi |
+| `verity.flashlight.batteryMinutes` | 20.0 | Tam pilin süresi (0 = hiç bitmez) |
+| `verity.events.enabled` | true | Korku olayları |
+| `verity.events.minMinutes` / `maxMinutes` | 6 / 15 | İki olay arasındaki süre (rastgele, dakika) |
+| `verity.events.onlyInDarkness` | true | Yalnızca karanlıktayken |
+| `verity.events.sounds` / `whispers` / `watcher` | true | Hangi olaylar olabilir |
+</details>
 
-Bozuk bir `mehburity.json` silinmez; `mehburity.json.broken` olarak saklanır ve varsayılanlar kullanılır.
-Aralık dışı değerler otomatik düzeltilir.
+İstemcinin kendi ayarları (Gemini anahtarı, model, ses) `config/mehburity-client.json` içindedir; ayarlar ekranından
+değiştirilir. **Bu dosyayı kimseyle paylaşma.**
 
-## Model, doku ve sesler (yer tutucular)
+## Sorun giderme
 
-Kendi çizimlerini **aynı yol ve boyutla** koyman yeterli:
+| Sorun | Çözüm |
+|---|---|
+| Mehburity hep aynı basit cevapları veriyor | Gemini anahtarı girilmemiş ya da geçersiz: `/mehburity ayarlar` → **Bağlantıyı test et** |
+| Ses gelmiyor | Ayarlarda "Sesli konuşma" açık mı? Ses yüksekliği? Ücretsiz kota dolmuş olabilir |
+| Mehburity kayboldu | `/mehburity cagir` |
+| Mehburity bana kızgın | Pasta ile sağ tıkla ya da "Mehburity, özür dilerim" yaz; OP isen `/mehburity sakin` |
+| Çok karanlık | El feneri ya da meşale kullan. Sunucu `verity.darkness.strength` değerini düşürebilir |
+| El feneri yanmıyor | Pil bitmiş olabilir (dayanıklılık çubuğu): örste kızıltaşla doldur |
+| Korku olayları istemiyorum | Sunucuda `verity.events.enabled: false`, sonra `/mehburity yenile` |
+| Sunucu çöktükten sonra bir yerde açıklanamayan ışık var | El fenerinden kalmış görünmez ışık bloğu: `/fill <x1 y1 z1> <x2 y2 z2> air replace minecraft:light` |
+
+## Doku ve sesleri değiştirmek
+
+Bütün görseller bu projede sıfırdan üretilmiş yer tutuculardır. Kendi çizimlerini **aynı yol ve boyutla** koyman
+yeterli (`src/main/resources/assets/mehburity/` altında):
 
 | Dosya | Boyut | Ne |
 |---|---|---|
-| `src/main/resources/assets/mehburity/textures/entity/mehburity/mehburity.png` | 128×64 | Mehburity küresi (eşdikdörtgen: ortası = yüz, üst kenar = tepe) |
-| `src/main/resources/assets/mehburity/textures/entity/mehburity/mehburity_angry.png` | 128×64 | Öfke nöbetindeki kırmızı küre ve kızgın yüz (aynı düzen); canavarın kafası da bu |
-| `src/main/resources/assets/mehburity/textures/entity/mehburity/mehburity_monster.png` | 64×64 | Canavarın derisi (her kutu yüzüne bir kez gerilir) |
-| `src/main/resources/assets/mehburity/textures/entity/mehburity/box.png` | 64×64 | Kutu (gövde 0,0'da; ön/arka kapaklar 0,24'te; yan kapaklar 0,32'de) |
-| `src/main/resources/assets/mehburity/icon.png` | 128×128 | Mod ikonu: Mehburity'nin kafası (gölgeli neon küre, şeffaf arka plan) |
+| `textures/entity/mehburity/mehburity.png` | 128×64 | Mehburity küresi (eşdikdörtgen: ortası = yüz, üst kenar = tepe) |
+| `textures/entity/mehburity/mehburity_annoyed.png` / `_mad.png` / `_scared.png` | 128×64 | Sinirli / kızgın / korkmuş yüz (aynı düzen) |
+| `textures/entity/mehburity/mehburity_angry.png` | 128×64 | Öfke nöbetindeki kırmızı küre; canavarın kafası |
+| `textures/entity/mehburity/mehburity_monster.png` | 64×64 | Canavarın derisi (her kutu yüzüne bir kez gerilir) |
+| `textures/entity/mehburity/watcher.png` | 128×64 | İzleyen iblisin kafası |
+| `textures/entity/mehburity/box.png` | 64×64 | Kutu (gövde 0,0; ön/arka kapaklar 0,24; yan kapaklar 0,32) |
+| `textures/item/flashlight.png` / `flashlight_on.png` | 16×16 | El feneri (kapalı / açık) |
+| `icon.png` | 128×128 | Mod ikonu: Mehburity'nin kafası |
 
-Yer tutucuları yeniden üretmek için: `python tools/gen_textures.py`. Logonun büyük bir kopyası için:
-`python tools/gen_textures.py --logo "Mehburity Logo.png" 512`
+Yer tutucuları yeniden üretmek için `python tools/gen_textures.py`. Logonun büyük bir kopyası için
+`python tools/gen_textures.py --logo "Mehburity Logo.png" 512`.
 
-Sesler şimdilik vanilla seslere yönlendirilmiş (`assets/mehburity/sounds.json`). Kendi seslerin için
-`.ogg` dosyalarını `src/main/resources/assets/mehburity/sounds/` klasörüne koy ve `sounds.json`'da
-`{"name": "minecraft:...", "type": "event"}` yerine `"mehburity:dosya_adi"` yaz.
-Ses olayları: `box.shake`, `box.open`, `mehburity.emerge`, `mehburity.speak` (anahtar yokken çalan "cıvıltı"),
-`mehburity.beam.charge` (ışın şarjı), `mehburity.beam.fire` (atış), `mehburity.rage` (öfke nöbeti kükremesi),
-`mehburity.monster.transform` / `step` / `swipe` / `shrink` (canavara dönüşme, ayak sesi, pençe, küreye dönme).
-Mehburity'nin konuşma sesi dosya değil, Gemini TTS ile üretilir.
+**Sesler** şimdilik vanilla seslere yönlendirilmiştir (`assets/mehburity/sounds.json`). Kendi seslerin için `.ogg`
+dosyalarını `assets/mehburity/sounds/` klasörüne koy ve `sounds.json`'da `"minecraft:…"` yerine `"mehburity:dosya_adi"`
+yaz. Ses olayları şunlar:
 
-## Kurulum (geliştirme)
+- **Kutu ve konuşma:** `box.shake`, `box.open`, `mehburity.emerge`, `mehburity.speak` (anahtar yokken çalan cıvıltı).
+- **Savaş ve öfke:** `mehburity.beam.charge`, `mehburity.beam.fire`, `mehburity.rage`.
+- **Canavar formu:** `mehburity.monster.transform`, `mehburity.monster.step`, `mehburity.monster.swipe`,
+  `mehburity.monster.shrink`.
+- **Korku olayları:** `verity.footstep`, `verity.ambience`, `verity.snap`, `verity.watcher_vanish`.
 
-```bat
-install.bat
-```
+Mehburity'nin konuşma sesi bir dosya değildir, Gemini TTS ile üretilir.
 
-Derler, sunucu oyun testlerini çalıştırır ve jar'ı MehburMC Launcher'daki **Mehburity Test**
-instance'ına kurar. Eksikse Fabric API, Mod Menu ve placeholder-api indirilir (SHA-512 doğrulamalı).
-Masaüstündeki **Mehburity Kur** kısayolu bunu çalıştırır.
+## Geliştirme
 
 | Komut | Ne yapar |
 |---|---|
-| `gradlew build` | Derler + sunucu oyun testleri |
-| `gradlew runClientGameTest` | Gerçek istemcide uçtan uca test (ekran görüntüleri `build/run/clientGameTest/screenshots`) |
+| `gradlew build` | Derler ve sunucu oyun testlerini çalıştırır |
+| `gradlew runClientGameTest` | Gerçek istemcide uçtan uca test; ekran görüntüleri `build/run/clientGameTest/screenshots` |
 | `gradlew runClient` | Geliştirme istemcisini açar |
+| `install.bat` | Derler, test eder, jar'ı MehburMC Launcher'daki **Mehburity Test** instance'ına kurar; eksik bağımlılıkları SHA-512 doğrulamalı indirir. Masaüstündeki **Mehburity Kur** kısayolu bunu çalıştırır. |
 
-## Sürümler
+```
+src/main/java/com/mehbur/mehburity/
+  entity/   Mehburity, kutu, sahiplik kaydı (CompanionRegistry), CompanionManager, sesler, konuşma satırları
+  ai/       GeminiClient (Interactions API), AiRouter, kişilik, oyun bağlamı ve olaylar, yerleşik cevaplar
+  combat/   Hedef kuralları (CombatTargets), hedef seçimi, ışın saldırısı, hasar tipleri
+  mining/   Kurallar, kazma hedefi (MineGoal), çanta (MiningBag), sohbet emirleri
+  build/    Plan (HousePlan), stiller, inşaat hedefi (BuildGoal), geri alma (Building), sohbet emirleri
+  anger/    Öfke göstergesi ve nöbet (Anger), suçluyu hedefleme, canavar formu (MonsterGoal), özür/hakaret (AngerChat)
+  verity/   Verity modülü (VerityFeature): kutu, karanlık, el feneri (FlashlightItem/Feature),
+            korku olayları (EventsFeature) ve izleyen iblis (WatcherEntity)
+  network/  Sunucu ↔ istemci paketleri
+  command/  /mehburity
+  config/   Tek ayar dosyası
+src/client/java/com/mehbur/mehburity/client/
+  render/   Küre (+ ışın, yüz ifadeleri), canavar modeli, izleyen, kutu
+  verity/   Karanlığın istemci tarafı (lightmap mixin'i)
+  ai/       İstemcide Gemini çağrısı (ClientAi) ve ses (VoicePlayer)
+  screen/   Ayarlar ekranı + Mod Menu entegrasyonu
+src/gametest/   Sunucu ve istemci oyun testleri (FakeGemini: testler için yerel sahte Gemini sunucusu)
+tools/          gen_textures.py (doku ve logo üretici), scan_secrets.py
+```
+
+**Yeni bir Verity özelliği eklemek için:** `verity/VerityFeature`'ı uygula, `VerityFeatures.ALL`'a ekle, açma/kapama
+ayarını `MehburityConfig.Verity` altına koy (çalışırken okunduğu için `/mehburity yenile` ile değişir).
+
+**Güvenlik:** `git config core.hooksPath .githooks` ile her commit'ten önce `tools/scan_secrets.py` çalışır ve API
+anahtarı gibi hassas bilgi içeren commit'leri engeller.
+
+## Sürümler ve notlar
 
 | Bileşen | Sürüm |
 |---|---|
@@ -282,40 +478,9 @@ Masaüstündeki **Mehburity Kur** kısayolu bunu çalıştırır.
 | Mod Menu (isteğe bağlı) | 20.0.3 |
 | Java | 25 |
 
-## Proje yapısı
+**Yol haritası:** Faz 9'da bas-konuş ile sesli konuşma gelecek. Tuşa basıp konuşacaksın, Mehburity duyacak. Tuş
+varsayılan olarak atanmamış olacak; ayarlar ekranından seçilecek.
 
-```
-src/main/java/com/mehbur/mehburity/
-  entity/   Mehburity, kutu, sahiplik kaydı (CompanionRegistry), CompanionManager
-  ai/       GeminiClient (Interactions API), AiRouter, kişilik, oyun bağlamı ve olaylar, yerleşik cevaplar
-  verity/   Verity özellikleri (VerityFeature arayüzü): kutu, karanlık
-  network/  Sunucu ↔ istemci paketleri
-  command/  /mehburity
-  config/   Tek ayar dosyası
-  combat/   Savaş: hedef kuralları (CombatTargets), hedef seçimi, ışın saldırısı, hasar tipi
-  mining/   Madencilik: kurallar (MiningRules), kazma hedefi (MineGoal), çanta (MiningBag), sohbet emirleri (MiningChat)
-  build/    Ev: plan (HousePlan), stiller (HouseStyle), inşaat hedefi (BuildGoal), geri alma (Building), sohbet emirleri (BuildChat)
-  anger/    Öfke: gösterge ve nöbet (Anger), suçluyu hedefleme (RageTargetGoal), canavar formunda kovalama ve pençe
-            (MonsterGoal), özür/hakaret (AngerChat)
-src/client/java/com/mehbur/mehburity/client/
-  render/   Küre renderer'ı (+ ışın), kutu modeli
-  verity/   Karanlığın istemci tarafı (lightmap mixin'i)
-  ai/       İstemcide Gemini çağrısı (ClientAi) ve ses (VoicePlayer)
-  screen/   Ayarlar ekranı + Mod Menu entegrasyonu
-  config/
-src/gametest/   Sunucu ve istemci oyun testleri (FakeGemini: testler için yerel sahte Gemini sunucusu;
-                ev testi kendi test ortamında, mehburity-test:solo, tek başına çalışır)
-tools/          gen_textures.py, scan_secrets.py
-```
-
-Yeni bir Verity özelliği eklemek için `verity/VerityFeature`'ı uygula ve `VerityFeatures.ALL`'a ekle.
-
-## Güvenlik
-
-`git config core.hooksPath .githooks` ile her commit'ten önce `tools/scan_secrets.py` çalışır ve
-API anahtarı gibi hassas bilgi içeren commit'leri engeller.
-
-## Notlar
-
-Mehburity, ThatMob'un Verity karakterinden esinlenmiştir. Verity JE modunun hiçbir modeli, dokusu veya
-sesi kullanılmamıştır (o mod "All Rights Reserved"); tüm görseller bu projede sıfırdan üretilmiştir.
+Mehburity, ThatMob'un **Verity** karakterinden esinlenmiştir. Verity JE modunun hiçbir modeli, dokusu ya da sesi
+kullanılmamıştır (o mod "All Rights Reserved"); tüm görseller bu projede sıfırdan üretilmiştir. Lisans: All Rights
+Reserved © Mehbur07.
