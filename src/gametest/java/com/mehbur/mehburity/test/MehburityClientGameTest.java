@@ -281,10 +281,16 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		context.takeScreenshot("mehburity-h3-undone");
 	}
 
-	/** Real left clicks make Mehburity rage (red face), a real right click with a cake calms it down. */
+	/**
+	 * Real left clicks make Mehburity rage: it turns into the 18-block demon (photographed while growing, by day, at
+	 * night and walking), then a real right click with a cake shrinks it back.
+	 */
 	private static void checkAnger(ClientGameTestContext context, TestServerContext server, UUID playerId) {
 		// Creative: the rage cannot hurt the player, so the test cannot die here.
 		server.runCommand("gamemode creative @a");
+		double speed = MehburityConfig.get().monster.blocksPerSecond;
+		// The demon stands still for the photos.
+		server.runOnServer(s -> MehburityConfig.get().monster.blocksPerSecond = 0.0);
 		// Mehburity floats straight ahead at eye height, so looking level along the player's yaw hits it.
 		float yaw = server.computeOnServer(s -> {
 			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
@@ -303,14 +309,55 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 			context.waitTicks(15);
 		}
 		server.waitFor(s -> CompanionManager.find(s, playerId).isRaging(), 100);
-		context.waitTicks(10);
-		context.takeScreenshot("mehburity-a1-rage");
+		if (!server.computeOnServer(s -> CompanionManager.find(s, playerId).isMonster())) {
+			throw new AssertionError("a rage must turn Mehburity into the demon");
+		}
 
-		server.runOnServer(s -> s.getPlayerList().getPlayer(playerId).setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CAKE)));
+		// Step back and look up at it while it grows.
+		Vec3 demon = server.computeOnServer(s -> CompanionManager.find(s, playerId).position());
+		server.runOnServer(s -> {
+			Vec3 back = demon.add(Vec3.directionFromRotation(0.0F, yaw).scale(-16.0));
+			int ground = s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int) Math.floor(back.x), (int) Math.floor(back.z));
+			s.getPlayerList().getPlayer(playerId).teleportTo(back.x, ground, back.z);
+		});
+		context.getInput().lookAt(yaw, -18.0F);
+		context.waitTicks(12);
+		context.takeScreenshot("mehburity-m1-transforming");
+		server.waitFor(s -> !CompanionManager.find(s, playerId).isTransforming(), 200);
+		context.waitTicks(10);
+		context.takeScreenshot("mehburity-m2-demon");
+		float height = server.computeOnServer(s -> CompanionManager.find(s, playerId).getBbHeight());
+		if (Math.abs(height - MehburityConfig.get().monster.height) > 0.01) {
+			throw new AssertionError("the demon must be " + MehburityConfig.get().monster.height + " blocks tall, was " + height);
+		}
+
+		server.runCommand("time set midnight");
+		context.waitTicks(20);
+		context.takeScreenshot("mehburity-m3-demon-night");
+		server.runCommand("time set noon");
+
+		// Let it walk towards the player for the walk cycle.
+		server.runOnServer(s -> MehburityConfig.get().monster.blocksPerSecond = speed);
+		context.waitTicks(25);
+		context.takeScreenshot("mehburity-m4-demon-walking");
+		server.runOnServer(s -> MehburityConfig.get().monster.blocksPerSecond = 0.0);
+
+		// Right in front of it, looking at its legs, a cake ends the rage.
+		server.runOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			MehburityEntity mehburity = CompanionManager.find(s, playerId);
+			Vec3 front = mehburity.position().add(Vec3.directionFromRotation(0.0F, yaw).scale(-2.5));
+			player.teleportTo(front.x, mehburity.getY(), front.z);
+			player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CAKE));
+		});
 		context.waitTicks(5);
-		context.getInput().lookAt(yaw, 0.0F);
+		context.getInput().lookAt(yaw, 10.0F);
 		context.getInput().pressKey(options -> options.keyUse);
 		server.waitFor(s -> !CompanionManager.find(s, playerId).isRaging(), 100);
+		server.runOnServer(s -> MehburityConfig.get().monster.blocksPerSecond = speed);
+		if (server.computeOnServer(s -> CompanionManager.find(s, playerId).isMonster())) {
+			throw new AssertionError("calming down must shrink the demon back into a sphere");
+		}
 		context.waitTicks(10);
 		context.takeScreenshot("mehburity-a2-calmed");
 		context.getInput().pressKey(options -> options.keyToggleGui);

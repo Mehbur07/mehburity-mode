@@ -27,6 +27,7 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 	public Mining mining = new Mining();
 	public Build build = new Build();
 	public Anger anger = new Anger();
+	public Monster monster = new Monster();
 	public Ai ai = new Ai();
 	public Verity verity = new Verity();
 
@@ -173,6 +174,27 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 	}
 
 	/**
+	 * The rage form: during a rage Mehburity turns into a tall, skinny demon that walks through walls after the
+	 * culprit and tears at it with its claws. Off: a rage stays a red sphere with a stronger beam (anger.rage*).
+	 */
+	public static final class Monster {
+		public boolean enabled = true;
+		/** Height of the demon in blocks. */
+		public double height = 18.0;
+		/** How long the transformation takes (ticks); the culprit gets this head start. */
+		public int transformTicks = 40;
+		/** Walking speed; a sprinting player does about 5.6 blocks per second. */
+		public double blocksPerSecond = 6.5;
+		/** Claw reach, measured on the ground from the demon's feet. */
+		public double reach = 5.0;
+		/** Damage of one claw swipe (a player has 20 health; armor still helps). */
+		public double damage = 24.0;
+		public int attackCooldownTicks = 30;
+		/** How hard a swipe throws the culprit. */
+		public double knockback = 1.2;
+	}
+
+	/**
 	 * Talking to Mehburity. The Gemini key itself is a client setting: the server sends each question to the
 	 * owner's client, which asks Gemini and sends the answer back.
 	 */
@@ -261,6 +283,9 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		if (anger == null) {
 			anger = new Anger();
 		}
+		if (monster == null) {
+			monster = new Monster();
+		}
 		if (ai == null) {
 			ai = new Ai();
 		}
@@ -324,6 +349,13 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 			anger.insults = new ArrayList<>();
 		}
 		anger.insults.removeIf(word -> word == null || word.isBlank());
+		monster.height = Mth.clamp(monster.height, 4.0, 32.0);
+		monster.transformTicks = Mth.clamp(monster.transformTicks, 0, 200);
+		monster.blocksPerSecond = Mth.clamp(monster.blocksPerSecond, 0.0, 40.0);
+		monster.reach = Mth.clamp(monster.reach, 1.0, 16.0);
+		monster.damage = Mth.clamp(monster.damage, 0.0, 1000.0);
+		monster.attackCooldownTicks = Mth.clamp(monster.attackCooldownTicks, 1, 200);
+		monster.knockback = Mth.clamp(monster.knockback, 0.0, 5.0);
 		if (ai.chatPrefixes == null) {
 			ai.chatPrefixes = new ArrayList<>();
 		}

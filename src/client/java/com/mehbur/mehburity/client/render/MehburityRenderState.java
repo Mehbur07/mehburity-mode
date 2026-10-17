@@ -19,4 +19,12 @@ public class MehburityRenderState extends EntityRenderState {
 	/** Temper 0-100, and whether it is in a rage (red face, red beam). */
 	public float anger;
 	public boolean raging;
+	/** Rage form: its height (0 = a sphere), 0..1 while it grows, and the claw swipe (1 = none). */
+	public float monsterHeight;
+	public float transformProgress = 1.0F;
+	public float swipeProgress = 1.0F;
+	/** Body yaw in degrees and the walk cycle, for the demon's legs and arms. */
+	public float bodyRot;
+	public float walkPosition;
+	public float walkSpeed;
 }

@@ -8,6 +8,7 @@ import com.mehbur.mehburity.entity.MehburityEntity;
 import com.mehbur.mehburity.entity.MehburitySounds;
 import com.mehbur.mehburity.entity.MehburitySpeech;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -20,6 +21,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -204,6 +206,12 @@ public final class Anger {
 		ServerLevel level = (ServerLevel) mehburity.level();
 		level.playSound(null, mehburity.getX(), mehburity.getY(), mehburity.getZ(), MehburitySounds.RAGE, SoundSource.HOSTILE, 1.5F, 1.0F);
 		level.sendParticles(ParticleTypes.ANGRY_VILLAGER, mehburity.getX(), mehburity.getY() + 0.5, mehburity.getZ(), 12, 0.6, 0.6, 0.6, 0.0);
+		MehburityConfig.Monster monster = MehburityConfig.get().monster;
+		if (monster.enabled) {
+			mehburity.setMonster((float) monster.height, monster.transformTicks);
+			level.playSound(null, mehburity.getX(), mehburity.getY(), mehburity.getZ(), MehburitySounds.MONSTER_TRANSFORM,
+					SoundSource.HOSTILE, 3.0F, 0.8F);
+		}
 		tell(mehburity, culprit, MehburitySpeech.text("anger.rage", "THAT'S IT! %s, I'm coming for you!", culprit.getDisplayName()));
 		ServerPlayer owner = mehburity.getOwnerPlayer();
 		if (owner != null) {
@@ -213,7 +221,16 @@ public final class Anger {
 
 	public static void endRage(MehburityEntity mehburity, RageEnd end) {
 		LivingEntity culprit = mehburity.getRageCulprit();
-		mehburity.setRageCulprit(null);
+		boolean wasMonster = mehburity.isMonster();
+		float monsterHeight = mehburity.getMonsterHeight();
+		mehburity.setRageCulprit(null); // also shrinks it back into a sphere
+		if (wasMonster) {
+			ServerLevel level = (ServerLevel) mehburity.level();
+			level.sendParticles(ParticleTypes.LARGE_SMOKE, mehburity.getX(), mehburity.getY() + monsterHeight * 0.5, mehburity.getZ(),
+					60, 0.8, monsterHeight * 0.3, 0.8, 0.03);
+			level.playSound(null, mehburity.getX(), mehburity.getY(), mehburity.getZ(), MehburitySounds.MONSTER_SHRINK,
+					SoundSource.HOSTILE, 2.0F, 0.6F);
+		}
 		MehburityConfig.Anger config = MehburityConfig.get().anger;
 		switch (end) {
 			case KILLED, FORCED -> set(mehburity, 0.0F);
@@ -233,6 +250,12 @@ public final class Anger {
 		MehburityEntity back = mehburity;
 		if (owner != null && !owner.isDeadOrDying()) {
 			back = mehburity.teleportToOwner(owner);
+		} else if (wasMonster) {
+			// The demon walked through rock; the sphere must not be left inside it.
+			BlockPos top = mehburity.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, mehburity.blockPosition());
+			if (mehburity.getY() < top.getY()) {
+				mehburity.teleportTo(mehburity.getX(), top.getY() + 0.5, mehburity.getZ());
+			}
 		}
 		if (culprit != null) {
 			tell(back, culprit, line);
@@ -286,7 +309,10 @@ public final class Anger {
 		if (mehburity.distanceToSqr(culprit) > CHASE_BLINK_DISTANCE * CHASE_BLINK_DISTANCE) {
 			ServerLevel level = (ServerLevel) mehburity.level();
 			level.sendParticles(ParticleTypes.LARGE_SMOKE, mehburity.getX(), mehburity.getY() + 0.4, mehburity.getZ(), 15, 0.3, 0.3, 0.3, 0.02);
-			Vec3 near = culprit.position().add(culprit.getLookAngle().scale(-3.0)).add(0.0, culprit.getBbHeight() + 1.0, 0.0);
+			// The demon lands on its feet a few steps behind them, the sphere just above their head.
+			Vec3 near = mehburity.isMonster()
+					? culprit.position().add(culprit.getLookAngle().multiply(-6.0, 0.0, -6.0))
+					: culprit.position().add(culprit.getLookAngle().scale(-3.0)).add(0.0, culprit.getBbHeight() + 1.0, 0.0);
 			mehburity.teleportTo(near.x, near.y, near.z);
 		}
 		if (mehburity.tickCount % SPARK_INTERVAL == 0) {
@@ -315,8 +341,10 @@ public final class Anger {
 	}
 
 	private static void spark(MehburityEntity mehburity, int count) {
+		// Above the head: the sphere's, or the demon's way up there.
+		double above = mehburity.isMonster() ? mehburity.getMonsterHeight() * mehburity.getTransformProgress(0.0F) + 0.3 : 0.9;
 		((ServerLevel) mehburity.level()).sendParticles(ParticleTypes.ANGRY_VILLAGER,
-				mehburity.getX(), mehburity.getY() + 0.9, mehburity.getZ(), count, 0.3, 0.2, 0.3, 0.0);
+				mehburity.getX(), mehburity.getY() + above, mehburity.getZ(), count, 0.3, 0.2, 0.3, 0.0);
 	}
 
 	/** Says {@code line} to the owner (with voice) and to the culprit if that is another player. */
@@ -349,6 +377,9 @@ public final class Anger {
 		LivingEntity culprit = mehburity.getRageCulprit();
 		if (culprit != null) {
 			out.append(", raging at ").append(culprit.getName().getString());
+		}
+		if (mehburity.isMonster()) {
+			out.append(", in its ").append(Math.round(mehburity.getMonsterHeight())).append("-block demon form");
 		}
 		return out.append('\n').toString();
 	}

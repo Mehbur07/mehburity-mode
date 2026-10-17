@@ -47,7 +47,7 @@ public final class BeamAttackGoal extends Goal {
 	@Override
 	public boolean canUse() {
 		LivingEntity target = mehburity.getTarget();
-		return target != null && target.isAlive() && !mehburity.isEmerging();
+		return target != null && target.isAlive() && !mehburity.isEmerging() && !mehburity.isMonster();
 	}
 
 	@Override

@@ -35,6 +35,30 @@
 			{ "name": "minecraft:entity.ravager.roar", "type": "event" }
 		]
 	},
+	"mehburity.monster.transform": {
+		"subtitle": "subtitles.mehburity.mehburity.monster.transform",
+		"sounds": [
+			{ "name": "minecraft:entity.warden.emerge", "type": "event" }
+		]
+	},
+	"mehburity.monster.step": {
+		"subtitle": "subtitles.mehburity.mehburity.monster.step",
+		"sounds": [
+			{ "name": "minecraft:entity.warden.step", "type": "event" }
+		]
+	},
+	"mehburity.monster.swipe": {
+		"subtitle": "subtitles.mehburity.mehburity.monster.swipe",
+		"sounds": [
+			{ "name": "minecraft:entity.warden.attack_impact", "type": "event" }
+		]
+	},
+	"mehburity.monster.shrink": {
+		"subtitle": "subtitles.mehburity.mehburity.monster.shrink",
+		"sounds": [
+			{ "name": "minecraft:entity.enderman.teleport", "type": "event" }
+		]
+	},
 	"mehburity.beam.fire": {
 		"subtitle": "subtitles.mehburity.mehburity.beam.fire",
 		"sounds": [

@@ -31,10 +31,10 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	private static final RenderType RENDER_TYPE = RenderTypes.entityCutout(TEXTURE);
 	/** The face during a rage. Replace the PNG (same size) to change it. */
 	private static final Identifier ANGRY_TEXTURE = MehburityMod.id("textures/entity/mehburity/mehburity_angry.png");
-	private static final RenderType ANGRY_RENDER_TYPE = RenderTypes.entityCutout(ANGRY_TEXTURE);
+	static final RenderType ANGRY_RENDER_TYPE = RenderTypes.entityCutout(ANGRY_TEXTURE);
 	/** From this anger on, the sphere flashes red now and then as a warning. */
 	private static final float WARNING_ANGER = 66.0F;
-	private static final float RADIUS = 0.4F;
+	static final float RADIUS = 0.4F;
 	private static final int STACKS = 16;
 	private static final int SLICES = 24;
 	/** Neon glow: Mehburity is drawn fully lit, so it shines even in Verity darkness. */
@@ -44,6 +44,9 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	private static final int BEAM_GLOW = 0x00F0FF;
 	private static final int RAGE_BEAM_CORE = 0xFFE0D0;
 	private static final int RAGE_BEAM_GLOW = 0xFF1020;
+	/** Share of the transformation spent swelling as a sphere before the demon starts to grow. */
+	private static final float TRANSFORM_SPHERE_PART = 0.25F;
+	private static final float MONSTER_SHADOW = 1.6F;
 
 	public MehburityRenderer(EntityRendererProvider.Context context) {
 		super(context);
@@ -63,6 +66,12 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		state.emergeProgress = entity.getEmergeProgress(partialTicks);
 		state.anger = entity.getAnger();
 		state.raging = entity.isRaging();
+		state.monsterHeight = entity.getMonsterHeight();
+		state.transformProgress = entity.getTransformProgress(partialTicks);
+		state.swipeProgress = entity.getSwipeProgress(partialTicks);
+		state.bodyRot = Mth.rotLerp(partialTicks, entity.yBodyRotO, entity.yBodyRot);
+		state.walkPosition = entity.walkAnimation.position(partialTicks);
+		state.walkSpeed = entity.walkAnimation.speed(partialTicks);
 		LivingEntity target = entity.getBeamTarget();
 		if (target != null) {
 			state.beamTarget = lerpedCenter(target, partialTicks);
@@ -95,12 +104,22 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	}
 
 	@Override
+	protected float getShadowRadius(MehburityRenderState state) {
+		return state.monsterHeight > 0.0F ? MONSTER_SHADOW : super.getShadowRadius(state);
+	}
+
+	@Override
 	protected int getBlockLightLevel(MehburityEntity entity, BlockPos pos) {
 		return Math.max(MIN_BLOCK_LIGHT, super.getBlockLightLevel(entity, pos));
 	}
 
 	@Override
 	public void submit(MehburityRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+		if (state.monsterHeight > 0.0F) {
+			submitMonster(state, poseStack, collector);
+			super.submit(state, poseStack, collector, camera);
+			return;
+		}
 		float emerge = easeOutBack(state.emergeProgress);
 		float bob = Mth.sin(state.ageInTicks * 0.1F) * 0.06F * state.emergeProgress;
 		float scale = 0.25F + 0.75F * emerge;
@@ -123,6 +142,34 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 			submitBeam(state, poseStack, collector, bob);
 		}
 		super.submit(state, poseStack, collector, camera);
+	}
+
+	/**
+	 * The rage form. While transforming it trembles: first the red sphere swells on the ground, then the demon grows
+	 * out of it to its full height.
+	 */
+	private static void submitMonster(MehburityRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
+		float progress = state.transformProgress;
+		poseStack.pushPose();
+		if (progress < 1.0F) {
+			float shake = 0.08F * (1.0F - progress);
+			poseStack.translate(Mth.sin(state.ageInTicks * 3.1F) * shake, 0.0F, Mth.cos(state.ageInTicks * 2.7F) * shake);
+		}
+		if (progress < TRANSFORM_SPHERE_PART) {
+			float swell = 1.0F + progress / TRANSFORM_SPHERE_PART;
+			poseStack.translate(0.0F, RADIUS * swell, 0.0F);
+			poseStack.mulPose(Axis.YP.rotationDegrees(-state.yRot));
+			poseStack.scale(swell, swell, swell);
+			int light = state.lightCoords;
+			collector.submitCustomGeometry(poseStack, ANGRY_RENDER_TYPE,
+					(pose, buffer) -> buildSphere(pose, buffer, light, OverlayTexture.NO_OVERLAY));
+		} else {
+			float grow = (progress - TRANSFORM_SPHERE_PART) / (1.0F - TRANSFORM_SPHERE_PART);
+			grow = grow * grow * (3.0F - 2.0F * grow);
+			float size = state.monsterHeight / MehburityMonsterModel.MODEL_HEIGHT;
+			MehburityMonsterModel.submit(state, poseStack, collector, size * (0.1F + 0.9F * grow));
+		}
+		poseStack.popPose();
 	}
 
 	/**
@@ -192,7 +239,7 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	}
 
 	/** Latitude/longitude sphere. u runs around the equator (0.5 = front, +Z), v from top to bottom. */
-	private static void buildSphere(PoseStack.Pose pose, VertexConsumer buffer, int light, int overlay) {
+	static void buildSphere(PoseStack.Pose pose, VertexConsumer buffer, int light, int overlay) {
 		for (int stack = 0; stack < STACKS; stack++) {
 			float v0 = (float) stack / STACKS;
 			float v1 = (float) (stack + 1) / STACKS;

@@ -16,7 +16,6 @@ NEON_CYAN = (0, 240, 255, 255)
 RAGE_RED = (235, 25, 35, 255)
 CYAN_SHADE = (0, 150, 170, 255)
 INK = (10, 10, 18, 255)
-BACKGROUND = (7, 7, 11, 255)
 CARDBOARD = (181, 131, 79)
 CARDBOARD_EDGE = (138, 96, 54)
 CARDBOARD_INSIDE = (74, 50, 32)
@@ -68,20 +67,85 @@ def angry_face_ink(fx: float, fy: float) -> bool:
     return abs(d - frown_r) < 0.035 and fy < 0.3 and abs(fx) < 0.38
 
 
-def icon(size: int):
-    """Flat 2D smiley used as the mod icon."""
-    c = (size - 1) / 2
-    r = size * 0.44
+def icon(size: int, samples: int = 4):
+    """Mod icon / logo: Mehburity's head, a shaded neon sphere turned a little to the side, with a soft glow
+    on a transparent background. Supersampled for smooth edges."""
+    c = size / 2
+    r = size * 0.40
+    halo = 1.22  # glow reaches this far (in sphere radii)
+    light = normalize((-0.55, 0.6, 0.6))
+    half = normalize((light[0], light[1], light[2] + 1.0))
+    yaw = math.radians(-18.0)
+    cos_y, sin_y = math.cos(yaw), math.sin(yaw)
+
+    def sample(sx, sy):
+        d2 = sx * sx + sy * sy
+        if d2 > 1.0:
+            d = math.sqrt(d2)
+            if d > halo:
+                return (0.0, 0.0, 0.0, 0.0)
+            a = ((halo - d) / (halo - 1.0)) ** 2 * 0.55
+            return (NEON_CYAN[0] / 255, NEON_CYAN[1] / 255, NEON_CYAN[2] / 255, a)
+        n = (sx, -sy, math.sqrt(1.0 - d2))
+        # Turn the face: the point in the sphere's own frame.
+        ox = n[0] * cos_y - n[2] * sin_y
+        oz = n[0] * sin_y + n[2] * cos_y
+        oy = n[1]
+        inked = oz > 0.0 and face_ink(ox, -oy)
+        diffuse = max(0.0, dot(n, light))
+        spec = max(0.0, dot(n, half)) ** 40
+        rim = (1.0 - n[2]) ** 3
+        base = INK if inked else NEON_CYAN
+        shade = 0.38 + 0.72 * diffuse
+        out = []
+        for i in range(3):
+            ch = base[i] / 255 * shade + spec * (0.35 if inked else 0.6)
+            if not inked:
+                ch += rim * 0.35 * (NEON_CYAN[i] / 255)
+            out.append(min(1.0, ch))
+        return (out[0], out[1], out[2], 1.0)
 
     def px(x, y):
-        dx, dy = (x - c) / r, (y - c) / r
-        d = math.hypot(dx, dy)
-        if d > 1.0:
-            return BACKGROUND
-        if face_ink(dx, dy):
-            return INK
-        t = max(0.0, min(1.0, (dx + dy) / 2 + 0.5))
-        return tuple(int(a + (b - a) * t * 0.7) for a, b in zip(NEON_CYAN[:3], CYAN_SHADE[:3])) + (255,)
+        acc = [0.0, 0.0, 0.0, 0.0]
+        for j in range(samples):
+            for i in range(samples):
+                sx = (x + (i + 0.5) / samples - c) / r
+                sy = (y + (j + 0.5) / samples - c) / r
+                cr, cg, cb, a = sample(sx, sy)
+                acc[0] += cr * a
+                acc[1] += cg * a
+                acc[2] += cb * a
+                acc[3] += a
+        n = samples * samples
+        a = acc[3] / n
+        if a <= 0.0:
+            return (0, 0, 0, 0)
+        return (int(acc[0] / acc[3] * 255), int(acc[1] / acc[3] * 255), int(acc[2] / acc[3] * 255), int(a * 255))
+
+    return px
+
+
+def normalize(v):
+    length = math.sqrt(sum(x * x for x in v))
+    return tuple(x / length for x in v)
+
+
+def dot(a, b):
+    return sum(x * y for x, y in zip(a, b))
+
+
+def monster_skin(width: int, height: int):
+    """The demon's skin: near-black with glowing red veins running along the limbs."""
+
+    def px(x, y):
+        n = noise(x, y)
+        vein = abs(math.sin(x * 0.42 + 2.2 * math.sin(y * 0.13)))
+        branch = abs(math.sin(y * 0.55 + 1.7 * math.sin(x * 0.21)))
+        if vein < 0.14 or (branch < 0.08 and (x // 8 + y // 8) % 3 == 0):
+            return (255, 50 + n * 2, 30, 255)
+        glow = max(0.0, 0.4 - vein) / 0.4
+        r = 24 + n + int(150 * glow * glow)
+        return (min(255, r), 12 + n // 2, 18 + n // 2, 255)
 
     return px
 
@@ -146,10 +210,20 @@ def box(width: int, height: int):
 
 
 if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) >= 3 and sys.argv[1] == "--logo":
+        # A large copy of the logo:  python tools/gen_textures.py --logo <file.png> [size]
+        size = int(sys.argv[3]) if len(sys.argv) > 3 else 512
+        write_png(Path(sys.argv[2]), size, size, icon(size, 3))
+        print("wrote", sys.argv[2])
+        sys.exit(0)
+
     outputs = [
         (ASSETS / "icon.png", 128, 128, icon(128)),
         (ENTITY / "mehburity.png", 128, 64, sphere(128, 64)),
         (ENTITY / "mehburity_angry.png", 128, 64, sphere(128, 64, RAGE_RED, angry_face_ink)),
+        (ENTITY / "mehburity_monster.png", 64, 64, monster_skin(64, 64)),
         (ENTITY / "box.png", 64, 64, box(64, 64)),
     ]
     for path, w, h, fn in outputs:

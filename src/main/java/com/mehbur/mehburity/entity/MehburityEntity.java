@@ -1,6 +1,7 @@
 package com.mehbur.mehburity.entity;
 
 import com.mehbur.mehburity.anger.Anger;
+import com.mehbur.mehburity.anger.MonsterGoal;
 import com.mehbur.mehburity.anger.RageTargetGoal;
 import com.mehbur.mehburity.build.BuildGoal;
 import com.mehbur.mehburity.build.BuildJob;
@@ -20,10 +21,12 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
@@ -57,11 +60,22 @@ public class MehburityEntity extends PathfinderMob {
 			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.FLOAT);
 	private static final EntityDataAccessor<Boolean> DATA_RAGING =
 			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.BOOLEAN);
+	/** Height of the rage form (the demon) in blocks, 0 while it is a sphere. The hitbox and the model follow it. */
+	private static final EntityDataAccessor<Float> DATA_MONSTER_HEIGHT =
+			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.FLOAT);
+	/** Ticks left of turning into the demon, and how long the whole transformation takes. Synced for the animation. */
+	private static final EntityDataAccessor<Integer> DATA_TRANSFORM_TICKS =
+			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.INT);
+	private static final EntityDataAccessor<Integer> DATA_TRANSFORM_DURATION =
+			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.INT);
 	public static final int EMERGE_DURATION = 30;
 	private static final int VALIDATE_INTERVAL = 20;
 	/** Entity event sent when a beam shot lands; the client flashes the beam. */
 	public static final byte EVENT_BEAM_FIRED = 100;
 	public static final int BEAM_FLASH_TICKS = 5;
+	/** Entity event sent when the demon swipes with its claws; the client swings the arm. */
+	public static final byte EVENT_CLAW_SWIPE = 101;
+	public static final int SWIPE_TICKS = 12;
 	/** How long the client takes to draw the beam at full charge (just looks; the real charge is server-side). */
 	private static final float BEAM_CHARGE_VISUAL_TICKS = 12.0F;
 
@@ -76,6 +90,7 @@ public class MehburityEntity extends PathfinderMob {
 	private int rageTicks;
 	private int clientBeamTicks;
 	private int clientFlashTicks;
+	private int clientSwipeTicks;
 
 	public MehburityEntity(EntityType<? extends MehburityEntity> type, Level level) {
 		super(type, level);
@@ -99,6 +114,9 @@ public class MehburityEntity extends PathfinderMob {
 		entityData.define(DATA_BEAM_TARGET, 0);
 		entityData.define(DATA_ANGER, 0.0F);
 		entityData.define(DATA_RAGING, false);
+		entityData.define(DATA_MONSTER_HEIGHT, 0.0F);
+		entityData.define(DATA_TRANSFORM_TICKS, 0);
+		entityData.define(DATA_TRANSFORM_DURATION, 0);
 	}
 
 	@Override
@@ -107,6 +125,8 @@ public class MehburityEntity extends PathfinderMob {
 		// A rage overrides everything: the only target is the culprit.
 		this.targetSelector.addGoal(0, new RageTargetGoal(this));
 		this.targetSelector.addGoal(1, targeting);
+		// The rage form walks and claws instead of flying and shooting.
+		this.goalSelector.addGoal(0, new MonsterGoal(this));
 		// Fighting comes before following; the companion manager still teleports it back if it gets too far.
 		this.goalSelector.addGoal(1, new BeamAttackGoal(this, targeting));
 		// Jobs pause for fights and keep following from pulling it away from the work. Only one job runs at a time.
@@ -199,14 +219,62 @@ public class MehburityEntity extends PathfinderMob {
 		return rageTicks;
 	}
 
-	/** Starts (culprit) or ends (null) the rage. Called by {@link Anger}. */
+	/** Starts (culprit) or ends (null) the rage. Called by {@link Anger}. Ending it also ends the rage form. */
 	public void setRageCulprit(@Nullable LivingEntity culprit) {
 		this.rageCulprit = culprit;
 		this.rageTicks = 0;
 		this.entityData.set(DATA_RAGING, culprit != null);
 		if (culprit == null) {
 			this.setTarget(null);
+			setMonster(0.0F, 0);
 		}
+	}
+
+	// ---------------------------------------------------------------- rage form
+
+	public boolean isMonster() {
+		return getMonsterHeight() > 0.0F;
+	}
+
+	public float getMonsterHeight() {
+		// The entity type's size is looked up once before the synced data exists.
+		return this.entityData == null ? 0.0F : this.entityData.get(DATA_MONSTER_HEIGHT);
+	}
+
+	/** Turns into the demon ({@code height} blocks, growing for {@code transformTicks}), or back into a sphere (0). */
+	public void setMonster(float height, int transformTicks) {
+		this.entityData.set(DATA_TRANSFORM_DURATION, height > 0.0F ? transformTicks : 0);
+		this.entityData.set(DATA_TRANSFORM_TICKS, height > 0.0F ? transformTicks : 0);
+		this.entityData.set(DATA_MONSTER_HEIGHT, Math.max(0.0F, height));
+		this.getNavigation().stop();
+		this.setDeltaMovement(Vec3.ZERO);
+	}
+
+	public boolean isTransforming() {
+		return this.entityData.get(DATA_TRANSFORM_TICKS) > 0;
+	}
+
+	/** 0 when the transformation just started, 1 when the demon is fully grown (also when it is not a monster). */
+	public float getTransformProgress(float partialTicks) {
+		int left = this.entityData.get(DATA_TRANSFORM_TICKS);
+		int duration = this.entityData.get(DATA_TRANSFORM_DURATION);
+		if (left <= 0 || duration <= 0) {
+			return 1.0F;
+		}
+		return Math.min(1.0F, (duration - left + partialTicks) / duration);
+	}
+
+	/** Client: 0 → the claw swipe just started, 1 → done (or no swipe). */
+	public float getSwipeProgress(float partialTicks) {
+		return clientSwipeTicks <= 0 ? 1.0F : Math.min(1.0F, (SWIPE_TICKS - clientSwipeTicks + partialTicks) / SWIPE_TICKS);
+	}
+
+	@Override
+	protected EntityDimensions getDefaultDimensions(Pose pose) {
+		float height = getMonsterHeight();
+		// Skinny: 2 blocks wide at 18 tall. It walks through blocks, so the size never gets it stuck.
+		return height > 0.0F ? EntityDimensions.scalable(height / 9.0F, height).withEyeHeight(height * 0.9F)
+				: super.getDefaultDimensions(pose);
 	}
 
 	/** Right-clicking with a cake calms it down. */
@@ -274,6 +342,10 @@ public class MehburityEntity extends PathfinderMob {
 		super.onSyncedDataUpdated(accessor);
 		if (DATA_BEAM_TARGET.equals(accessor)) {
 			clientBeamTicks = 0;
+		} else if (DATA_MONSTER_HEIGHT.equals(accessor)) {
+			// The demon walks through walls (an 18-block body would never fit through a cave).
+			this.noPhysics = isMonster();
+			this.refreshDimensions();
 		}
 	}
 
@@ -281,6 +353,8 @@ public class MehburityEntity extends PathfinderMob {
 	public void handleEntityEvent(byte id) {
 		if (id == EVENT_BEAM_FIRED) {
 			clientFlashTicks = BEAM_FLASH_TICKS;
+		} else if (id == EVENT_CLAW_SWIPE) {
+			clientSwipeTicks = SWIPE_TICKS;
 		} else {
 			super.handleEntityEvent(id);
 		}
@@ -296,6 +370,9 @@ public class MehburityEntity extends PathfinderMob {
 			if (clientFlashTicks > 0) {
 				clientFlashTicks--;
 			}
+			if (clientSwipeTicks > 0) {
+				clientSwipeTicks--;
+			}
 			return;
 		}
 
@@ -303,6 +380,11 @@ public class MehburityEntity extends PathfinderMob {
 			rageTicks++;
 		}
 		Anger.tick(this);
+
+		int transform = this.entityData.get(DATA_TRANSFORM_TICKS);
+		if (transform > 0) {
+			this.entityData.set(DATA_TRANSFORM_TICKS, transform - 1);
+		}
 
 		int emerge = this.entityData.get(DATA_EMERGE_TICKS);
 		if (emerge > 0) {

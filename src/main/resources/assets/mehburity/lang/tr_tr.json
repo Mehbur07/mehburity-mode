@@ -108,5 +108,11 @@
 	"mehburity.speech.anger.status_angry": "Kızgınım! Dikkat et... (öfke %s/100)",
 	"mehburity.speech.anger.status_raging": "ÇILDIRDIM! (öfke %s/100)",
 	"mehburity.command.calmed": "%s Mehburity sakinleştirildi.",
-	"subtitles.mehburity.mehburity.rage": "Mehburity öfkeyle kükrüyor"
+	"subtitles.mehburity.mehburity.rage": "Mehburity öfkeyle kükrüyor",
+	"death.attack.mehburity.claw": "%1$s, %2$s tarafından parçalandı",
+	"death.attack.mehburity.claw.player": "%1$s, %3$s ile savaşırken %2$s tarafından parçalandı",
+	"subtitles.mehburity.mehburity.monster.transform": "Mehburity canavara dönüşüyor",
+	"subtitles.mehburity.mehburity.monster.step": "Dev ayak sesleri",
+	"subtitles.mehburity.mehburity.monster.swipe": "Canavar pençesi savruluyor",
+	"subtitles.mehburity.mehburity.monster.shrink": "Mehburity eski haline dönüyor"
 }

@@ -4,8 +4,7 @@ Minecraft **26.2 / Fabric** modu. Mehburity, oyuncunun yanında süzülen neon c
 yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar ve sinirlenince
 18 blokluk bir canavara dönüşür.
 
-> Durum: **Faz 6 (öfke) tamamlandı.** Canavar formu (18 blokluk iblis) sonraki fazda gelecek;
-> tam README Faz 8'de.
+> Durum: **Faz 7 (canavar formu) tamamlandı.** Tam README Faz 8'de, sesli konuşma (bas-konuş) Faz 9'da.
 
 ## Özellikler (şu an)
 
@@ -66,9 +65,8 @@ yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar
 
   Hasar almaz, sadece fark eder. **33**'te "Hey, yapma şunu!", **66**'da "Beni gerçekten kızdırıyorsun..." der ve
   üstünden kızgın partiküller çıkar, küre ara ara kırmızı yanıp söner. **100**'de **öfke nöbetine** girer:
-  kükrer, kırmızı bir küreye ve kızgın bir yüze dönüşür, kazmayı/inşaatı bırakır ve **sadece suçluyu** kovalar
-  (daha hızlı, 24 bloktan uzaklaşırsa yanına ışınlanır) ve kırmızı, daha güçlü bir ışınla (10 hasar) vurur.
-  Başka kimseye dokunmaz. Nöbet şöyle biter:
+  kükrer, kazmayı/inşaatı bırakır ve **canavar formuna** geçer (aşağıda), sonra **sadece suçluyu** kovalar
+  (24 bloktan uzaklaşırsa yanına ışınlanır). Başka kimseye dokunmaz. Nöbet şöyle biter:
   - Suçlu **ölürse** → sakinleşir (öfke 0),
   - **Pasta** veya **özür** göstergeyi 40'ın altına indirirse,
   - Suçlu kaçarsa (oyundan çıkar, başka boyuta geçer) ya da **90 sn** dolarsa.
@@ -82,6 +80,18 @@ yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar
   Öfke dünya kaydında saklanır: oyundan çıkıp girmek sıfırlamaz. Gemini öfkesini bilir ve ona göre konuşur.
   Sunucu isterse oyunculara (`anger.rageAtPlayers`) ya da sahibine (`anger.rageAtOwner`) öfkelenmesini kapatabilir;
   o zaman o kişiye en fazla küser, nöbete girmez.
+- **Canavar formu:** Öfke nöbetinde Mehburity **18 blok boyunda, sıska bir iblise** dönüşür. Kükrer, titrer, kırmızı
+  küre olarak yere iner ve dumanlar içinde 2 saniyede büyür (bu, suçlunun kaçmak için kazandığı süredir). Uzun bacaklar,
+  dizlerine kadar inen kollar, her elde üç pençe ve iki boynuz. Kafası Mehburity'nin kırmızı, kızgın yüzlü küresidir
+  ve suçluya döner. Gövdesi koyu, kırmızı parlayan damarlıdır. Verity karanlığında da görünür.
+  - **Yürüyerek** kovalar (saniyede 6,5 blok, koşan oyuncudan hızlı), ağır ayak sesleriyle. **Blokların içinden
+    geçer**: mağarada sıkışmaz, hiçbir bloğu kırmaz. Ayakları yüzeydedir; suçlu yerin altına saklanırsa onun hizasına iner.
+  - 5 blok yakına gelince kolunu kaldırıp **pençesiyle** vurur (24 hasar, zırh azaltır), suçluyu savurur. Kule yapmak
+    kurtarmaz: ayağından başına kadar her yere uzanır.
+  - Ölüm mesajı: "… Mehburity tarafından parçalandı".
+  - Nöbet bitince dumanla tekrar küreye döner, sahibinin yanına ışınlanır (sahibi yoksa yüzeye çıkar).
+  - `monster.enabled: false` ile kapatılırsa öfke nöbeti kırmızı bir küre olarak kalır: daha hızlı uçar ve kırmızı,
+    daha güçlü bir ışınla (10 hasar) vurur.
 - **Mehburity:** Havada süzülen, pürüzsüz neon cyan küre; yüzü baktığı yöne döner. Seni takip eder,
   uzakta kalırsa (veya başka boyuttaysan) yanına ışınlanır.
 - **Ölümsüz:** Hiçbir hasar almaz, `/kill` ile ölmez; boşluğa düşerse sahibinin yanına döner.
@@ -189,13 +199,21 @@ Gemini ile konuşma ve ses Google'ın API kotasından düşer (ücretsiz katman�
 | `anger.calmBelow` | 40 | Pasta/özür göstergeyi buna indirince nöbet biter |
 | `anger.cakeCalm` / `apologyCalm` | 60 / 25 | Pastanın / özrün düşürdüğü öfke |
 | `anger.apologyCooldownSeconds` | 30 | Aynı oyuncunun özrü bu sürede bir sayılır |
-| `anger.rageDamage` | 10.0 | Nöbetteki ışının hasarı |
-| `anger.rageCooldownTicks` | 10 | Nöbette iki atış arası bekleme (tick) |
-| `anger.rageSpeed` | 3.0 | Suçluyu kovalarken hız çarpanı |
+| `anger.rageDamage` | 10.0 | Nöbetteki ışının hasarı (canavar formu kapalıyken) |
+| `anger.rageCooldownTicks` | 10 | Nöbette iki atış arası bekleme (tick, canavar formu kapalıyken) |
+| `anger.rageSpeed` | 3.0 | Suçluyu kovalarken uçuş hız çarpanı (canavar formu kapalıyken) |
 | `anger.maxRageSeconds` | 90 | Bu süreden sonra kovalamayı bırakır |
 | `anger.rageAtPlayers` | true | Oyunculara öfke nöbeti (kapalıyken sadece canavarlar suçlu olabilir) |
 | `anger.rageAtOwner` | true | Sahibine de öfke nöbeti (Verity gibi) |
 | `anger.insults` | ["aptal", "salak", ...] | Hakaret sayılan kelimeler (büyük/küçük harf ve Türkçe karakter fark etmez; "aptalsın" da sayılır) |
+| `monster.enabled` | true | Öfke nöbetinde canavar formu |
+| `monster.height` | 18.0 | İblisin boyu (4–32 blok) |
+| `monster.transformTicks` | 40 | Dönüşüm süresi (tick, 20 = 1 sn) |
+| `monster.blocksPerSecond` | 6.5 | Yürüme hızı (koşan oyuncu ≈ 5,6) |
+| `monster.reach` | 5.0 | Pençe menzili (blok) |
+| `monster.damage` | 24.0 | Bir pençe darbesinin hasarı |
+| `monster.attackCooldownTicks` | 30 | İki pençe darbesi arası bekleme (tick) |
+| `monster.knockback` | 1.2 | Darbenin savurma gücü |
 | `ai.enabled` | true | Mehburity sohbete cevap versin mi |
 | `ai.chatPrefixes` | ["mehburity", "mehbur"] | Mesaj bunlardan biriyle başlarsa Mehburity'ye sorulmuş sayılır |
 | `ai.hearingRadius` | 32.0 | Cevabı sohbette görebilecek oyuncuların uzaklığı (blok) |
@@ -221,17 +239,20 @@ Kendi çizimlerini **aynı yol ve boyutla** koyman yeterli:
 | Dosya | Boyut | Ne |
 |---|---|---|
 | `src/main/resources/assets/mehburity/textures/entity/mehburity/mehburity.png` | 128×64 | Mehburity küresi (eşdikdörtgen: ortası = yüz, üst kenar = tepe) |
-| `src/main/resources/assets/mehburity/textures/entity/mehburity/mehburity_angry.png` | 128×64 | Öfke nöbetindeki kırmızı küre ve kızgın yüz (aynı düzen) |
+| `src/main/resources/assets/mehburity/textures/entity/mehburity/mehburity_angry.png` | 128×64 | Öfke nöbetindeki kırmızı küre ve kızgın yüz (aynı düzen); canavarın kafası da bu |
+| `src/main/resources/assets/mehburity/textures/entity/mehburity/mehburity_monster.png` | 64×64 | Canavarın derisi (her kutu yüzüne bir kez gerilir) |
 | `src/main/resources/assets/mehburity/textures/entity/mehburity/box.png` | 64×64 | Kutu (gövde 0,0'da; ön/arka kapaklar 0,24'te; yan kapaklar 0,32'de) |
-| `src/main/resources/assets/mehburity/icon.png` | 128×128 | Mod ikonu |
+| `src/main/resources/assets/mehburity/icon.png` | 128×128 | Mod ikonu: Mehburity'nin kafası (gölgeli neon küre, şeffaf arka plan) |
 
-Yer tutucuları yeniden üretmek için: `python tools/gen_textures.py`
+Yer tutucuları yeniden üretmek için: `python tools/gen_textures.py`. Logonun büyük bir kopyası için:
+`python tools/gen_textures.py --logo "Mehburity Logo.png" 512`
 
 Sesler şimdilik vanilla seslere yönlendirilmiş (`assets/mehburity/sounds.json`). Kendi seslerin için
 `.ogg` dosyalarını `src/main/resources/assets/mehburity/sounds/` klasörüne koy ve `sounds.json`'da
 `{"name": "minecraft:...", "type": "event"}` yerine `"mehburity:dosya_adi"` yaz.
 Ses olayları: `box.shake`, `box.open`, `mehburity.emerge`, `mehburity.speak` (anahtar yokken çalan "cıvıltı"),
-`mehburity.beam.charge` (ışın şarjı), `mehburity.beam.fire` (atış), `mehburity.rage` (öfke nöbeti kükremesi).
+`mehburity.beam.charge` (ışın şarjı), `mehburity.beam.fire` (atış), `mehburity.rage` (öfke nöbeti kükremesi),
+`mehburity.monster.transform` / `step` / `swipe` / `shrink` (canavara dönüşme, ayak sesi, pençe, küreye dönme).
 Mehburity'nin konuşma sesi dosya değil, Gemini TTS ile üretilir.
 
 ## Kurulum (geliştirme)
@@ -274,7 +295,8 @@ src/main/java/com/mehbur/mehburity/
   combat/   Savaş: hedef kuralları (CombatTargets), hedef seçimi, ışın saldırısı, hasar tipi
   mining/   Madencilik: kurallar (MiningRules), kazma hedefi (MineGoal), çanta (MiningBag), sohbet emirleri (MiningChat)
   build/    Ev: plan (HousePlan), stiller (HouseStyle), inşaat hedefi (BuildGoal), geri alma (Building), sohbet emirleri (BuildChat)
-  anger/    Öfke: gösterge ve nöbet (Anger), suçluyu kovalama (RageTargetGoal), özür/hakaret (AngerChat)
+  anger/    Öfke: gösterge ve nöbet (Anger), suçluyu hedefleme (RageTargetGoal), canavar formunda kovalama ve pençe
+            (MonsterGoal), özür/hakaret (AngerChat)
 src/client/java/com/mehbur/mehburity/client/
   render/   Küre renderer'ı (+ ışın), kutu modeli
   verity/   Karanlığın istemci tarafı (lightmap mixin'i)

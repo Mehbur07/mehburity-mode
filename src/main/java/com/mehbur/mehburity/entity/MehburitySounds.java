@@ -19,6 +19,11 @@ public final class MehburitySounds {
 	public static final SoundEvent BEAM_FIRE = register("mehburity.beam.fire");
 	/** Mehburity flies into a rage. */
 	public static final SoundEvent RAGE = register("mehburity.rage");
+	/** The rage form: turning into the demon, its footsteps, a claw swipe and shrinking back. */
+	public static final SoundEvent MONSTER_TRANSFORM = register("mehburity.monster.transform");
+	public static final SoundEvent MONSTER_STEP = register("mehburity.monster.step");
+	public static final SoundEvent MONSTER_SWIPE = register("mehburity.monster.swipe");
+	public static final SoundEvent MONSTER_SHRINK = register("mehburity.monster.shrink");
 
 	private MehburitySounds() {
 	}

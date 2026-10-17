@@ -108,5 +108,11 @@
 	"mehburity.speech.anger.status_angry": "I'm angry! Careful... (anger %s/100)",
 	"mehburity.speech.anger.status_raging": "I'M IN A RAGE! (anger %s/100)",
 	"mehburity.command.calmed": "Calmed %s Mehburity.",
-	"subtitles.mehburity.mehburity.rage": "Mehburity roars in rage"
+	"subtitles.mehburity.mehburity.rage": "Mehburity roars in rage",
+	"death.attack.mehburity.claw": "%1$s was torn apart by %2$s",
+	"death.attack.mehburity.claw.player": "%1$s was torn apart by %2$s while fighting %3$s",
+	"subtitles.mehburity.mehburity.monster.transform": "Mehburity turns into a monster",
+	"subtitles.mehburity.mehburity.monster.step": "Giant footsteps",
+	"subtitles.mehburity.mehburity.monster.swipe": "Monster claws swipe",
+	"subtitles.mehburity.mehburity.monster.shrink": "Mehburity shrinks back"
 }

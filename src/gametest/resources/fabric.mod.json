@@ -11,7 +11,8 @@
 			"com.mehbur.mehburity.test.MehburityCombatGameTests",
 			"com.mehbur.mehburity.test.MehburityMiningGameTests",
 			"com.mehbur.mehburity.test.MehburityBuildGameTests",
-			"com.mehbur.mehburity.test.MehburityAngerGameTests"
+			"com.mehbur.mehburity.test.MehburityAngerGameTests",
+			"com.mehbur.mehburity.test.MehburityMonsterGameTests"
 		],
 		"fabric-client-gametest": [
 			"com.mehbur.mehburity.test.MehburityClientGameTest"
