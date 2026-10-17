@@ -176,9 +176,28 @@ def dot(a, b):
 
 
 def monster_skin(width: int, height: int):
-    """The demon's skin: near-black with glowing red veins running along the limbs."""
+    """The rage form's skin. Top half: smooth neon cyan with a faint glow along the limbs. Bottom half: deep teal
+    for the horns, claws and spikes."""
 
     def px(x, y):
+        n = noise(x, y) // 3
+        if y >= height // 2:
+            t = (y - height // 2) / (height // 2 - 1)  # darker towards the tips
+            return (0, max(0, int(110 - 50 * t) + n), max(0, int(130 - 50 * t) + n), 255)
+        # A soft brighter band down the middle of each face (u), like light running along the limb.
+        band = 1.0 - abs((x % 16) - 7.5) / 7.5
+        return (int(20 * band), min(255, 214 + int(30 * band) + n), min(255, 234 + int(20 * band) + n), 255)
+
+    return px
+
+
+def watcher_skin(width: int, height: int):
+    """The watcher's skin: near-black with glowing red veins on top, plain dark for horns and claws below."""
+
+    def px(x, y):
+        if y >= height // 2:
+            n = noise(x, y) // 2
+            return (30 + n, 10, 14, 255)
         n = noise(x, y)
         vein = abs(math.sin(x * 0.42 + 2.2 * math.sin(y * 0.13)))
         branch = abs(math.sin(y * 0.55 + 1.7 * math.sin(x * 0.21)))
@@ -262,14 +281,17 @@ if __name__ == "__main__":
 
     outputs = [
         (ASSETS / "icon.png", 128, 128, icon(128)),
-        (ENTITY / "mehburity.png", 128, 64, sphere(128, 64)),
-        (ENTITY / "mehburity_angry.png", 128, 64, sphere(128, 64, RAGE_RED, angry_face_ink)),
-        (ENTITY / "mehburity_annoyed.png", 128, 64, sphere(128, 64, NEON_CYAN, annoyed_face_ink)),
-        (ENTITY / "mehburity_mad.png", 128, 64, sphere(128, 64, NEON_CYAN, angry_face_ink)),
-        (ENTITY / "mehburity_scared.png", 128, 64, sphere(128, 64, NEON_CYAN, scared_face_ink)),
+        # Spheres at 256x128, so the faces stay crisp on the 2.4-block head of the rage form.
+        (ENTITY / "mehburity.png", 256, 128, sphere(256, 128)),
+        (ENTITY / "mehburity_angry.png", 256, 128, sphere(256, 128, RAGE_RED, angry_face_ink)),
+        (ENTITY / "mehburity_annoyed.png", 256, 128, sphere(256, 128, NEON_CYAN, annoyed_face_ink)),
+        (ENTITY / "mehburity_mad.png", 256, 128, sphere(256, 128, NEON_CYAN, angry_face_ink)),
+        (ENTITY / "mehburity_scared.png", 256, 128, sphere(256, 128, NEON_CYAN, scared_face_ink)),
         (ENTITY / "mehburity_monster.png", 64, 64, monster_skin(64, 64)),
-        # The watcher: Mehburity's smile, glowing white on a near-black head.
-        (ENTITY / "watcher.png", 128, 64, sphere(128, 64, (22, 12, 16, 255), face_ink, (245, 240, 235, 255))),
+        # The watcher: Mehburity's smile, glowing white on a near-black head, and a black body with red veins.
+        (ENTITY / "watcher.png", 256, 128, sphere(256, 128, (22, 12, 16, 255), face_ink, (245, 240, 235, 255))),
+        (ENTITY / "watcher_skin.png", 64, 64, watcher_skin(64, 64)),
+        (ITEMS / "mehburity.png", 16, 16, icon(16, 4)),
         (ITEMS / "flashlight.png", 16, 16, flashlight(16, False)),
         (ITEMS / "flashlight_on.png", 16, 16, flashlight(16, True)),
         (ENTITY / "box.png", 64, 64, box(64, 64)),

@@ -13,6 +13,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.phys.Vec3;
@@ -134,7 +136,7 @@ public final class CompanionManager {
 		level.sendParticles(ParticleTypes.END_ROD, spot.x, spot.y + 0.5, spot.z, 15, 0.3, 0.3, 0.3, 0.02);
 
 		MehburitySpeech.say(player, MehburitySpeech.text("box.appeared",
-				"A box appeared next to you... Hit it (left click) to open it."));
+				"A box appeared next to you... Right click it to open it."));
 		MehburityMod.LOGGER.info("Gave a Mehburity box to {}", player.getGameProfile().name());
 		return box;
 	}
@@ -222,6 +224,45 @@ public final class CompanionManager {
 				: previous.withEntity(mehburity.getUUID()).withMode(mode).withStowed(false));
 		level.addFreshEntity(mehburity);
 		return mehburity;
+	}
+
+	// ---------------------------------------------------------------- carrying
+
+	/** The owner's right click: Mehburity goes into their inventory as an item and leaves the world. */
+	public static void carry(ServerPlayer owner, MehburityEntity mehburity) {
+		ServerLevel level = (ServerLevel) mehburity.level();
+		update(owner, companion -> companion.withMode(CompanionMode.CARRIED).withStowed(false).withAnger(mehburity.getAnger()));
+		level.sendParticles(new DustParticleOptions(MehburityBoxEntity.NEON_CYAN, 1.0F),
+				mehburity.getX(), mehburity.getY() + 0.4, mehburity.getZ(), 15, 0.25, 0.25, 0.25, 0.0);
+		level.playSound(null, mehburity.getX(), mehburity.getY(), mehburity.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.6F, 1.4F);
+		mehburity.discard();
+		ItemStack item = MehburityItem.of(owner.getUUID());
+		if (!owner.getInventory().add(item)) {
+			owner.drop(item, false);
+		}
+		MehburitySpeech.say(owner, MehburitySpeech.text("carry.picked_up", "Wheee! Right click to let me out again."));
+	}
+
+	/**
+	 * Lets a carried Mehburity out at {@code spot} (beside the owner when null). False when it is not carried, e.g.
+	 * it was called back with {@code /mehburity cagir} in the meantime.
+	 */
+	public static boolean release(ServerPlayer owner, @Nullable Vec3 spot) {
+		CompanionRegistry.Companion companion = CompanionRegistry.companion(owner.level().getServer(), owner.getUUID());
+		if (companion == null || companion.mode() != CompanionMode.CARRIED) {
+			return false;
+		}
+		MehburityEntity mehburity = spot == null ? spawnCompanion(owner, CompanionMode.FOLLOW)
+				: spawnCompanion(owner.level(), owner.getUUID(), spot, CompanionMode.FOLLOW);
+		if (mehburity == null) {
+			return false;
+		}
+		owner.level().sendParticles(new DustParticleOptions(MehburityBoxEntity.NEON_CYAN, 1.2F),
+				mehburity.getX(), mehburity.getY() + 0.4, mehburity.getZ(), 20, 0.3, 0.3, 0.3, 0.0);
+		owner.level().playSound(null, mehburity.getX(), mehburity.getY(), mehburity.getZ(), MehburitySounds.EMERGE,
+				SoundSource.NEUTRAL, 0.8F, 1.3F);
+		MehburitySpeech.say(owner, MehburitySpeech.text("carry.released", "Phew, it was dark in there!"));
+		return true;
 	}
 
 	// ---------------------------------------------------------------- commands

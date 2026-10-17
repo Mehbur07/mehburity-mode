@@ -10,21 +10,25 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
 
 /**
- * The cardboard box Mehburity arrives in. Only its owner can open it, by hitting it (left click).
- * Opening plays an animation for {@code verity.box.openTicks} ticks, then Mehburity rises out and the box vanishes.
+ * The cardboard box Mehburity arrives in. Only its owner can open it, with a right click. Opening plays an animation
+ * for {@code verity.box.openTicks} ticks, then Mehburity rises out and the box vanishes.
  */
 public class MehburityBoxEntity extends Entity {
 	/** -1 while closed, otherwise ticks since opening started. Synced for the lid animation. */
@@ -83,17 +87,46 @@ public class MehburityBoxEntity extends Entity {
 		return true;
 	}
 
+	/** Right click opens the box, for its owner only. */
+	@Override
+	public InteractionResult interact(Player player, InteractionHand hand, Vec3 location) {
+		if (hand != InteractionHand.MAIN_HAND) {
+			return InteractionResult.PASS;
+		}
+		if (player instanceof ServerPlayer serverPlayer) {
+			if (!isOwner(serverPlayer)) {
+				notYours(serverPlayer);
+			} else {
+				tryOpen(serverPlayer);
+			}
+		}
+		return InteractionResult.SUCCESS;
+	}
+
+	/** Hitting it does nothing but remind how it opens; the box takes no damage and gives no knockback. */
 	@Override
 	public boolean skipAttackInteraction(Entity source) {
-		if (source instanceof ServerPlayer player && !tryOpen(player)) {
-			ServerPlayer owner = ownerId == null ? null : player.level().getServer().getPlayerList().getPlayer(ownerId);
-			MehburitySpeech.say(player, owner != null
-					? MehburitySpeech.text("box.not_yours", "This box belongs to %s.", owner.getDisplayName())
-					: MehburitySpeech.text("box.not_yours_unknown", "This box is not yours."));
+		if (source instanceof ServerPlayer player && !isOpening()) {
+			if (isOwner(player)) {
+				MehburitySpeech.say(player, MehburitySpeech.text("box.how_to_open", "Right click the box to open it."));
+			} else {
+				notYours(player);
+			}
 		}
-		// Never run the normal attack: the box takes no damage and gives no knockback.
 		return true;
 	}
+
+	private boolean isOwner(ServerPlayer player) {
+		return ownerId != null && ownerId.equals(player.getUUID());
+	}
+
+	private void notYours(ServerPlayer player) {
+		ServerPlayer owner = ownerId == null ? null : player.level().getServer().getPlayerList().getPlayer(ownerId);
+		MehburitySpeech.say(player, owner != null
+				? MehburitySpeech.text("box.not_yours", "This box belongs to %s.", owner.getDisplayName())
+				: MehburitySpeech.text("box.not_yours_unknown", "This box is not yours."));
+	}
+
 
 	@Override
 	public void tick() {
@@ -203,7 +236,7 @@ public class MehburityBoxEntity extends Entity {
 	@Override
 	protected void readAdditionalSaveData(ValueInput input) {
 		ownerId = input.read("Owner", UUIDUtil.CODEC).orElse(null);
-		// An opening that was interrupted by a save restarts closed; the owner just hits it again.
+		// An opening that was interrupted by a save restarts closed; the owner just right clicks it again.
 		this.entityData.set(DATA_OPEN_TICKS, -1);
 	}
 }

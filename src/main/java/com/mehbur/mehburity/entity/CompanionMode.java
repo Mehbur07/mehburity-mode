@@ -8,7 +8,9 @@ public enum CompanionMode implements StringRepresentable {
 	/** Flies after its owner and teleports to them when left behind. */
 	FOLLOW("follow"),
 	/** Hovers where it was told to wait. */
-	STAY("stay");
+	STAY("stay"),
+	/** In its owner's inventory as an item ({@link MehburityItem}); not in the world until let out again. */
+	CARRIED("carried");
 
 	public static final Codec<CompanionMode> CODEC = StringRepresentable.fromEnum(CompanionMode::values);
 

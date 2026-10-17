@@ -11,6 +11,7 @@ import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.CompanionRegistry;
 import com.mehbur.mehburity.entity.MehburityBoxEntity;
+import com.mehbur.mehburity.entity.MehburityItem;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext;
@@ -53,8 +54,8 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * End-to-end client test (run with {@code gradlew runClientGameTest}). A real client: finds the first-join box,
- * opens it with a left click, checks that Verity darkness really darkens the night, then leaves and rejoins
- * to make sure Mehburity comes back. Screenshots land in {@code build/run/clientGameTest/screenshots}.
+ * opens it with a right click, picks Mehburity up and lets it out again, checks that Verity darkness really darkens
+ * the night, then leaves and rejoins to make sure Mehburity comes back. Screenshots land in {@code build/run/clientGameTest/screenshots}.
  */
 public final class MehburityClientGameTest implements FabricClientGameTest {
 	@Override
@@ -85,13 +86,14 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 			context.waitTicks(10);
 			context.takeScreenshot("mehburity-1-box");
 
-			// Left click opens it; Mehburity rises out.
-			context.getInput().pressKey(options -> options.keyAttack);
+			// Right click opens it; Mehburity rises out.
+			context.getInput().pressKey(options -> options.keyUse);
 			context.waitTicks(15);
 			context.takeScreenshot("mehburity-2-box-opening");
 			server.waitFor(s -> CompanionManager.find(s, playerId) != null, 200);
 			context.waitTicks(40);
 			context.takeScreenshot("mehburity-3-out");
+			checkCarrying(context, server, playerId);
 
 			checkTalking(context, server, playerId);
 			checkSettingsAndCommands(context, server, playerId);
@@ -112,6 +114,47 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 			context.takeScreenshot("mehburity-8-rejoined");
 		}
 		MehburityMod.LOGGER.info("Mehburity client game test passed");
+	}
+
+	/** A real right click picks Mehburity up into the inventory; a right click on the ground with it lets it out. */
+	private static void checkCarrying(ClientGameTestContext context, TestServerContext server, UUID playerId) {
+		float yaw = server.computeOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			CompanionManager.setMode(player, CompanionMode.STAY);
+			Vec3 front = player.getEyePosition().add(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(2.5)).subtract(0.0, 0.4, 0.0);
+			CompanionManager.find(s, playerId).teleportTo(front.x, front.y, front.z);
+			return player.getYRot();
+		});
+		context.getInput().lookAt(yaw, 0.0F);
+		context.waitTicks(5);
+		context.getInput().pressKey(options -> options.keyUse);
+		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.CARRIED, 100);
+		int slot = server.computeOnServer(s -> {
+			var inventory = s.getPlayerList().getPlayer(playerId).getInventory();
+			for (int i = 0; i < 9; i++) {
+				if (inventory.getItem(i).is(MehburityItem.ITEM)) {
+					return i;
+				}
+			}
+			return -1;
+		});
+		if (slot < 0) {
+			throw new AssertionError("Mehburity must be in the hotbar after the right click");
+		}
+		context.getInput().pressKey(options -> options.keyHotbarSlots[slot]);
+		context.waitTicks(5);
+		context.takeScreenshot("mehburity-3b-carried");
+
+		context.getInput().lookAt(yaw, 50.0F);
+		context.waitTicks(2);
+		context.getInput().pressKey(options -> options.keyUse);
+		server.waitFor(s -> CompanionManager.find(s, playerId) != null, 100);
+		assertEquals(CompanionMode.FOLLOW, server.computeOnServer(s -> CompanionRegistry.companion(s, playerId).mode()),
+				"let out, Mehburity follows again");
+		context.getInput().pressKey(options -> options.keyHotbarSlots[0]);
+		context.getInput().lookAt(yaw, 0.0F);
+		context.waitTicks(20);
+		context.takeScreenshot("mehburity-3c-let-out");
 	}
 
 	/**

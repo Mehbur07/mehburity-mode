@@ -6,7 +6,9 @@ import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.CompanionRegistry;
+import com.mehbur.mehburity.anger.Anger;
 import com.mehbur.mehburity.entity.MehburityBoxEntity;
+import com.mehbur.mehburity.entity.MehburityItem;
 import com.mehbur.mehburity.entity.MehburityEntities;
 import com.mehbur.mehburity.entity.MehburityEntity;
 import com.mojang.brigadier.tree.CommandNode;
@@ -24,6 +26,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -85,7 +92,7 @@ public final class MehburityGameTests {
 	/** Gives the owner a box, opens it, and runs {@code then} once Mehburity is out. */
 	static void withCompanion(GameTestHelper helper, ServerPlayer owner, Consumer<MehburityEntity> then) {
 		MehburityBoxEntity box = CompanionManager.spawnBox(owner);
-		box.skipAttackInteraction(owner);
+		box.interact(owner, InteractionHand.MAIN_HAND, Vec3.ZERO);
 		helper.runAfterDelay(READY, () -> {
 			MehburityEntity mehburity = CompanionManager.find(helper.getLevel().getServer(), owner.getUUID());
 			helper.assertTrue(mehburity != null, "Mehburity must have come out of the box");
@@ -179,7 +186,9 @@ public final class MehburityGameTests {
 				"the box must be recorded");
 
 		box.skipAttackInteraction(owner);
-		helper.assertTrue(box.isOpening(), "the owner's hit must start the opening");
+		helper.assertFalse(box.isOpening(), "hitting the box no longer opens it");
+		box.interact(owner, InteractionHand.MAIN_HAND, Vec3.ZERO);
+		helper.assertTrue(box.isOpening(), "the owner's right click must start the opening");
 
 		helper.succeedWhen(() -> {
 			MehburityEntity mehburity = CompanionManager.find(helper.getLevel().getServer(), owner.getUUID());
@@ -196,6 +205,7 @@ public final class MehburityGameTests {
 		MehburityBoxEntity box = CompanionManager.spawnBox(owner);
 
 		helper.assertTrue(box.skipAttackInteraction(stranger), "the attack is always swallowed");
+		box.interact(stranger, InteractionHand.MAIN_HAND, Vec3.ZERO);
 		helper.assertFalse(box.isOpening(), "a stranger must not open someone else's box");
 		helper.runAfterDelay(AFTER_OPEN, () -> {
 			helper.assertTrue(CompanionManager.find(helper.getLevel().getServer(), stranger.getUUID()) == null,
@@ -210,11 +220,64 @@ public final class MehburityGameTests {
 		ServerPlayer owner = owner(helper);
 		withCompanion(helper, owner, first -> {
 			MehburityBoxEntity second = CompanionManager.spawnBox(owner);
-			second.skipAttackInteraction(owner);
+			second.interact(owner, InteractionHand.MAIN_HAND, Vec3.ZERO);
 			helper.runAfterDelay(AFTER_OPEN, () -> {
 				helper.assertTrue(companionsOf(helper.getLevel(), owner) == 1, "there must be exactly one Mehburity");
 				helper.assertFalse(first.isRemoved(), "the original Mehburity stays");
 				helper.assertTrue(second.isRemoved(), "the extra box is used up");
+				helper.succeed();
+			});
+		});
+	}
+
+	// ---------------------------------------------------------------- carrying
+
+	/** Moves the first Mehburity item in the inventory into the main hand (it may already be the selected slot). */
+	private static ItemStack mehburityInHand(ServerPlayer player) {
+		for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+			ItemStack stack = player.getInventory().getItem(slot);
+			if (stack.is(MehburityItem.ITEM)) {
+				player.getInventory().setItem(slot, ItemStack.EMPTY);
+				player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+				return stack;
+			}
+		}
+		throw new AssertionError("no Mehburity in the inventory");
+	}
+
+	@GameTest(maxTicks = 300)
+	public void mehburity_can_be_carried_and_let_out(GameTestHelper helper) {
+		ServerPlayer owner = owner(helper);
+		ServerLevel level = helper.getLevel();
+		withCompanion(helper, owner, mehburity -> {
+			Husk husk = helper.spawn(EntityTypes.HUSK, new BlockPos(6, 1, 6));
+			husk.setNoAi(true);
+			Anger.provoke(mehburity, husk, 100.0);
+			mehburity.interact(owner, InteractionHand.MAIN_HAND, Vec3.ZERO);
+			helper.assertFalse(mehburity.isRemoved(), "a raging Mehburity cannot be picked up");
+			Anger.endRage(mehburity, Anger.RageEnd.FORCED);
+
+			mehburity.interact(owner, InteractionHand.MAIN_HAND, Vec3.ZERO);
+			helper.assertTrue(mehburity.isRemoved(), "right click picks Mehburity up");
+			helper.assertValueEqual(CompanionMode.CARRIED, CompanionRegistry.companion(level.getServer(), owner.getUUID()).mode(),
+					"the registry knows it is carried");
+			helper.assertTrue(owner.getInventory().contains(stack -> stack.is(MehburityItem.ITEM)
+					&& owner.getUUID().equals(stack.get(MehburityItem.OWNER))), "it is in the owner's inventory");
+			helper.runAfterDelay(30, () -> {
+				helper.assertTrue(CompanionManager.find(level.getServer(), owner.getUUID()) == null,
+						"a carried Mehburity is not re-created beside its owner");
+				ItemStack item = mehburityInHand(owner);
+				item.use(level, owner, InteractionHand.MAIN_HAND);
+				MehburityEntity out = CompanionManager.find(level.getServer(), owner.getUUID());
+				helper.assertTrue(out != null && out.getMode() == CompanionMode.FOLLOW, "right click with it lets it out");
+				helper.assertTrue(owner.getMainHandItem().isEmpty(), "the item is used up");
+
+				// Called back while carried: the old item is stale and must not make a second one.
+				out.interact(owner, InteractionHand.MAIN_HAND, Vec3.ZERO);
+				helper.assertValueEqual(CompanionManager.SummonResult.RESPAWNED, CompanionManager.summon(owner), "cagir brings it back");
+				mehburityInHand(owner).use(level, owner, InteractionHand.MAIN_HAND);
+				helper.assertTrue(companionsOf(level, owner) == 1, "still exactly one Mehburity");
+				helper.assertTrue(owner.getMainHandItem().isEmpty(), "the stale item goes away");
 				helper.succeed();
 			});
 		});

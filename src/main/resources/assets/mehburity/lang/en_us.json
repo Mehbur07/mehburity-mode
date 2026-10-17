@@ -5,7 +5,7 @@
 	"mehburity.command.reloaded": "Mehburity config reloaded.",
 	"mehburity.command.reload_failed": "The config file had a problem, defaults are in use. See the log.",
 	"mehburity.command.not_nearby": "Your Mehburity is not nearby. Use /mehburity cagir first.",
-	"mehburity.speech.box.appeared": "A box appeared next to you... Hit it (left click) to open it.",
+	"mehburity.speech.box.appeared": "A box appeared next to you... Right click it to open it.",
 	"mehburity.speech.box.not_yours": "This box belongs to %s.",
 	"mehburity.speech.box.not_yours_unknown": "This box is not yours.",
 	"mehburity.speech.already_have": "You already have me!",
@@ -152,5 +152,13 @@
 	"mehburity.config.talk_key.none": "none",
 	"mehburity.config.talk_key.tooltip": "Hold this key and speak; release to send it to Mehburity. Esc removes the key.",
 	"mehburity.config.press_key": "press a key",
-	"mehburity.config.talk_seconds": "Longest recording: %s s"
+	"mehburity.config.talk_seconds": "Longest recording: %s s",
+	"mehburity.speech.box.how_to_open": "Right click the box to open it.",
+	"item.mehburity.mehburity": "Mehburity",
+	"mehburity.speech.carry.picked_up": "Wheee! Right click to let me out again.",
+	"mehburity.speech.carry.released": "Phew, it was dark in there!",
+	"mehburity.speech.carry.too_angry": "Don't touch me right now!",
+	"mehburity.speech.carry.not_yours": "I belong to %s. Only they can let me out.",
+	"mehburity.speech.carry.not_yours_unknown": "You're not my owner. Only they can let me out.",
+	"mehburity.command.carried": "Mehburity is in your inventory. Right click with it to let it out (or /mehburity cagir)."
 }

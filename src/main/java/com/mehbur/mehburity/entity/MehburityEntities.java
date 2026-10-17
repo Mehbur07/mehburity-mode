@@ -52,6 +52,7 @@ public final class MehburityEntities {
 	}
 
 	public static void register() {
+		MehburityItem.init();
 		FabricDefaultAttributeRegistry.register(MEHBURITY, MehburityEntity.createAttributes());
 	}
 }

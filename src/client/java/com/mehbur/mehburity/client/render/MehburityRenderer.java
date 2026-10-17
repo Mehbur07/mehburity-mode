@@ -26,7 +26,7 @@ import net.minecraft.world.phys.Vec3;
  * the centre of the texture is the face, pointing where Mehburity looks. It bobs gently while hovering.
  */
 public class MehburityRenderer extends EntityRenderer<MehburityEntity, MehburityRenderState> {
-	/** Placeholder art, 128x64 equirectangular. Replace the PNG to change the look. */
+	/** Placeholder art, 256x128 equirectangular. Replace the PNG to change the look. */
 	private static final Identifier TEXTURE = MehburityMod.id("textures/entity/mehburity/mehburity.png");
 	private static final RenderType RENDER_TYPE = RenderTypes.entityCutout(TEXTURE);
 	/** The face during a rage. Replace the PNG (same size) to change it. */
@@ -34,7 +34,7 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	static final RenderType ANGRY_RENDER_TYPE = RenderTypes.entityCutout(ANGRY_TEXTURE);
 	/** Expressions, same layout: a flat mouth when annoyed, a cross face when angry, wide eyes when scared. */
 	private static final RenderType ANNOYED_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_annoyed.png"));
-	private static final RenderType MAD_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_mad.png"));
+	static final RenderType MAD_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_mad.png"));
 	private static final RenderType SCARED_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_scared.png"));
 	/** From this anger on it looks annoyed (a third of the default rage threshold). */
 	private static final float ANNOYED_ANGER = 33.0F;
@@ -165,8 +165,8 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	}
 
 	/**
-	 * The rage form. While transforming it trembles: first the red sphere swells on the ground, then the demon grows
-	 * out of it to its full height.
+	 * The rage form, a neon cyan demon. While transforming it trembles: first the angry sphere swells on the ground,
+	 * then the demon grows out of it to its full height.
 	 */
 	private static void submitMonster(MehburityRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
 		float progress = state.transformProgress;
@@ -181,13 +181,13 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 			poseStack.mulPose(Axis.YP.rotationDegrees(-state.yRot));
 			poseStack.scale(swell, swell, swell);
 			int light = state.lightCoords;
-			collector.submitCustomGeometry(poseStack, ANGRY_RENDER_TYPE,
+			collector.submitCustomGeometry(poseStack, MAD_RENDER_TYPE,
 					(pose, buffer) -> buildSphere(pose, buffer, light, OverlayTexture.NO_OVERLAY));
 		} else {
 			float grow = (progress - TRANSFORM_SPHERE_PART) / (1.0F - TRANSFORM_SPHERE_PART);
 			grow = grow * grow * (3.0F - 2.0F * grow);
 			float size = state.monsterHeight / MehburityMonsterModel.MODEL_HEIGHT;
-			MehburityMonsterModel.submit(state, poseStack, collector, size * (0.1F + 0.9F * grow), ANGRY_RENDER_TYPE);
+			MehburityMonsterModel.submit(state, poseStack, collector, size * (0.1F + 0.9F * grow), MehburityMonsterModel.SKIN, MAD_RENDER_TYPE);
 		}
 		poseStack.popPose();
 	}

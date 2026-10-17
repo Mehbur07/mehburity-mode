@@ -213,8 +213,14 @@ public final class MehburityCommands {
 	}
 
 	private static int noCompanion(CommandContext<CommandSourceStack> ctx) {
-		ctx.getSource().sendFailure(Component.translatableWithFallback(KEY + "no_companion",
-				"You don't have a Mehburity yet. Open your box first (/mehburity cagir)."));
+		ServerPlayer player = ctx.getSource().getPlayer();
+		CompanionRegistry.Companion companion = player == null ? null
+				: CompanionRegistry.companion(ctx.getSource().getServer(), player.getUUID());
+		ctx.getSource().sendFailure(companion != null && companion.mode() == CompanionMode.CARRIED
+				? Component.translatableWithFallback(KEY + "carried",
+						"Mehburity is in your inventory. Right click with it to let it out (or /mehburity cagir).")
+				: Component.translatableWithFallback(KEY + "no_companion",
+						"You don't have a Mehburity yet. Open your box first (/mehburity cagir)."));
 		return 0;
 	}
 

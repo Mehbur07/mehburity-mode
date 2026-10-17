@@ -40,7 +40,7 @@ elinde bir el feneri vardır ve karanlıkta… bazen yalnız değilsindir.
 Mod Menu.
 
 1. `mehburity-<sürüm>.jar` dosyasını `.minecraft/mods` klasörüne at (Fabric API de orada olmalı).
-2. Dünyaya gir. Önünde bir **karton kutu** durur. **Sol tıkla**: kutu sallanır, kapakları açılır ve Mehburity içinden
+2. Dünyaya gir. Önünde bir **karton kutu** durur. **Sağ tıkla**: kutu sallanır, kapakları açılır ve Mehburity içinden
    dönerek yükselir: *"Hello! I'm Mehburity. Your personal helper friend. Ask me anything. I know everything."*
 3. Mehburity sana bir **el feneri** verir. Sağ tıkla açarsın, çünkü geceler ve mağaralar zifiri karanlıktır.
 4. Sohbete **`Mehburity, merhaba!`** yaz. Gemini anahtarı olmadan da basit cevaplar verir. Gerçek sohbet ve ses için
@@ -111,6 +111,13 @@ Emirler Gemini'ye gitmeden anlaşılır, büyük/küçük harf ve Türkçe karak
 - **Ölümsüzdür:** hasar almaz, `/kill` ile ölmez, boşluğa düşerse sana döner. Ama vurulduğunu fark eder (bkz. [Öfke](#öfke)).
 - **Oyuncu başına bir Mehburity.** Sahiplik dünya kaydında tutulur. Oyundan çıkınca seninle "gider", girince yanında
   belirir. "Otur" modundaysa bıraktığın yerde bekler.
+- **Eline alabilirsin:** Mehburity'ye **sağ tıkla**, envanterine girer ("Vuhuu!"). Elindeyken **sağ tıklarsan**
+  baktığın yere (havaya tıklarsan yanına) çıkar ve takip etmeye devam eder.
+  - Envanterdeyken de sohbette cevap verir; öfkesi aynen saklanır.
+  - Sadece sahibi alabilir ve çıkarabilir. Başkasının eline geçse bile onu yalnızca sahibi serbest bırakabilir.
+  - Öfke nöbetindeyken, canavar formundayken ya da kutudan yeni çıkarken eline alınamaz ("Şu an bana dokunma!").
+  - Pasta tutarken sağ tıklamak onu almaz, öfkesini yatıştırır.
+  - Eşyayı kaybedersen `/mehburity cagir` onu geri getirir; eski eşya ise kullanılınca boşa gider.
 
 ### Savaş
 
@@ -175,10 +182,16 @@ başka boyuta geçer) ya da 90 saniye dolunca. Sonra Mehburity sahibinin yanına
 
 ### Canavar formu
 
-Öfke nöbetinde Mehburity **18 blok boyunda, sıska bir iblise** dönüşür. Önce kırmızı küre olarak yere iner, titrer ve
-dumanlar içinde 2 saniyede büyür. Bu iki saniye, suçlunun kaçmak için kazandığı süredir. İblisin uzun bacakları,
-dizlerine inen kolları, üç pençeli elleri ve iki boynuzu var. Kafası Mehburity'nin kırmızı, kızgın küresidir. Koyu
-gövdesindeki kırmızı damarlar karanlıkta parlar.
+Öfke nöbetinde Mehburity **18 blok boyunda, sıska, neon cyan bir iblise** dönüşür. Önce kızgın yüzlü küre olarak yere
+iner, titrer ve dumanlar içinde 2 saniyede büyür. Bu iki saniye, suçlunun kaçmak için kazandığı süredir.
+
+İblisin görünüşü:
+
+- **Gövde:** yuvarlak, uca doğru incelen uzuvlar ve eklemleri; kambur, geniş bir göğüs, dar bir bel ve sırtında dikenler.
+- **Kollar ve bacaklar:** dizlerine inen uzun kollar, ellerinde üçer kıvrık pençe; parmak uçlarında basan, pençeli
+  ayaklar.
+- **Kafa:** Mehburity'nin cyan küresi, yüzünde kızgın ifade, üstünde geriye kıvrılan iki boynuz.
+- **Renk:** neon cyan. Boynuz, pençe ve dikenler koyu turkuaz. Karanlıkta parlar.
 
 - **Yürüyerek** kovalar: saniyede 6,5 blok, yani koşan bir oyuncudan hızlıdır. Blokların **içinden geçer**, hiçbir
   şeyi kırmaz. Ayakları yüzeydedir; suçlu yerin altına saklanırsa onun hizasına iner.
@@ -192,7 +205,8 @@ gövdesindeki kırmızı damarlar karanlıkta parlar.
 
 Verity'den uyarlanan, her biri ayardan kapatılabilen özellikler (`verity.*`):
 
-**Kutu.** Her oyuncu ilk girişinde bir kutu alır. Kutuyu yalnızca sahibi açabilir.
+**Kutu.** Her oyuncu ilk girişinde bir kutu alır. Kutu **sağ tıkla** açılır, yalnızca sahibi açabilir. Kutuya vurmak
+(sol tık) bir şey yapmaz, sadece nasıl açılacağını hatırlatır.
 
 **Verity karanlığı (her zaman açık).** Parlaklık ayarı işe yaramaz, ay ışığı ve ortam ışığı söner; gece ve mağaralar
 ışık kaynağı olmadan zifiri karanlıktır. Meşaleler normal çalışır. Gücü `verity.darkness.strength` ile ayarlanır.
@@ -438,11 +452,12 @@ yeterli (`src/main/resources/assets/mehburity/` altında):
 
 | Dosya | Boyut | Ne |
 |---|---|---|
-| `textures/entity/mehburity/mehburity.png` | 128×64 | Mehburity küresi (eşdikdörtgen: ortası = yüz, üst kenar = tepe) |
-| `textures/entity/mehburity/mehburity_annoyed.png` / `_mad.png` / `_scared.png` | 128×64 | Sinirli / kızgın / korkmuş yüz (aynı düzen) |
-| `textures/entity/mehburity/mehburity_angry.png` | 128×64 | Öfke nöbetindeki kırmızı küre; canavarın kafası |
-| `textures/entity/mehburity/mehburity_monster.png` | 64×64 | Canavarın derisi (her kutu yüzüne bir kez gerilir) |
-| `textures/entity/mehburity/watcher.png` | 128×64 | İzleyen iblisin kafası |
+| `textures/entity/mehburity/mehburity.png` | 256×128 | Mehburity küresi (eşdikdörtgen: ortası = yüz, üst kenar = tepe) |
+| `textures/entity/mehburity/mehburity_annoyed.png` / `_mad.png` / `_scared.png` | 256×128 | Sinirli / kızgın / korkmuş yüz (aynı düzen); kızgın yüz canavarın kafası |
+| `textures/entity/mehburity/mehburity_angry.png` | 256×128 | Canavar formu kapalıyken öfke nöbetindeki kırmızı küre |
+| `textures/entity/mehburity/mehburity_monster.png` | 64×64 | Canavarın derisi: üst yarı gövde (her uzvun çevresine sarılır), alt yarı boynuz/pençe/diken |
+| `textures/entity/mehburity/watcher.png` / `watcher_skin.png` | 256×128 / 64×64 | İzleyen iblisin kafası / derisi (canavarla aynı düzen) |
+| `textures/item/mehburity.png` | 16×16 | Envanterdeki Mehburity |
 | `textures/entity/mehburity/box.png` | 64×64 | Kutu (gövde 0,0; ön/arka kapaklar 0,24; yan kapaklar 0,32) |
 | `textures/item/flashlight.png` / `flashlight_on.png` | 16×16 | El feneri (kapalı / açık) |
 | `icon.png` | 128×128 | Mod ikonu: Mehburity'nin kafası |

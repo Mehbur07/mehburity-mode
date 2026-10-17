@@ -12,12 +12,15 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
 
 /**
- * The demon of the scripted scares: the same body as Mehburity's rage form, standing still, with a dark sphere for a
- * head that wears Mehburity's smile in glowing white. Drawn fully lit, so its veins and face show in the dark.
+ * The demon of the scripted scares: the same body as Mehburity's rage form but black with red veins, standing still,
+ * with a dark sphere for a head that wears Mehburity's smile in glowing white. Drawn fully lit, so its veins and face
+ * show in the dark.
  */
 public class WatcherRenderer extends EntityRenderer<WatcherEntity, MehburityRenderState> {
-	/** 128x64 equirectangular like Mehburity's sphere. Replace the PNG (same size) to change it. */
+	/** 256x128 equirectangular like Mehburity's sphere. Replace the PNG (same size) to change it. */
 	private static final RenderType HEAD = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/watcher.png"));
+	/** Its skin: near black with glowing red veins (64x64, same layout as the rage form's skin). */
+	private static final RenderType SKIN = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/watcher_skin.png"));
 	private static final int FULL_LIGHT = 15;
 
 	public WatcherRenderer(EntityRendererProvider.Context context) {
@@ -49,7 +52,7 @@ public class WatcherRenderer extends EntityRenderer<WatcherEntity, MehburityRend
 
 	@Override
 	public void submit(MehburityRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
-		MehburityMonsterModel.submit(state, poseStack, collector, state.monsterHeight / MehburityMonsterModel.MODEL_HEIGHT, HEAD);
+		MehburityMonsterModel.submit(state, poseStack, collector, state.monsterHeight / MehburityMonsterModel.MODEL_HEIGHT, SKIN, HEAD);
 		super.submit(state, poseStack, collector, camera);
 	}
 }

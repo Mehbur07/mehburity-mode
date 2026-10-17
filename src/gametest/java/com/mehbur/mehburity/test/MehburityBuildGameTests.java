@@ -167,7 +167,10 @@ public final class MehburityBuildGameTests {
 						helper.assertTrue(drops.isEmpty(), "building and undoing must not drop items: " + drops);
 					})
 					.thenExecute(() -> checkHeldBlocks(helper, owner, mehburity))
-					.thenExecuteAfter(10, () -> stopAndUndo(helper, owner, mehburity))
+					// Stopped half-way: once at least one block is down (flying to the site takes a varying time).
+					.thenWaitUntil(() -> helper.assertTrue(mehburity.getBuildJob() != null && mehburity.getBuildJob().placed() > 0,
+							"the second house must get started"))
+					.thenExecute(() -> stopAndUndo(helper, owner, mehburity))
 					.thenExecute(() -> checkProtection(helper, owner, mehburity))
 					.thenExecute(() -> {
 						MehburityConfig.get().build.blocksPerSecond = speed;

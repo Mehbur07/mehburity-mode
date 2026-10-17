@@ -292,7 +292,10 @@ public class MehburityEntity extends PathfinderMob {
 				: super.getDefaultDimensions(pose);
 	}
 
-	/** Right-clicking with a cake calms it down. */
+	/**
+	 * Right click: with a cake it calms down; otherwise its owner picks it up and carries it in the inventory (not
+	 * while it is raging, or still rising out of its box).
+	 */
 	@Override
 	protected InteractionResult mobInteract(Player player, InteractionHand hand) {
 		if (player.getItemInHand(hand).is(net.minecraft.world.item.Items.CAKE)) {
@@ -301,7 +304,18 @@ public class MehburityEntity extends PathfinderMob {
 			}
 			return InteractionResult.SUCCESS;
 		}
-		return super.mobInteract(player, hand);
+		if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer owner)) {
+			return this.level().isClientSide() && hand == InteractionHand.MAIN_HAND ? InteractionResult.SUCCESS : InteractionResult.PASS;
+		}
+		if (!owner.getUUID().equals(ownerId)) {
+			return InteractionResult.PASS;
+		}
+		if (isRaging() || isMonster() || isEmerging()) {
+			MehburitySpeech.say(owner, MehburitySpeech.text("carry.too_angry", "Don't touch me right now!"));
+		} else {
+			CompanionManager.carry(owner, this);
+		}
+		return InteractionResult.SUCCESS;
 	}
 
 	public @Nullable BuildJob getBuildJob() {
