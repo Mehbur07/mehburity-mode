@@ -50,7 +50,8 @@ public final class MineGoal extends Goal {
 
 	@Override
 	public boolean canUse() {
-		return mehburity.getMiningJob() != null && !mehburity.isEmerging() && mehburity.getOwnerPlayer() != null;
+		return mehburity.getMiningJob() != null && !mehburity.isEmerging() && !mehburity.isRaging()
+				&& mehburity.getOwnerPlayer() != null;
 	}
 
 	@Override

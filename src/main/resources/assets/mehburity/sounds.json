@@ -29,6 +29,12 @@
 			{ "name": "minecraft:block.beacon.power_select", "type": "event" }
 		]
 	},
+	"mehburity.rage": {
+		"subtitle": "subtitles.mehburity.mehburity.rage",
+		"sounds": [
+			{ "name": "minecraft:entity.ravager.roar", "type": "event" }
+		]
+	},
 	"mehburity.beam.fire": {
 		"subtitle": "subtitles.mehburity.mehburity.beam.fire",
 		"sounds": [

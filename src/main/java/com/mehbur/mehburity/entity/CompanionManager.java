@@ -75,10 +75,12 @@ public final class CompanionManager {
 			return;
 		}
 		MehburityEntity mehburity = findEntity(server, companion.entityId());
+		float anger = companion.anger();
 		if (mehburity != null) {
+			anger = mehburity.getAnger(); // a rage ends here, the temper is remembered
 			mehburity.discard();
 		}
-		CompanionRegistry.putCompanion(server, player.getUUID(), companion.withStowed(true));
+		CompanionRegistry.putCompanion(server, player.getUUID(), companion.withStowed(true).withAnger(anger));
 	}
 
 	/**
@@ -94,7 +96,8 @@ public final class CompanionManager {
 
 		MehburityEntity mehburity = findEntity(server, companion.entityId());
 		if (mehburity != null) {
-			if (companion.mode() == CompanionMode.FOLLOW && mehburity.isTooFarFrom(player) && !isBusyBuilding(mehburity, player)) {
+			if (companion.mode() == CompanionMode.FOLLOW && mehburity.isTooFarFrom(player) && !isBusyBuilding(mehburity, player)
+					&& !mehburity.isRaging()) { // a rage goes after the culprit, wherever they run
 				mehburity.teleportToOwner(player);
 			}
 			return;
@@ -205,6 +208,10 @@ public final class CompanionManager {
 		mehburity.snapTo(pos.x, pos.y, pos.z, 0.0F, 0.0F);
 		mehburity.setOwnerId(ownerId);
 		mehburity.setMode(mode);
+		CompanionRegistry.Companion stored = CompanionRegistry.companion(level.getServer(), ownerId);
+		if (stored != null) {
+			mehburity.setAnger(stored.anger());
+		}
 		// Register first: the entity validates itself against the registry and must find itself there.
 		// A re-created Mehburity keeps the owner's choices (combat on/off).
 		CompanionRegistry.Companion previous = CompanionRegistry.companion(level.getServer(), ownerId);

@@ -80,7 +80,7 @@ public final class BeamAttackGoal extends Goal {
 		double distance = mehburity.distanceTo(target);
 		boolean sees = mehburity.getSensing().hasLineOfSight(target);
 
-		if (mehburity.getMode() == CompanionMode.FOLLOW) {
+		if (mehburity.getMode() == CompanionMode.FOLLOW || mehburity.isRaging()) {
 			approach(target, distance, sees, config);
 		}
 		if (cooldown > 0) {
@@ -107,7 +107,7 @@ public final class BeamAttackGoal extends Goal {
 		if (++charge >= config.chargeTicks) {
 			fire(target, config);
 			charge = 0;
-			cooldown = config.cooldownTicks;
+			cooldown = mehburity.isRaging() ? MehburityConfig.get().anger.rageCooldownTicks : config.cooldownTicks;
 			flash = MehburityEntity.BEAM_FLASH_TICKS; // keeps the beam visible while it flashes
 		}
 	}
@@ -121,8 +121,8 @@ public final class BeamAttackGoal extends Goal {
 			return;
 		}
 		repathDelay = adjustedTickDelay(REPATH_INTERVAL);
-		mehburity.getNavigation().moveTo(target.getX(), target.getY() + target.getBbHeight() + HOVER_ABOVE, target.getZ(),
-				MehburityConfig.get().companion.followSpeed);
+		double speed = mehburity.isRaging() ? MehburityConfig.get().anger.rageSpeed : MehburityConfig.get().companion.followSpeed;
+		mehburity.getNavigation().moveTo(target.getX(), target.getY() + target.getBbHeight() + HOVER_ABOVE, target.getZ(), speed);
 	}
 
 	private void fire(LivingEntity target, MehburityConfig.Combat config) {
@@ -132,7 +132,8 @@ public final class BeamAttackGoal extends Goal {
 			// Counts as the owner's kill: experience and player-only loot drop.
 			target.setLastHurtByPlayer(owner, 100);
 		}
-		target.hurtServer(level, MehburityDamage.beam(level, mehburity), (float) config.damage);
+		float damage = (float) (mehburity.isRaging() ? MehburityConfig.get().anger.rageDamage : config.damage);
+		target.hurtServer(level, MehburityDamage.beam(level, mehburity), damage);
 		level.broadcastEntityEvent(mehburity, MehburityEntity.EVENT_BEAM_FIRED);
 		mehburity.playSound(MehburitySounds.BEAM_FIRE, 1.0F, 1.2F + mehburity.getRandom().nextFloat() * 0.2F);
 
@@ -141,7 +142,7 @@ public final class BeamAttackGoal extends Goal {
 				12, 0.25, 0.25, 0.25, 0.0);
 		level.sendParticles(ParticleTypes.END_ROD, hit.x, hit.y, hit.z, 5, 0.1, 0.1, 0.1, 0.06);
 
-		if (!target.isAlive() && owner != null) {
+		if (!target.isAlive() && owner != null && !mehburity.isRaging()) {
 			CombatTargets.Reason reason = targeting.reason();
 			String why = switch (reason == null ? CombatTargets.Reason.GUARDING : reason) {
 				case DEFENDING -> "it had attacked the player";

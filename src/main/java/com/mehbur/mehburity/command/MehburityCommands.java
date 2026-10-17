@@ -1,6 +1,7 @@
 package com.mehbur.mehburity.command;
 
 import com.mehbur.mehburity.MehburityMod;
+import com.mehbur.mehburity.anger.Anger;
 import com.mehbur.mehburity.build.Building;
 import com.mehbur.mehburity.build.HouseStyle;
 import com.mehbur.mehburity.config.ConfigReloadedCallback;
@@ -9,6 +10,7 @@ import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.CompanionRegistry;
+import com.mehbur.mehburity.entity.MehburityEntity;
 import com.mehbur.mehburity.entity.MehburitySpeech;
 import com.mehbur.mehburity.mining.Mining;
 import com.mehbur.mehburity.network.OpenSettingsPayload;
@@ -22,7 +24,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.entity.EntityTypeTest;
 
 import java.util.function.Predicate;
 
@@ -59,6 +63,10 @@ public final class MehburityCommands {
 				.then(houseCommand())
 				.then(Commands.literal("ver").executes(ctx -> mining(ctx, Mining::give)))
 				.then(Commands.literal("canta").executes(ctx -> mining(ctx, Mining::list)))
+				.then(Commands.literal("ofke").executes(MehburityCommands::angerStatus))
+				.then(Commands.literal("sakin")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(MehburityCommands::calmAll))
 				.then(Commands.literal("ayarlar").executes(MehburityCommands::openSettings))
 				.then(Commands.literal("yenile")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -126,6 +134,42 @@ public final class MehburityCommands {
 			MehburitySpeech.say(player, MehburitySpeech.text("combat.server_off", "Fighting is turned off on this server."));
 		}
 		return 1;
+	}
+
+	/** {@code /mehburity ofke}: how angry the player's Mehburity is. */
+	private static int angerStatus(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		MehburityEntity mehburity = CompanionManager.find(player.level().getServer(), player.getUUID());
+		if (mehburity == null) {
+			return noCompanion(ctx);
+		}
+		int anger = Math.round(mehburity.getAnger());
+		MehburitySpeech.say(player, switch (Anger.mood(mehburity)) {
+			case CALM -> MehburitySpeech.text("anger.status_calm", "I'm calm. (anger %s/100)", anger);
+			case ANNOYED -> MehburitySpeech.text("anger.status_annoyed", "I'm a bit annoyed. (anger %s/100)", anger);
+			case ANGRY -> MehburitySpeech.text("anger.status_angry", "I'm angry! Careful... (anger %s/100)", anger);
+			case RAGING -> MehburitySpeech.text("anger.status_raging", "I'M IN A RAGE! (anger %s/100)", anger);
+		});
+		return 1;
+	}
+
+	/** {@code /mehburity sakin} (operators): ends every rage and empties every loaded Mehburity's anger. */
+	private static int calmAll(CommandContext<CommandSourceStack> ctx) {
+		int calmed = 0;
+		for (ServerLevel level : ctx.getSource().getServer().getAllLevels()) {
+			for (MehburityEntity mehburity : level.getEntities(EntityTypeTest.forClass(MehburityEntity.class), m -> true)) {
+				if (mehburity.isRaging()) {
+					Anger.endRage(mehburity, Anger.RageEnd.FORCED);
+				} else {
+					Anger.calm(mehburity, 100.0);
+				}
+				calmed++;
+			}
+		}
+		int count = calmed;
+		ctx.getSource().sendSuccess(() -> Component.translatableWithFallback(KEY + "calmed",
+				"Calmed %s Mehburity.", count), true);
+		return count;
 	}
 
 	/** {@code /mehburity ev [ahsap|tas|tugla|elimdeki]}, {@code ev dur}, {@code ev geri}. */

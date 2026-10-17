@@ -17,6 +17,8 @@ public final class MehburitySounds {
 	public static final SoundEvent SPEAK = register("mehburity.speak");
 	public static final SoundEvent BEAM_CHARGE = register("mehburity.beam.charge");
 	public static final SoundEvent BEAM_FIRE = register("mehburity.beam.fire");
+	/** Mehburity flies into a rage. */
+	public static final SoundEvent RAGE = register("mehburity.rage");
 
 	private MehburitySounds() {
 	}

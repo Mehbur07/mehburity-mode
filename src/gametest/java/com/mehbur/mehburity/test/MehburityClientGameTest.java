@@ -25,6 +25,8 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
@@ -89,6 +91,7 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 			checkCombat(context, server, playerId);
 			checkMining(context, server, playerId);
 			checkBuilding(context, server, playerId);
+			checkAnger(context, server, playerId);
 			checkDarkness(context, server);
 		}
 
@@ -276,6 +279,43 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> MehburityConfig.get().build.blocksPerSecond = speed);
 		context.waitTicks(10);
 		context.takeScreenshot("mehburity-h3-undone");
+	}
+
+	/** Real left clicks make Mehburity rage (red face), a real right click with a cake calms it down. */
+	private static void checkAnger(ClientGameTestContext context, TestServerContext server, UUID playerId) {
+		// Creative: the rage cannot hurt the player, so the test cannot die here.
+		server.runCommand("gamemode creative @a");
+		// Mehburity floats straight ahead at eye height, so looking level along the player's yaw hits it.
+		float yaw = server.computeOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			MehburityEntity mehburity = CompanionManager.find(s, playerId);
+			CompanionManager.setMode(player, CompanionMode.STAY);
+			Vec3 front = player.getEyePosition().add(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(2.5)).subtract(0.0, 0.4, 0.0);
+			mehburity.teleportTo(front.x, front.y, front.z);
+			return player.getYRot();
+		});
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.waitTicks(5);
+		context.getInput().lookAt(yaw, 0.0F);
+		int hits = (int) Math.ceil(MehburityConfig.get().anger.rageThreshold / MehburityConfig.get().anger.playerHitAnger);
+		for (int i = 0; i < hits; i++) {
+			context.getInput().pressKey(options -> options.keyAttack);
+			context.waitTicks(15);
+		}
+		server.waitFor(s -> CompanionManager.find(s, playerId).isRaging(), 100);
+		context.waitTicks(10);
+		context.takeScreenshot("mehburity-a1-rage");
+
+		server.runOnServer(s -> s.getPlayerList().getPlayer(playerId).setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CAKE)));
+		context.waitTicks(5);
+		context.getInput().lookAt(yaw, 0.0F);
+		context.getInput().pressKey(options -> options.keyUse);
+		server.waitFor(s -> !CompanionManager.find(s, playerId).isRaging(), 100);
+		context.waitTicks(10);
+		context.takeScreenshot("mehburity-a2-calmed");
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.runOnClient(mc -> mc.player.connection.sendCommand("mehburity takip"));
+		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.FOLLOW, 100);
 	}
 
 	private static void assertEquals(Object expected, Object actual, String what) {

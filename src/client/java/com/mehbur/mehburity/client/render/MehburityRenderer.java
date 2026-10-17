@@ -29,6 +29,11 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	/** Placeholder art, 128x64 equirectangular. Replace the PNG to change the look. */
 	private static final Identifier TEXTURE = MehburityMod.id("textures/entity/mehburity/mehburity.png");
 	private static final RenderType RENDER_TYPE = RenderTypes.entityCutout(TEXTURE);
+	/** The face during a rage. Replace the PNG (same size) to change it. */
+	private static final Identifier ANGRY_TEXTURE = MehburityMod.id("textures/entity/mehburity/mehburity_angry.png");
+	private static final RenderType ANGRY_RENDER_TYPE = RenderTypes.entityCutout(ANGRY_TEXTURE);
+	/** From this anger on, the sphere flashes red now and then as a warning. */
+	private static final float WARNING_ANGER = 66.0F;
 	private static final float RADIUS = 0.4F;
 	private static final int STACKS = 16;
 	private static final int SLICES = 24;
@@ -37,6 +42,8 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	/** Beam colours (ARGB): a near-white core inside a neon cyan glow. Drawn additively, so they shine in the dark. */
 	private static final int BEAM_CORE = 0xE0FFFF;
 	private static final int BEAM_GLOW = 0x00F0FF;
+	private static final int RAGE_BEAM_CORE = 0xFFE0D0;
+	private static final int RAGE_BEAM_GLOW = 0xFF1020;
 
 	public MehburityRenderer(EntityRendererProvider.Context context) {
 		super(context);
@@ -54,6 +61,8 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		state.yRot = Mth.rotLerp(partialTicks, entity.yHeadRotO, entity.yHeadRot);
 		state.xRot = entity.getXRot(partialTicks);
 		state.emergeProgress = entity.getEmergeProgress(partialTicks);
+		state.anger = entity.getAnger();
+		state.raging = entity.isRaging();
 		LivingEntity target = entity.getBeamTarget();
 		if (target != null) {
 			state.beamTarget = lerpedCenter(target, partialTicks);
@@ -104,7 +113,11 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		poseStack.mulPose(Axis.YP.rotationDegrees((1.0F - state.emergeProgress) * 360.0F));
 		poseStack.scale(scale, scale, scale);
 		int light = state.lightCoords;
-		collector.submitCustomGeometry(poseStack, RENDER_TYPE, (pose, buffer) -> buildSphere(pose, buffer, light));
+		// Very angry: a red flash every second, like a mob being hit.
+		boolean flash = !state.raging && state.anger >= WARNING_ANGER && ((int) state.ageInTicks / 5) % 4 == 0;
+		int overlay = OverlayTexture.pack(0.0F, flash);
+		collector.submitCustomGeometry(poseStack, state.raging ? ANGRY_RENDER_TYPE : RENDER_TYPE,
+				(pose, buffer) -> buildSphere(pose, buffer, light, overlay));
 		poseStack.popPose();
 		if (state.beamTarget != null) {
 			submitBeam(state, poseStack, collector, bob);
@@ -139,9 +152,11 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		poseStack.mulPose(Axis.XP.rotation((float) Math.acos(Mth.clamp(beam.y, -1.0, 1.0))));
 		// Starts at the sphere's surface, not inside it.
 		float start = RADIUS * 0.9F;
+		int glow = state.raging ? RAGE_BEAM_GLOW : BEAM_GLOW;
+		int core = state.raging ? RAGE_BEAM_CORE : BEAM_CORE;
 		collector.submitCustomGeometry(poseStack, RenderTypes.lightning(), (pose, buffer) -> {
-			tube(pose, buffer, start, length, glowRadius, BEAM_GLOW, glowAlpha);
-			tube(pose, buffer, start, length, coreRadius, BEAM_CORE, coreAlpha);
+			tube(pose, buffer, start, length, glowRadius, glow, glowAlpha);
+			tube(pose, buffer, start, length, coreRadius, core, coreAlpha);
 		});
 		poseStack.popPose();
 	}
@@ -177,22 +192,22 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	}
 
 	/** Latitude/longitude sphere. u runs around the equator (0.5 = front, +Z), v from top to bottom. */
-	private static void buildSphere(PoseStack.Pose pose, VertexConsumer buffer, int light) {
+	private static void buildSphere(PoseStack.Pose pose, VertexConsumer buffer, int light, int overlay) {
 		for (int stack = 0; stack < STACKS; stack++) {
 			float v0 = (float) stack / STACKS;
 			float v1 = (float) (stack + 1) / STACKS;
 			for (int slice = 0; slice < SLICES; slice++) {
 				float u0 = (float) slice / SLICES;
 				float u1 = (float) (slice + 1) / SLICES;
-				vertex(pose, buffer, light, u0, v0);
-				vertex(pose, buffer, light, u0, v1);
-				vertex(pose, buffer, light, u1, v1);
-				vertex(pose, buffer, light, u1, v0);
+				vertex(pose, buffer, light, overlay, u0, v0);
+				vertex(pose, buffer, light, overlay, u0, v1);
+				vertex(pose, buffer, light, overlay, u1, v1);
+				vertex(pose, buffer, light, overlay, u1, v0);
 			}
 		}
 	}
 
-	private static void vertex(PoseStack.Pose pose, VertexConsumer buffer, int light, float u, float v) {
+	private static void vertex(PoseStack.Pose pose, VertexConsumer buffer, int light, int overlay, float u, float v) {
 		float theta = v * Mth.PI;
 		float phi = (u - 0.5F) * Mth.TWO_PI;
 		float nx = Mth.sin(theta) * Mth.sin(phi);
@@ -201,7 +216,7 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		buffer.addVertex(pose, nx * RADIUS, ny * RADIUS, nz * RADIUS)
 				.setColor(-1)
 				.setUv(u, v)
-				.setOverlay(OverlayTexture.NO_OVERLAY)
+				.setOverlay(overlay)
 				.setLight(light)
 				.setNormal(pose, nx, ny, nz);
 	}

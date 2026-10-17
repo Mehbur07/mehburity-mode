@@ -10,12 +10,19 @@ import com.mehbur.mehburity.entity.MehburityBoxEntity;
 import com.mehbur.mehburity.entity.MehburityEntities;
 import com.mehbur.mehburity.entity.MehburityEntity;
 import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.authlib.GameProfile;
+import io.netty.channel.embedded.EmbeddedChannel;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
+import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
 import java.io.IOException;
@@ -23,6 +30,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /** Server game tests, run headless by {@code gradlew build}. */
@@ -48,6 +56,27 @@ public final class MehburityGameTests {
 	/** A mock player standing inside the test area. */
 	static ServerPlayer owner(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		Vec3 pos = helper.absoluteVec(new Vec3(2.5, 1.0, 2.5));
+		player.teleportTo(pos.x, pos.y, pos.z);
+		return player;
+	}
+
+	/**
+	 * Like {@code GameTestHelper.makeMockServerPlayerInLevel}, but in survival: the vanilla mock player is always
+	 * in creative,, mobs never target creative players and it never
+	 * finishes "loading", which makes it invulnerable.
+	 */
+	static ServerPlayer survivalOwner(GameTestHelper helper) {
+		CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-survivor"), false);
+		ServerLevel level = helper.getLevel();
+		ServerPlayer player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation());
+		Connection connection = new Connection(PacketFlow.SERVERBOUND);
+		new EmbeddedChannel(connection);
+		level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+		// Also resets the creative abilities (invulnerability) the test server's default game mode gave.
+		player.setGameMode(GameType.SURVIVAL);
+		// A mock client never says it finished loading, and players that have not loaded cannot be hurt.
+		player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
 		Vec3 pos = helper.absoluteVec(new Vec3(2.5, 1.0, 2.5));
 		player.teleportTo(pos.x, pos.y, pos.z);
 		return player;
@@ -134,7 +163,7 @@ public final class MehburityGameTests {
 		CommandNode<CommandSourceStack> root = helper.getLevel().getServer().getCommands().getDispatcher()
 				.getRoot().getChild(MehburityCommands.ROOT);
 		helper.assertTrue(root != null, "/mehburity must be registered");
-		for (String sub : new String[]{"yenile", "cagir", "otur", "takip", "ayarlar", "savas", "kaz", "ver", "canta", "ev"}) {
+		for (String sub : new String[]{"yenile", "cagir", "otur", "takip", "ayarlar", "savas", "kaz", "ver", "canta", "ev", "ofke", "sakin"}) {
 			helper.assertTrue(root.getChild(sub) != null, "/mehburity " + sub + " must be registered");
 		}
 		helper.succeed();

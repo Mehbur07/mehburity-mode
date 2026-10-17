@@ -26,6 +26,7 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 	public Combat combat = new Combat();
 	public Mining mining = new Mining();
 	public Build build = new Build();
+	public Anger anger = new Anger();
 	public Ai ai = new Ai();
 	public Verity verity = new Verity();
 
@@ -128,6 +129,50 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 	}
 
 	/**
+	 * Mehburity's temper, a meter from 0 to 100 that cools down over time. Hitting it, insulting it or killing its
+	 * owner makes it angrier; at {@code rageThreshold} it goes into a rage and hunts down only the culprit. Cake and
+	 * apologies ("Mehburity, özür dilerim") calm it down.
+	 */
+	public static final class Anger {
+		public boolean enabled = true;
+		/** A player hits Mehburity (its owner too). */
+		public double playerHitAnger = 25.0;
+		/** A mob hits Mehburity (an arrow counts for its shooter). */
+		public double mobHitAnger = 5.0;
+		/** Someone insults it in chat (words below). */
+		public double insultAnger = 15.0;
+		/** Someone kills its owner; 100 means an instant rage at the killer. */
+		public double ownerKilledAnger = 100.0;
+		/** Cools down by this much per minute. */
+		public double decayPerMinute = 10.0;
+		/** Goes into a rage at this level. */
+		public double rageThreshold = 100.0;
+		/** A rage ends when cake or apologies bring the meter down to this (or lower). */
+		public double calmBelow = 40.0;
+		/** Right-clicking Mehburity with a cake. */
+		public double cakeCalm = 60.0;
+		/** "Mehburity, özür dilerim" / "sorry". */
+		public double apologyCalm = 25.0;
+		/** One apology per player per this many seconds counts. */
+		public int apologyCooldownSeconds = 30;
+		/** Beam damage during a rage (the normal beam does combat.damage). */
+		public double rageDamage = 10.0;
+		public int rageCooldownTicks = 10;
+		/** Flying speed multiplier while chasing the culprit. */
+		public double rageSpeed = 3.0;
+		/** Gives up after this long. */
+		public int maxRageSeconds = 90;
+		/** Lets a rage target players at all (other players and the owner). Off: only mobs can be culprits. */
+		public boolean rageAtPlayers = true;
+		/** Lets a rage target its own owner (Verity-like). */
+		public boolean rageAtOwner = true;
+		/** Words that count as insults when said to Mehburity (accents and case do not matter). */
+		public List<String> insults = new ArrayList<>(List.of(
+				"aptal", "salak", "gerizekali", "beyinsiz", "seni sevmiyorum", "nefret ediyorum",
+				"stupid", "idiot", "dumb", "i hate you", "useless"));
+	}
+
+	/**
 	 * Talking to Mehburity. The Gemini key itself is a client setting: the server sends each question to the
 	 * owner's client, which asks Gemini and sends the answer back.
 	 */
@@ -213,6 +258,9 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		if (build == null) {
 			build = new Build();
 		}
+		if (anger == null) {
+			anger = new Anger();
+		}
 		if (ai == null) {
 			ai = new Ai();
 		}
@@ -258,6 +306,24 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		build.blocksPerSecond = Mth.clamp(build.blocksPerSecond, 1.0, 400.0);
 		build.maxFoundationDepth = Mth.clamp(build.maxFoundationDepth, 0, 32);
 		build.reach = Mth.clamp(build.reach, 3.0, 16.0);
+		anger.playerHitAnger = Mth.clamp(anger.playerHitAnger, 0.0, 100.0);
+		anger.mobHitAnger = Mth.clamp(anger.mobHitAnger, 0.0, 100.0);
+		anger.insultAnger = Mth.clamp(anger.insultAnger, 0.0, 100.0);
+		anger.ownerKilledAnger = Mth.clamp(anger.ownerKilledAnger, 0.0, 100.0);
+		anger.decayPerMinute = Mth.clamp(anger.decayPerMinute, 0.0, 6000.0);
+		anger.rageThreshold = Mth.clamp(anger.rageThreshold, 1.0, 100.0);
+		anger.calmBelow = Mth.clamp(anger.calmBelow, 0.0, anger.rageThreshold);
+		anger.cakeCalm = Mth.clamp(anger.cakeCalm, 0.0, 100.0);
+		anger.apologyCalm = Mth.clamp(anger.apologyCalm, 0.0, 100.0);
+		anger.apologyCooldownSeconds = Mth.clamp(anger.apologyCooldownSeconds, 0, 3600);
+		anger.rageDamage = Mth.clamp(anger.rageDamage, 0.0, 1000.0);
+		anger.rageCooldownTicks = Mth.clamp(anger.rageCooldownTicks, 0, 200);
+		anger.rageSpeed = Mth.clamp(anger.rageSpeed, 0.1, 10.0);
+		anger.maxRageSeconds = Mth.clamp(anger.maxRageSeconds, 5, 3600);
+		if (anger.insults == null) {
+			anger.insults = new ArrayList<>();
+		}
+		anger.insults.removeIf(word -> word == null || word.isBlank());
 		if (ai.chatPrefixes == null) {
 			ai.chatPrefixes = new ArrayList<>();
 		}

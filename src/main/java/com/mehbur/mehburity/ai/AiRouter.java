@@ -73,7 +73,7 @@ public final class AiRouter {
 		Runnable order = ChatCommandCallback.EVENT.invoker().handle(player, question);
 		if (order != null) {
 			// An order ("maden kaz"), carried out without asking Gemini once the owner's own line is in the chat.
-			ORDERS.add(order);
+			later(order);
 			return true;
 		}
 
@@ -132,6 +132,11 @@ public final class AiRouter {
 			return;
 		}
 		deliver(player, text, payload.fromGemini(), false);
+	}
+
+	/** Runs {@code action} at the end of this tick, after the chat line that caused it has been shown. */
+	public static void later(Runnable action) {
+		ORDERS.add(action);
 	}
 
 	/** Runs the chat orders received this tick. Public so tests can flush them without waiting a tick. */

@@ -40,7 +40,8 @@ public final class BuildGoal extends Goal {
 
 	@Override
 	public boolean canUse() {
-		return mehburity.getBuildJob() != null && !mehburity.isEmerging() && mehburity.getOwnerPlayer() != null;
+		return mehburity.getBuildJob() != null && !mehburity.isEmerging() && !mehburity.isRaging()
+				&& mehburity.getOwnerPlayer() != null;
 	}
 
 	@Override

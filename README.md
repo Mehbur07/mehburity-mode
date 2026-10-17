@@ -4,7 +4,7 @@ Minecraft **26.2 / Fabric** modu. Mehburity, oyuncunun yanında süzülen neon c
 yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar ve sinirlenince
 18 blokluk bir canavara dönüşür.
 
-> Durum: **Faz 5 (ev yapma) tamamlandı.** Öfke ve canavar formu sonraki fazlarda gelecek;
+> Durum: **Faz 6 (öfke) tamamlandı.** Canavar formu (18 blokluk iblis) sonraki fazda gelecek;
 > tam README Faz 8'de.
 
 ## Özellikler (şu an)
@@ -59,6 +59,29 @@ yapay zeka yardımcısı: Gemini ile konuşur, seni korur, maden kazar, ev yapar
   Kırılmaz bloklara, eşya tutan bloklara (sandık, fırın...) ve korunan alanlara asla dokunmaz; önünde böyle bir şey
   varsa sağına, arkasına ya da soluna kurar, hiçbir yöne sığmazsa söyler. Kazma ile aynı anda yapılmaz; saldırı
   olursa önce savaşır. İnşaat sürerken Mehburity sahasından ayrılmaz.
+- **Öfke:** Mehburity'nin 0–100 arası bir **öfke göstergesi** var. Onu sinirlendiren şeyler:
+  - Bir oyuncunun ona vurması (sahibi dahil): **+25**, bir canavarın vurması: **+5** (ok, atanın sayılır),
+  - Sohbette ona hakaret ("Mehburity, aptalsın", "salak", "I hate you"...): **+15**,
+  - **Sahibini öldürmek: +100**, yani katil anında öfkenin hedefi olur.
+
+  Hasar almaz, sadece fark eder. **33**'te "Hey, yapma şunu!", **66**'da "Beni gerçekten kızdırıyorsun..." der ve
+  üstünden kızgın partiküller çıkar, küre ara ara kırmızı yanıp söner. **100**'de **öfke nöbetine** girer:
+  kükrer, kırmızı bir küreye ve kızgın bir yüze dönüşür, kazmayı/inşaatı bırakır ve **sadece suçluyu** kovalar
+  (daha hızlı, 24 bloktan uzaklaşırsa yanına ışınlanır) ve kırmızı, daha güçlü bir ışınla (10 hasar) vurur.
+  Başka kimseye dokunmaz. Nöbet şöyle biter:
+  - Suçlu **ölürse** → sakinleşir (öfke 0),
+  - **Pasta** veya **özür** göstergeyi 40'ın altına indirirse,
+  - Suçlu kaçarsa (oyundan çıkar, başka boyuta geçer) ya da **90 sn** dolarsa.
+
+  Her durumda sonra sahibinin yanına ışınlanır. Sakinleştirmek için:
+  - Mehburity'ye **pasta ile sağ tık**: **−60** (bir pasta harcanır, yaratıcı modda harcanmaz),
+  - **"Mehburity, özür dilerim"** / "affet", "pardon", "sorry": **−25** (oyuncu başına 30 sn'de bir sayılır).
+    Sahibi olmayan biri (genelde suçlu) de yazabilir; ona en yakın, öncelikle ona kızgın olan Mehburity duyar.
+  - Kendi kendine soğur: kimse dokunmazsa dakikada **−10** (her sinirlendirmeden sonra 5 sn bekler).
+
+  Öfke dünya kaydında saklanır: oyundan çıkıp girmek sıfırlamaz. Gemini öfkesini bilir ve ona göre konuşur.
+  Sunucu isterse oyunculara (`anger.rageAtPlayers`) ya da sahibine (`anger.rageAtOwner`) öfkelenmesini kapatabilir;
+  o zaman o kişiye en fazla küser, nöbete girmez.
 - **Mehburity:** Havada süzülen, pürüzsüz neon cyan küre; yüzü baktığı yöne döner. Seni takip eder,
   uzakta kalırsa (veya başka boyuttaysan) yanına ışınlanır.
 - **Ölümsüz:** Hiçbir hasar almaz, `/kill` ile ölmez; boşluğa düşerse sahibinin yanına döner.
@@ -90,6 +113,8 @@ Alt komutlar ASCII yazılır (Minecraft'ın komut ayrıştırıcısı "ç, ğ" k
 | `/mehburity ev geri` | herkes | Son evi kaldırır, araziyi eski haline getirir ("Mehburity, evi geri al") |
 | `/mehburity ver` | herkes | Kazdıklarını verir ("Mehburity, kazdığın madenleri ver") |
 | `/mehburity canta` | herkes | Çantada ne olduğunu söyler ("Mehburity, ne kazdın?") |
+| `/mehburity ofke` | herkes | Mehburity'nin ne kadar kızgın olduğunu söyler |
+| `/mehburity sakin` | OP | Yüklü tüm Mehburity'leri sakinleştirir, öfke nöbetlerini bitirir |
 | `/mehburity ayarlar` | herkes | Ayarlar ekranını açar (Gemini anahtarı, ses) |
 | `/mehburity yenile` | OP | Ayar dosyasını yeniden yükler ve oyunculara gönderir |
 
@@ -155,6 +180,22 @@ Gemini ile konuşma ve ses Google'ın API kotasından düşer (ücretsiz katman�
 | `build.maxFoundationDepth` | 6 | Zemin altındaki boşlukları bu derinliğe kadar doldurur |
 | `build.furnish` | true | Yatak, sandık, çalışma masası, fırın (meşaleler her zaman konur) |
 | `build.reach` | 8.0 | Blokları bu uzaklıktan yerleştirir |
+| `anger.enabled` | true | Sunucu genelinde öfke açık mı |
+| `anger.playerHitAnger` / `mobHitAnger` | 25 / 5 | Bir oyuncu / canavar vurunca eklenen öfke |
+| `anger.insultAnger` | 15 | Hakaret başına öfke |
+| `anger.ownerKilledAnger` | 100 | Sahibi öldürülünce katile öfke (100 = anında nöbet) |
+| `anger.decayPerMinute` | 10 | Dakikada soğuma |
+| `anger.rageThreshold` | 100 | Bu seviyede öfke nöbeti başlar |
+| `anger.calmBelow` | 40 | Pasta/özür göstergeyi buna indirince nöbet biter |
+| `anger.cakeCalm` / `apologyCalm` | 60 / 25 | Pastanın / özrün düşürdüğü öfke |
+| `anger.apologyCooldownSeconds` | 30 | Aynı oyuncunun özrü bu sürede bir sayılır |
+| `anger.rageDamage` | 10.0 | Nöbetteki ışının hasarı |
+| `anger.rageCooldownTicks` | 10 | Nöbette iki atış arası bekleme (tick) |
+| `anger.rageSpeed` | 3.0 | Suçluyu kovalarken hız çarpanı |
+| `anger.maxRageSeconds` | 90 | Bu süreden sonra kovalamayı bırakır |
+| `anger.rageAtPlayers` | true | Oyunculara öfke nöbeti (kapalıyken sadece canavarlar suçlu olabilir) |
+| `anger.rageAtOwner` | true | Sahibine de öfke nöbeti (Verity gibi) |
+| `anger.insults` | ["aptal", "salak", ...] | Hakaret sayılan kelimeler (büyük/küçük harf ve Türkçe karakter fark etmez; "aptalsın" da sayılır) |
 | `ai.enabled` | true | Mehburity sohbete cevap versin mi |
 | `ai.chatPrefixes` | ["mehburity", "mehbur"] | Mesaj bunlardan biriyle başlarsa Mehburity'ye sorulmuş sayılır |
 | `ai.hearingRadius` | 32.0 | Cevabı sohbette görebilecek oyuncuların uzaklığı (blok) |
@@ -180,6 +221,7 @@ Kendi çizimlerini **aynı yol ve boyutla** koyman yeterli:
 | Dosya | Boyut | Ne |
 |---|---|---|
 | `src/main/resources/assets/mehburity/textures/entity/mehburity/mehburity.png` | 128×64 | Mehburity küresi (eşdikdörtgen: ortası = yüz, üst kenar = tepe) |
+| `src/main/resources/assets/mehburity/textures/entity/mehburity/mehburity_angry.png` | 128×64 | Öfke nöbetindeki kırmızı küre ve kızgın yüz (aynı düzen) |
 | `src/main/resources/assets/mehburity/textures/entity/mehburity/box.png` | 64×64 | Kutu (gövde 0,0'da; ön/arka kapaklar 0,24'te; yan kapaklar 0,32'de) |
 | `src/main/resources/assets/mehburity/icon.png` | 128×128 | Mod ikonu |
 
@@ -189,7 +231,7 @@ Sesler şimdilik vanilla seslere yönlendirilmiş (`assets/mehburity/sounds.json
 `.ogg` dosyalarını `src/main/resources/assets/mehburity/sounds/` klasörüne koy ve `sounds.json`'da
 `{"name": "minecraft:...", "type": "event"}` yerine `"mehburity:dosya_adi"` yaz.
 Ses olayları: `box.shake`, `box.open`, `mehburity.emerge`, `mehburity.speak` (anahtar yokken çalan "cıvıltı"),
-`mehburity.beam.charge` (ışın şarjı), `mehburity.beam.fire` (atış).
+`mehburity.beam.charge` (ışın şarjı), `mehburity.beam.fire` (atış), `mehburity.rage` (öfke nöbeti kükremesi).
 Mehburity'nin konuşma sesi dosya değil, Gemini TTS ile üretilir.
 
 ## Kurulum (geliştirme)
@@ -232,7 +274,7 @@ src/main/java/com/mehbur/mehburity/
   combat/   Savaş: hedef kuralları (CombatTargets), hedef seçimi, ışın saldırısı, hasar tipi
   mining/   Madencilik: kurallar (MiningRules), kazma hedefi (MineGoal), çanta (MiningBag), sohbet emirleri (MiningChat)
   build/    Ev: plan (HousePlan), stiller (HouseStyle), inşaat hedefi (BuildGoal), geri alma (Building), sohbet emirleri (BuildChat)
-  anger/    Sonraki faz
+  anger/    Öfke: gösterge ve nöbet (Anger), suçluyu kovalama (RageTargetGoal), özür/hakaret (AngerChat)
 src/client/java/com/mehbur/mehburity/client/
   render/   Küre renderer'ı (+ ışın), kutu modeli
   verity/   Karanlığın istemci tarafı (lightmap mixin'i)

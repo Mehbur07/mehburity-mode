@@ -1,5 +1,7 @@
 package com.mehbur.mehburity.entity;
 
+import com.mehbur.mehburity.anger.Anger;
+import com.mehbur.mehburity.anger.RageTargetGoal;
 import com.mehbur.mehburity.build.BuildGoal;
 import com.mehbur.mehburity.build.BuildJob;
 import com.mehbur.mehburity.combat.BeamAttackGoal;
@@ -16,6 +18,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -48,6 +52,11 @@ public class MehburityEntity extends PathfinderMob {
 	/** Entity id of what the beam is aimed at (charging or just fired), 0 when idle. Synced for the beam renderer. */
 	private static final EntityDataAccessor<Integer> DATA_BEAM_TARGET =
 			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.INT);
+	/** Temper, 0-100. Synced so the client can show it (angry sparks, the red rage face). */
+	private static final EntityDataAccessor<Float> DATA_ANGER =
+			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.FLOAT);
+	private static final EntityDataAccessor<Boolean> DATA_RAGING =
+			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.BOOLEAN);
 	public static final int EMERGE_DURATION = 30;
 	private static final int VALIDATE_INTERVAL = 20;
 	/** Entity event sent when a beam shot lands; the client flashes the beam. */
@@ -62,6 +71,9 @@ public class MehburityEntity extends PathfinderMob {
 	private @Nullable MiningJob miningJob;
 	/** The house it is building; not saved either. */
 	private @Nullable BuildJob buildJob;
+	/** Whom it is raging at; not saved (a rage ends with the session). */
+	private @Nullable LivingEntity rageCulprit;
+	private int rageTicks;
 	private int clientBeamTicks;
 	private int clientFlashTicks;
 
@@ -85,11 +97,15 @@ public class MehburityEntity extends PathfinderMob {
 		super.defineSynchedData(entityData);
 		entityData.define(DATA_EMERGE_TICKS, 0);
 		entityData.define(DATA_BEAM_TARGET, 0);
+		entityData.define(DATA_ANGER, 0.0F);
+		entityData.define(DATA_RAGING, false);
 	}
 
 	@Override
 	protected void registerGoals() {
 		DefendOwnerTargetGoal targeting = new DefendOwnerTargetGoal(this);
+		// A rage overrides everything: the only target is the culprit.
+		this.targetSelector.addGoal(0, new RageTargetGoal(this));
 		this.targetSelector.addGoal(1, targeting);
 		// Fighting comes before following; the companion manager still teleports it back if it gets too far.
 		this.goalSelector.addGoal(1, new BeamAttackGoal(this, targeting));
@@ -158,6 +174,51 @@ public class MehburityEntity extends PathfinderMob {
 
 	public void setMiningJob(@Nullable MiningJob job) {
 		this.miningJob = job;
+	}
+
+	// ---------------------------------------------------------------- anger
+
+	public float getAnger() {
+		return this.entityData.get(DATA_ANGER);
+	}
+
+	/** Use {@link Anger} to change it: that also handles warnings, the rage and saving. */
+	public void setAnger(float anger) {
+		this.entityData.set(DATA_ANGER, Math.max(0.0F, Math.min(100.0F, anger)));
+	}
+
+	public boolean isRaging() {
+		return this.entityData.get(DATA_RAGING);
+	}
+
+	public @Nullable LivingEntity getRageCulprit() {
+		return rageCulprit;
+	}
+
+	public int getRageTicks() {
+		return rageTicks;
+	}
+
+	/** Starts (culprit) or ends (null) the rage. Called by {@link Anger}. */
+	public void setRageCulprit(@Nullable LivingEntity culprit) {
+		this.rageCulprit = culprit;
+		this.rageTicks = 0;
+		this.entityData.set(DATA_RAGING, culprit != null);
+		if (culprit == null) {
+			this.setTarget(null);
+		}
+	}
+
+	/** Right-clicking with a cake calms it down. */
+	@Override
+	protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+		if (player.getItemInHand(hand).is(net.minecraft.world.item.Items.CAKE)) {
+			if (this.level() instanceof ServerLevel && player instanceof ServerPlayer serverPlayer) {
+				Anger.feedCake(this, serverPlayer, hand);
+			}
+			return InteractionResult.SUCCESS;
+		}
+		return super.mobInteract(player, hand);
 	}
 
 	public @Nullable BuildJob getBuildJob() {
@@ -238,6 +299,11 @@ public class MehburityEntity extends PathfinderMob {
 			return;
 		}
 
+		if (rageCulprit != null) {
+			rageTicks++;
+		}
+		Anger.tick(this);
+
 		int emerge = this.entityData.get(DATA_EMERGE_TICKS);
 		if (emerge > 0) {
 			this.entityData.set(DATA_EMERGE_TICKS, emerge - 1);
@@ -288,8 +354,10 @@ public class MehburityEntity extends PathfinderMob {
 
 	// ---------------------------------------------------------------- immortality
 
+	/** Never hurt, but it remembers who tried. */
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
+		Anger.onAttacked(this, source);
 		return false;
 	}
 
@@ -336,6 +404,7 @@ public class MehburityEntity extends PathfinderMob {
 		super.addAdditionalSaveData(output);
 		output.storeNullable("Owner", UUIDUtil.CODEC, ownerId);
 		output.store("Mode", CompanionMode.CODEC, mode);
+		output.putFloat("Anger", getAnger());
 	}
 
 	@Override
@@ -343,5 +412,6 @@ public class MehburityEntity extends PathfinderMob {
 		super.readAdditionalSaveData(input);
 		ownerId = input.read("Owner", UUIDUtil.CODEC).orElse(null);
 		mode = input.read("Mode", CompanionMode.CODEC).orElse(CompanionMode.FOLLOW);
+		setAnger(input.getFloatOr("Anger", 0.0F));
 	}
 }

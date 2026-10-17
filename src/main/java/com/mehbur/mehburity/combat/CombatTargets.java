@@ -42,6 +42,7 @@ public final class CombatTargets {
 	/** Combat is switched on for the server and for this owner, and the owner is around to be protected. */
 	public static boolean isActive(MehburityEntity mehburity, @Nullable ServerPlayer owner) {
 		return owner != null
+				&& !mehburity.isRaging() // a rage has its own target
 				&& !owner.isSpectator()
 				&& !mehburity.isEmerging()
 				&& MehburityConfig.get().combat.enabled

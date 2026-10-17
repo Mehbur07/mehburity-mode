@@ -1,6 +1,7 @@
 package com.mehbur.mehburity.ai;
 
 import com.mehbur.mehburity.config.MehburityConfig;
+import com.mehbur.mehburity.anger.Anger;
 import com.mehbur.mehburity.build.Building;
 import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.MehburityEntity;
@@ -51,6 +52,7 @@ public final class GameContext {
 			MehburityEntity mehburity = CompanionManager.find(level.getServer(), player.getUUID());
 			out.append(Mining.describeFor(player, mehburity));
 			out.append(Building.describeFor(mehburity));
+			out.append(Anger.describeFor(mehburity));
 		}
 		String recent = GameEvents.recent(player);
 		if (!recent.isEmpty()) {

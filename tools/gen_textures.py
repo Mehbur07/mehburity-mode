@@ -13,6 +13,7 @@ ASSETS = ROOT / "src" / "main" / "resources" / "assets" / "mehburity"
 ENTITY = ASSETS / "textures" / "entity" / "mehburity"
 
 NEON_CYAN = (0, 240, 255, 255)
+RAGE_RED = (235, 25, 35, 255)
 CYAN_SHADE = (0, 150, 170, 255)
 INK = (10, 10, 18, 255)
 BACKGROUND = (7, 7, 11, 255)
@@ -51,6 +52,22 @@ def face_ink(fx: float, fy: float) -> bool:
     return abs(d - smile_r) < 0.035 and fy > 0.14 and abs(fx) < 0.44
 
 
+def angry_face_ink(fx: float, fy: float) -> bool:
+    """The same face in a rage: eyes cut by slanted brows (high outside, low inside) and a frown."""
+    for ex in (-0.28, 0.28):
+        in_eye = ((fx - ex) / 0.085) ** 2 + ((fy + 0.22) / 0.14) ** 2 <= 1.0
+        # Brow line: higher on the outside, lower towards the nose (y points down).
+        brow_y = -0.30 - 0.45 * (abs(fx) - 0.28)
+        if in_eye and fy > brow_y:
+            return True
+        # The brow itself, a thick slanted bar above each eye.
+        if abs(fx - ex) < 0.14 and abs(fy - (brow_y - 0.06)) < 0.035:
+            return True
+    frown_r = 0.5
+    d = math.hypot(fx, fy - 0.62)
+    return abs(d - frown_r) < 0.035 and fy < 0.3 and abs(fx) < 0.38
+
+
 def icon(size: int):
     """Flat 2D smiley used as the mod icon."""
     c = (size - 1) / 2
@@ -69,7 +86,7 @@ def icon(size: int):
     return px
 
 
-def sphere(width: int, height: int):
+def sphere(width: int, height: int, color=NEON_CYAN, ink=face_ink):
     """Equirectangular sphere texture: u = longitude (0.5 = front), v = latitude (0 = top).
 
     The face is drawn by projecting each texel straight onto the front plane, so it looks
@@ -84,11 +101,11 @@ def sphere(width: int, height: int):
         dx = math.sin(theta) * math.sin(phi)
         dy = math.cos(theta)
         dz = math.sin(theta) * math.cos(phi)
-        if dz > 0.0 and face_ink(dx, -dy):
+        if dz > 0.0 and ink(dx, -dy):
             return INK
         # Slightly brighter towards the front so the face side reads as "the front".
         glow = 0.85 + 0.15 * max(0.0, dz)
-        return tuple(int(c * glow) for c in NEON_CYAN[:3]) + (255,)
+        return tuple(int(c * glow) for c in color[:3]) + (255,)
 
     return px
 
@@ -132,6 +149,7 @@ if __name__ == "__main__":
     outputs = [
         (ASSETS / "icon.png", 128, 128, icon(128)),
         (ENTITY / "mehburity.png", 128, 64, sphere(128, 64)),
+        (ENTITY / "mehburity_angry.png", 128, 64, sphere(128, 64, RAGE_RED, angry_face_ink)),
         (ENTITY / "box.png", 64, 64, box(64, 64)),
     ]
     for path, w, h, fn in outputs:

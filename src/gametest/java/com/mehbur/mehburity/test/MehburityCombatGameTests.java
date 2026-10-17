@@ -5,26 +5,19 @@ import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.MehburityEntity;
-import com.mojang.authlib.GameProfile;
-import io.netty.channel.embedded.EmbeddedChannel;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.UUID;
-
 import static com.mehbur.mehburity.test.MehburityGameTests.owner;
+import static com.mehbur.mehburity.test.MehburityGameTests.survivalOwner;
 import static com.mehbur.mehburity.test.MehburityGameTests.tempConfig;
 import static com.mehbur.mehburity.test.MehburityGameTests.withCompanion;
 
@@ -35,24 +28,6 @@ import static com.mehbur.mehburity.test.MehburityGameTests.withCompanion;
 public final class MehburityCombatGameTests {
 	/** Long enough for several shots, if Mehburity wrongly decided to fire. */
 	private static final int QUIET_TICKS = 80;
-
-	/**
-	 * Like {@code GameTestHelper.makeMockServerPlayerInLevel}, but in survival: the vanilla mock player is always
-	 * in creative, and mobs never target creative players.
-	 */
-	private static ServerPlayer survivalOwner(GameTestHelper helper) {
-		CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-survivor"), false);
-		ServerLevel level = helper.getLevel();
-		ServerPlayer player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation());
-		Connection connection = new Connection(PacketFlow.SERVERBOUND);
-		new EmbeddedChannel(connection);
-		level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
-		// Also resets the creative abilities (invulnerability) the test server's default game mode gave.
-		player.setGameMode(GameType.SURVIVAL);
-		Vec3 pos = helper.absoluteVec(new Vec3(2.5, 1.0, 2.5));
-		player.teleportTo(pos.x, pos.y, pos.z);
-		return player;
-	}
 
 	private static Husk husk(GameTestHelper helper, int x, int z) {
 		Husk husk = helper.spawn(EntityTypes.HUSK, new BlockPos(x, 1, z));

@@ -16,4 +16,7 @@ public class MehburityRenderState extends EntityRenderState {
 	public float beamCharge;
 	/** 1 right after a shot, fading to 0. */
 	public float beamFlash;
+	/** Temper 0-100, and whether it is in a rage (red face, red beam). */
+	public float anger;
+	public boolean raging;
 }
