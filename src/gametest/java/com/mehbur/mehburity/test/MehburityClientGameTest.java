@@ -12,6 +12,7 @@ import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.CompanionRegistry;
 import com.mehbur.mehburity.entity.MehburityBoxEntity;
 import com.mehbur.mehburity.entity.MehburityItem;
+import com.mehbur.mehburity.entity.MehburitySpeech;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext;
@@ -198,6 +199,16 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		context.takeScreenshot("mehburity-3d-rolling");
 		context.waitTicks(60);
 		context.takeScreenshot("mehburity-3e-settled");
+		// Talking: the mouth opens and shuts while the line lasts.
+		server.runOnServer(s -> MehburitySpeech.say(s.getPlayerList().getPlayer(playerId),
+				net.minecraft.network.chat.Component.literal("Look at me, I can talk now! Isn't that cool?")));
+		if (!server.computeOnServer(s -> CompanionManager.find(s, playerId).isTalking())) {
+			throw new AssertionError("Mehburity must be talking while it says something");
+		}
+		context.waitTicks(15); // it turns to look at the player while it talks
+		context.takeScreenshot("mehburity-3e-talking-1");
+		context.waitTicks(2);
+		context.takeScreenshot("mehburity-3e-talking-2");
 		context.getInput().pressKey(options -> options.keyToggleGui);
 		server.runOnServer(s -> CompanionManager.setMode(s.getPlayerList().getPlayer(playerId), CompanionMode.FOLLOW));
 

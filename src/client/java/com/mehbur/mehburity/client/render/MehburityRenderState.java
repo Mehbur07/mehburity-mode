@@ -24,6 +24,8 @@ public class MehburityRenderState extends EntityRenderState {
 	public boolean raging;
 	/** Shows the scared face (scripted scares). */
 	public boolean scared;
+	/** Talking, and whether the mouth is open in this frame. */
+	public boolean mouthOpen;
 	/** Rage form: its height (0 = a sphere), 0..1 while it grows, and the claw swipe (1 = none). */
 	public float monsterHeight;
 	public float transformProgress = 1.0F;

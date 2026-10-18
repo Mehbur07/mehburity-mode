@@ -195,6 +195,7 @@ public final class AiRouter {
 				listener.sendSystemMessage(line);
 			}
 		}
+		MehburitySpeech.talk(owner, text);
 		if (speakForOwner) {
 			MehburitySpeech.sendVoice(owner, Component.literal(text));
 		}

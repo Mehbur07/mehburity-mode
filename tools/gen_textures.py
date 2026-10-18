@@ -87,6 +87,28 @@ def scared_face_ink(fx: float, fy: float) -> bool:
     return abs(d - 0.13) < 0.045
 
 
+# Talking frames: the same faces with the mouth open. Eyes and brows sit above fy = 0, mouths below.
+def talk_face_ink(fx: float, fy: float) -> bool:
+    """The smile opened into a "D": flat on top, the smile's curve below."""
+    if fy < 0.05:
+        return face_ink(fx, fy)
+    return fy > 0.16 and math.hypot(fx, fy + 0.22) < 0.615 and abs(fx) < 0.44
+
+
+def talk_annoyed_face_ink(fx: float, fy: float) -> bool:
+    """Annoyed, talking: a small flat oval instead of the straight line."""
+    if fy < 0.05:
+        return annoyed_face_ink(fx, fy)
+    return (fx / 0.24) ** 2 + ((fy - 0.33) / 0.075) ** 2 <= 1.0
+
+
+def talk_angry_face_ink(fx: float, fy: float) -> bool:
+    """Cross or raging, talking: the frown opened into an upside-down "D"."""
+    if fy < 0.05:
+        return angry_face_ink(fx, fy)
+    return fy < 0.36 and math.hypot(fx, fy - 0.62) < 0.535 and abs(fx) < 0.38
+
+
 def flashlight(size: int, on: bool):
     """16x16 item: a flashlight lying diagonally, lens at the top right; switched on, the lens glows."""
 
@@ -287,6 +309,10 @@ if __name__ == "__main__":
         (ENTITY / "mehburity_annoyed.png", 256, 128, sphere(256, 128, NEON_CYAN, annoyed_face_ink)),
         (ENTITY / "mehburity_mad.png", 256, 128, sphere(256, 128, NEON_CYAN, angry_face_ink)),
         (ENTITY / "mehburity_scared.png", 256, 128, sphere(256, 128, NEON_CYAN, scared_face_ink)),
+        (ENTITY / "mehburity_talk.png", 256, 128, sphere(256, 128, NEON_CYAN, talk_face_ink)),
+        (ENTITY / "mehburity_annoyed_talk.png", 256, 128, sphere(256, 128, NEON_CYAN, talk_annoyed_face_ink)),
+        (ENTITY / "mehburity_mad_talk.png", 256, 128, sphere(256, 128, NEON_CYAN, talk_angry_face_ink)),
+        (ENTITY / "mehburity_angry_talk.png", 256, 128, sphere(256, 128, RAGE_RED, talk_angry_face_ink)),
         (ENTITY / "mehburity_monster.png", 64, 64, monster_skin(64, 64)),
         # The watcher: Mehburity's smile, glowing white on a near-black head, and a black body with red veins.
         (ENTITY / "watcher.png", 256, 128, sphere(256, 128, (22, 12, 16, 255), face_ink, (245, 240, 235, 255))),

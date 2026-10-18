@@ -1,10 +1,12 @@
 package com.mehbur.mehburity.client.render;
 
 import com.mehbur.mehburity.MehburityMod;
+import com.mehbur.mehburity.client.ai.VoicePlayer;
 import com.mehbur.mehburity.entity.MehburityEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -37,6 +39,11 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	private static final RenderType ANNOYED_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_annoyed.png"));
 	static final RenderType MAD_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_mad.png"));
 	private static final RenderType SCARED_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_scared.png"));
+	/** The same faces with the mouth open, swapped in and out while it talks. */
+	private static final RenderType TALK_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_talk.png"));
+	private static final RenderType ANNOYED_TALK_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_annoyed_talk.png"));
+	private static final RenderType MAD_TALK_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_mad_talk.png"));
+	private static final RenderType ANGRY_TALK_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_angry_talk.png"));
 	/** From this anger on it looks annoyed (a third of the default rage threshold). */
 	private static final float ANNOYED_ANGER = 33.0F;
 	/** From this anger on, it looks cross and the sphere flashes red now and then as a warning. */
@@ -76,6 +83,7 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		state.anger = entity.getAnger();
 		state.raging = entity.isRaging();
 		state.scared = entity.isScared();
+		state.mouthOpen = isTalking(entity) && mouthOpen(entity.getId(), state.ageInTicks);
 		state.monsterHeight = entity.getMonsterHeight();
 		state.transformProgress = entity.getTransformProgress(partialTicks);
 		state.swipeProgress = entity.getSwipeProgress(partialTicks);
@@ -157,18 +165,40 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		super.submit(state, poseStack, collector, camera);
 	}
 
-	/** The face for its mood: anger wins over fear, fear over the usual smile. */
+	/** The face for its mood: anger wins over fear, fear over the usual smile. Talking opens the mouth now and then. */
 	private static RenderType face(MehburityRenderState state) {
+		boolean open = state.mouthOpen;
 		if (state.raging) {
-			return ANGRY_RENDER_TYPE;
+			return open ? ANGRY_TALK_RENDER_TYPE : ANGRY_RENDER_TYPE;
 		}
 		if (state.anger >= WARNING_ANGER) {
-			return MAD_RENDER_TYPE;
+			return open ? MAD_TALK_RENDER_TYPE : MAD_RENDER_TYPE;
 		}
 		if (state.anger >= ANNOYED_ANGER) {
-			return ANNOYED_RENDER_TYPE;
+			return open ? ANNOYED_TALK_RENDER_TYPE : ANNOYED_RENDER_TYPE;
 		}
-		return state.scared ? SCARED_RENDER_TYPE : RENDER_TYPE;
+		if (state.scared) {
+			return SCARED_RENDER_TYPE; // its mouth is open already
+		}
+		return open ? TALK_RENDER_TYPE : RENDER_TYPE;
+	}
+
+	/** A line from the server, or (for the local player's own Mehburity) its voice coming out of the speakers. */
+	private static boolean isTalking(MehburityEntity entity) {
+		if (entity.isTalking()) {
+			return true;
+		}
+		var player = Minecraft.getInstance().player;
+		return VoicePlayer.isPlaying() && player != null && entity.isOwnedBy(player.getUUID());
+	}
+
+	/**
+	 * Syllables: the mouth opens and shuts every few ticks, with an irregular rhythm (two waves) so it does not look
+	 * like a metronome. Offset per entity, so two Mehburities never talk in sync.
+	 */
+	private static boolean mouthOpen(int id, float ageInTicks) {
+		float t = ageInTicks + id * 7.3F;
+		return Mth.sin(t * 1.25F) + 0.6F * Mth.sin(t * 0.43F) > -0.2F;
 	}
 
 	/**

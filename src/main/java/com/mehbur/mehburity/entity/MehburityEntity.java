@@ -72,7 +72,17 @@ public class MehburityEntity extends PathfinderMob {
 	/** Ticks left of looking scared (wide eyes, small mouth), e.g. after a scripted scare. Synced for the face. */
 	private static final EntityDataAccessor<Integer> DATA_SCARED_TICKS =
 			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.INT);
+	/** Ticks it keeps moving its mouth for the line it is saying. Synced; the client counts down by itself. */
+	private static final EntityDataAccessor<Integer> DATA_TALK_TICKS =
+			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.INT);
+	/** The owner's UUID as text ("" when none), so a client knows its own Mehburity, e.g. to move its mouth with the voice. */
+	private static final EntityDataAccessor<String> DATA_OWNER =
+			SynchedEntityData.defineId(MehburityEntity.class, EntityDataSerializers.STRING);
 	public static final int EMERGE_DURATION = 30;
+	/** Talking speed: a bit faster than Gemini's voice reads, which keeps up with it while the voice plays. */
+	private static final double TALK_TICKS_PER_CHAR = 1.2;
+	private static final int MIN_TALK_TICKS = 15;
+	private static final int MAX_TALK_TICKS = 400;
 	private static final int VALIDATE_INTERVAL = 20;
 	/** Entity event sent when a beam shot lands; the client flashes the beam. */
 	public static final byte EVENT_BEAM_FIRED = 100;
@@ -100,6 +110,8 @@ public class MehburityEntity extends PathfinderMob {
 	private int clientBeamTicks;
 	private int clientFlashTicks;
 	private int clientSwipeTicks;
+	/** Server: ticks left of the current line. Client: the same, counted down locally. */
+	private int talkTicks;
 	/** Client: how far the ball has rolled (radians, kept in 0..2π) and towards which yaw, for the renderer. */
 	private float clientRoll;
 	private float clientRollO;
@@ -130,6 +142,8 @@ public class MehburityEntity extends PathfinderMob {
 		entityData.define(DATA_TRANSFORM_TICKS, 0);
 		entityData.define(DATA_TRANSFORM_DURATION, 0);
 		entityData.define(DATA_SCARED_TICKS, 0);
+		entityData.define(DATA_TALK_TICKS, 0);
+		entityData.define(DATA_OWNER, "");
 	}
 
 	@Override
@@ -177,6 +191,12 @@ public class MehburityEntity extends PathfinderMob {
 
 	public void setOwnerId(@Nullable UUID ownerId) {
 		this.ownerId = ownerId;
+		this.entityData.set(DATA_OWNER, ownerId == null ? "" : ownerId.toString());
+	}
+
+	/** Works on the client too (the owner is synced). */
+	public boolean isOwnedBy(UUID player) {
+		return player.toString().equals(this.entityData.get(DATA_OWNER));
 	}
 
 	public @Nullable ServerPlayer getOwnerPlayer() {
@@ -241,6 +261,20 @@ public class MehburityEntity extends PathfinderMob {
 	}
 
 	// ---------------------------------------------------------------- expressions
+
+	/** Moves its mouth for as long as saying {@code text} takes (everyone nearby sees it talk). */
+	public void talk(String text) {
+		int ticks = Mth.clamp((int) Math.round(text.length() * TALK_TICKS_PER_CHAR), MIN_TALK_TICKS, MAX_TALK_TICKS);
+		talkTicks = Math.max(talkTicks, ticks);
+		// A new value each time, so a second line of the same length still reaches the clients.
+		int synced = this.entityData.get(DATA_TALK_TICKS);
+		this.entityData.set(DATA_TALK_TICKS, talkTicks == synced ? talkTicks + 1 : talkTicks);
+	}
+
+	/** Saying something right now (a line from the server; the client adds its own voice playback). */
+	public boolean isTalking() {
+		return talkTicks > 0;
+	}
 
 	/** Shows the scared face for {@code ticks} (the anger faces still win while it is angry). */
 	public void setScared(int ticks) {
@@ -408,6 +442,8 @@ public class MehburityEntity extends PathfinderMob {
 		super.onSyncedDataUpdated(accessor);
 		if (DATA_BEAM_TARGET.equals(accessor)) {
 			clientBeamTicks = 0;
+		} else if (DATA_TALK_TICKS.equals(accessor) && this.level().isClientSide()) {
+			talkTicks = this.entityData.get(DATA_TALK_TICKS);
 		} else if (DATA_MONSTER_HEIGHT.equals(accessor)) {
 			// The demon walks through walls (an 18-block body would never fit through a cave).
 			this.noPhysics = isMonster();
@@ -440,11 +476,17 @@ public class MehburityEntity extends PathfinderMob {
 				clientSwipeTicks--;
 			}
 			tickRoll();
+			if (talkTicks > 0) {
+				talkTicks--;
+			}
 			return;
 		}
 
 		if (rageCulprit != null) {
 			rageTicks++;
+		}
+		if (talkTicks > 0 && --talkTicks == 0) {
+			this.entityData.set(DATA_TALK_TICKS, 0);
 		}
 		Anger.tick(this);
 
@@ -472,6 +514,22 @@ public class MehburityEntity extends PathfinderMob {
 		if (this.tickCount % VALIDATE_INTERVAL == 0
 				&& (ownerId == null || !CompanionRegistry.isCurrentCompanion(level, ownerId, this.getUUID()))) {
 			this.discard();
+		}
+	}
+
+	/**
+	 * Idle and talking, it looks at whom it talks to; at work or in a fight it keeps its eyes on that. Runs after
+	 * the goals (which would otherwise look around at random) and before the look is applied.
+	 */
+	@Override
+	protected void customServerAiStep(ServerLevel level) {
+		super.customServerAiStep(level);
+		if (talkTicks <= 0 || isMonster() || this.getTarget() != null || miningJob != null || buildJob != null) {
+			return;
+		}
+		ServerPlayer owner = getOwnerPlayer();
+		if (owner != null && owner.level() == level) {
+			this.getLookControl().setLookAt(owner, 30.0F, 30.0F);
 		}
 	}
 
@@ -577,7 +635,7 @@ public class MehburityEntity extends PathfinderMob {
 	@Override
 	protected void readAdditionalSaveData(ValueInput input) {
 		super.readAdditionalSaveData(input);
-		ownerId = input.read("Owner", UUIDUtil.CODEC).orElse(null);
+		setOwnerId(input.read("Owner", UUIDUtil.CODEC).orElse(null));
 		mode = input.read("Mode", CompanionMode.CODEC).orElse(CompanionMode.FOLLOW);
 		setAnger(input.getFloatOr("Anger", 0.0F));
 	}

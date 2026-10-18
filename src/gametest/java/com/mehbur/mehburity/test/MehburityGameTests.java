@@ -11,6 +11,7 @@ import com.mehbur.mehburity.entity.MehburityBoxEntity;
 import com.mehbur.mehburity.entity.MehburityItem;
 import com.mehbur.mehburity.entity.MehburityEntities;
 import com.mehbur.mehburity.entity.MehburityEntity;
+import com.mehbur.mehburity.entity.MehburitySpeech;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.authlib.GameProfile;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -21,6 +22,7 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -366,6 +368,22 @@ public final class MehburityGameTests {
 				helper.succeedWhen(() -> helper.assertTrue(mehburity.distanceTo(owner) < close,
 						"FOLLOW must roll back to the owner"));
 			});
+		});
+	}
+
+	@GameTest(maxTicks = 500)
+	public void mehburity_moves_its_mouth_while_it_talks(GameTestHelper helper) {
+		ServerPlayer owner = owner(helper);
+		withCompanion(helper, owner, mehburity -> {
+			helper.assertTrue(mehburity.isTalking(), "it talks while it greets its owner");
+			helper.startSequence()
+					.thenWaitUntil(() -> helper.assertFalse(mehburity.isTalking(), "quiet once the greeting is said"))
+					.thenExecute(() -> {
+						MehburitySpeech.say(owner, Component.literal("Hello there, nice to see you!"));
+						helper.assertTrue(mehburity.isTalking(), "talking while it says something");
+					})
+					.thenWaitUntil(() -> helper.assertFalse(mehburity.isTalking(), "quiet again once the line is said"))
+					.thenSucceed();
 		});
 	}
 

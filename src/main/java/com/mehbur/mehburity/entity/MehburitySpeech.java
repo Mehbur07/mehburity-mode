@@ -24,6 +24,15 @@ public final class MehburitySpeech {
 	/** Chat only (short acknowledgements). */
 	public static void say(ServerPlayer player, Component message) {
 		player.sendSystemMessage(line(message));
+		talk(player, message.getString());
+	}
+
+	/** Moves the mouth of {@code player}'s Mehburity while it says {@code text}, if it is out in the world. */
+	public static void talk(ServerPlayer player, String text) {
+		MehburityEntity mehburity = CompanionManager.find(player.level().getServer(), player.getUUID());
+		if (mehburity != null) {
+			mehburity.talk(text);
+		}
 	}
 
 	/** Chat plus Mehburity's voice on the player's client. */

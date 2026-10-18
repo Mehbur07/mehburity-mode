@@ -110,6 +110,8 @@ Emirler Gemini'ye gitmeden anlaşılır, büyük/küçük harf ve Türkçe karak
 - Yerde yuvarlanarak seni takip eder (bir bloğu yuvarlanıp çıkar, suda yüzer); durunca yüzü dik konuma oturur ve baktığı
   yöne döner. 20 bloktan uzak kalırsan ya da başka boyuta geçersen
   yanına ışınlanır. `/mehburity otur` ile bulunduğu yerde bekler, `/mehburity takip` ile yeniden peşine düşer.
+- **Konuşurken ağzı oynar:** her cümlede (sesli okurken de) ağzı açılıp kapanır ve boştaysa sana döner. Yakındaki
+  herkes konuştuğunu görür; sinirliyken ve öfkeliyken de o yüzün ağzı oynar.
 - **Ölümsüzdür:** hasar almaz, `/kill` ile ölmez, boşluğa düşerse sana döner. Ama vurulduğunu fark eder (bkz. [Öfke](#öfke)).
 - **Oyuncu başına bir Mehburity.** Sahiplik dünya kaydında tutulur. Oyundan çıkınca seninle "gider", girince yanında
   belirir. "Otur" modundaysa bıraktığın yerde bekler.

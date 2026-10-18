@@ -45,6 +45,8 @@ public final class VoicePlayer {
 	private static CompletableFuture<Void> queue = CompletableFuture.completedFuture(null);
 	/** Bumped by {@link #hush()}: lines asked for before it are cut off or skipped. */
 	private static volatile int generation;
+	/** True while a line is coming out of the speakers; Mehburity moves its mouth meanwhile. */
+	private static volatile boolean playing;
 
 	private VoicePlayer() {
 	}
@@ -104,6 +106,10 @@ public final class VoicePlayer {
 		generation++;
 	}
 
+	public static boolean isPlaying() {
+		return playing;
+	}
+
 	/** Blocking playback on the audio thread, scaled by our volume × Minecraft's voice/master volume. */
 	private static void play(byte[] wav, int asked) {
 		try (AudioInputStream stream = AudioSystem.getAudioInputStream(new ByteArrayInputStream(wav))) {
@@ -112,6 +118,7 @@ public final class VoicePlayer {
 				line.open(format);
 				applyVolume(line);
 				line.start();
+				playing = true;
 				byte[] buffer = new byte[4096];
 				int read;
 				while ((read = stream.read(buffer)) > 0) {
@@ -126,6 +133,8 @@ public final class VoicePlayer {
 		} catch (Exception e) {
 			// No audio device, unsupported format...: the chat line is still there.
 			MehburityMod.LOGGER.warn("Could not play Mehburity's voice: {}", e.toString());
+		} finally {
+			playing = false;
 		}
 	}
 
