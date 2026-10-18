@@ -26,6 +26,7 @@ import com.mehbur.mehburity.verity.EventsFeature;
 import com.mehbur.mehburity.verity.FlashlightItem;
 import com.mehbur.mehburity.verity.WatcherEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -469,9 +470,45 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		if (!dropped.equals("[]")) {
 			throw new AssertionError("undo dropped blocks as items: " + dropped);
 		}
-		server.runOnServer(s -> MehburityConfig.get().build.blocksPerSecond = speed);
 		context.waitTicks(10);
 		context.takeScreenshot("mehburity-h3-undone");
+
+		// A described house from the real chat: designed from the words (no Gemini key here) and built.
+		server.runOnServer(s -> MehburityConfig.get().build.blocksPerSecond = 400.0);
+		context.runOnClient(mc -> mc.player.connection.sendChat(
+				"Mehburity, iki katlı, havuzlu, bahçeli, balkonlu, kuleli, bacalı, sivri çatılı tuğla bir ev yap"));
+		server.waitFor(s -> CompanionManager.find(s, playerId).getBuildJob() != null, 200);
+		BlockPos front = server.computeOnServer(s -> CompanionManager.find(s, playerId).getBuildJob().plan().origin());
+		boolean asked = server.computeOnServer(s -> {
+			var spec = CompanionManager.find(s, playerId).getBuildJob().plan().spec();
+			return spec.floors() == 2 && spec.pool() && spec.garden() && spec.balcony() && spec.tower() && spec.chimney();
+		});
+		if (!asked) {
+			throw new AssertionError("the house must be designed as described");
+		}
+		server.waitFor(s -> CompanionManager.find(s, playerId).getBuildJob() == null, 2400);
+		server.runOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			Vec3 back = player.position().subtract(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(10.0));
+			player.teleportTo(back.x, player.getY() + 6.0, back.z);
+		});
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.waitTicks(20);
+		context.getInput().lookAt(front.above(5).relative(Direction.fromYRot(server.computeOnServer(
+				s -> s.getPlayerList().getPlayer(playerId).getYRot())), 4));
+		context.waitTicks(10);
+		context.takeScreenshot("mehburity-h4-described-house");
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, evi geri al"));
+		server.waitFor(s -> !(s.overworld().getBlockState(front.above()).getBlock() instanceof DoorBlock), 200);
+		server.runOnServer(s -> MehburityConfig.get().build.blocksPerSecond = speed);
+		server.runOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			Vec3 back = player.position().add(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(10.0));
+			int ground = s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int) Math.floor(back.x), (int) Math.floor(back.z));
+			player.teleportTo(back.x, ground, back.z);
+		});
+		context.waitTicks(10);
 	}
 
 	/**

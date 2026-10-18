@@ -101,6 +101,7 @@ Emirler Gemini'ye gitmeden anlaşılır, büyük/küçük harf ve Türkçe karak
 | ev yap / build me a house | Önüne ahşap bir ev kurar | `/mehburity ev` |
 | taş ev yap, tuğla ev yap, ahşap ev yap | Seçilen stilde ev | `/mehburity ev tas` … |
 | elimdeki bloktan ev yap | Duvarları elindeki bloktan | `/mehburity ev elimdeki` |
+| iki katlı, havuzlu, kırmızı çatılı beyaz bir ev yap | **Tarif ettiğin evi** tasarlayıp yapar | — |
 | inşaatı durdur / stop building | Yarıda bırakır | `/mehburity ev dur` |
 | evi geri al / remove the house | Evi kaldırır, araziyi eski haline getirir | `/mehburity ev geri` |
 | özür dilerim, affet, pardon, sorry | Öfkesini azaltır (−25) | – |
@@ -164,6 +165,24 @@ harcamaz**. Ev 7×7'lik bir gövde, köşe direkleri, camlar, kapı ve basamakl�
   tam olmayan bir blok (meşale, basamak…) olamaz.
 - **"Evi geri al"** son evi kaldırır ve araziyi eski haline getirir (sunucu kapanana kadar).
 - Kırılmaz bloklara, eşya tutan bloklara ve korunan alanlara dokunmaz. Önü doluysa sağa, arkaya ya da sola kurar.
+
+**Tarif ettiğin her ev:** Evi kelimelerle anlat, Mehburity ona göre tasarlayıp yapsın. Örnekler:
+"Mehburity, iki katlı, havuzlu, bahçeli, kırmızı çatılı beyaz bir ev yap", "kuleli ve bacalı büyük bir ortaçağ taş evi
+yap", "modern bir villa yap", "9x13 boyutunda 3 katlı, 4 yataklı, sivri çatılı ladin ev yap", "build me a japanese house
+with a garden".
+
+- **Anlaşılanlar:** boyut (küçük / büyük / kocaman ya da `9x13`), kat sayısı (1–4, katlar arası merdiven), tavan
+  yüksekliği, çatı (sivri/üçgen, düz, piramit), malzeme (ahşap, meşe, huş, ladin, koyu meşe, akasya, kiraz, orman,
+  mangrov, bambu, taş, kırık taş, tuğla, kumtaşı, kuvars/mermer, beton, cam, derin taş, karataş, nether, prizmarin,
+  kerpiç, buz, kar, altın, elmas, zümrüt, obsidyen, ametist, bakır), renkler ("beyaz ev", "kırmızı çatılı"), tarzlar
+  (modern, ortaçağ/kale, Japon, kış, villa, malikane, kulübe) ve ekler: **havuz, bahçe** (çit, kapı, yol, çiçekler,
+  fenerler), **balkon, veranda, baca** (tüten), **kule**, kütüphane, mutfak, büyük pencereler, yatak sayısı.
+- **Gemini anahtarın varsa** tarif Gemini'ye de sorulur; o da aynı alanları seçer ("deniz kenarında romantik bir
+  ev" gibi serbest tarifler de anlaşılır). Gemini'nin seçtiği bloklar denetlenir: düşen (kum, çakıl), operatör, kırılmaz
+  bloklar ve kırmızı taş isteyen demir kapı kabul edilmez. Anahtar yoksa ya da 25 saniyede cevap gelmezse kelimelerden
+  çıkan tasarım yapılır.
+- Sadece "ev yap" (ya da "taş ev yap") demek eskisi gibi klasik 7×7 evi hemen yapar. Tarifli evler de "evi geri al" ile
+  kaldırılır; en fazla 21×21, 4 kat. Yüksek çatılara ve kulelere aşağıdan, yerde yuvarlanırken blok koyar.
 
 ### Öfke
 

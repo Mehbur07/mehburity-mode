@@ -54,12 +54,40 @@ public final class Building {
 
 	public static void register() {
 		BuildChat.register();
+		HouseDesigner.register();
 	}
 
-	/** Builds a house in front of the owner; {@code style} null means {@code build.defaultStyle}. */
+	/** Builds the classic house in front of the owner; {@code style} null means {@code build.defaultStyle}. */
 	public static boolean start(ServerPlayer owner, @Nullable HouseStyle style) {
-		MehburityConfig.Build config = MehburityConfig.get().build;
-		if (!config.enabled) {
+		return start(owner, style, null);
+	}
+
+	/**
+	 * Builds the house {@code description} asks for ("iki katlı havuzlu beyaz bir ev"), designed from its words and,
+	 * with a Gemini key, by Gemini; a bare "ev yap" (or a null description) builds the classic house at once.
+	 */
+	public static boolean start(ServerPlayer owner, @Nullable HouseStyle style, @Nullable String description) {
+		if (busyOrMissing(owner) != null) {
+			return busyOrMissing(owner);
+		}
+		HouseStyle chosen = style != null ? style : HouseStyle.byId(MehburityConfig.get().build.defaultStyle);
+		HouseStyle.Palette palette = (chosen == null ? HouseStyle.WOOD : chosen).palette();
+		if (chosen == HouseStyle.HELD) {
+			BlockState walls = heldWallBlock(owner);
+			if (walls == null) {
+				return false;
+			}
+			palette = palette.withWalls(walls);
+		}
+		if (description == null || BuildChat.isPlain(description)) {
+			return begin(owner, HouseSpec.standard(palette), null);
+		}
+		return HouseDesigner.design(owner, description, palette);
+	}
+
+	/** Null when Mehburity can build now; otherwise says why not and returns what {@link #start} returns. */
+	private static @Nullable Boolean busyOrMissing(ServerPlayer owner) {
+		if (!MehburityConfig.get().build.enabled) {
 			MehburitySpeech.say(owner, MehburitySpeech.text("build.server_off", "Building is turned off on this server."));
 			return false;
 		}
@@ -73,19 +101,17 @@ public final class Building {
 			MehburitySpeech.say(owner, MehburitySpeech.text("build.already", "I'm already building!"));
 			return true;
 		}
+		return null;
+	}
 
-		HouseStyle chosen = style != null ? style : HouseStyle.byId(config.defaultStyle);
-		HouseStyle.Palette palette = (chosen == null ? HouseStyle.WOOD : chosen).palette();
-		if (chosen == HouseStyle.HELD) {
-			BlockState walls = heldWallBlock(owner);
-			if (walls == null) {
-				return false;
-			}
-			palette = palette.withWalls(walls);
+	/** Builds {@code spec} in front of the owner ({@code description}: what they asked for, null for the classic house). */
+	static boolean begin(ServerPlayer owner, HouseSpec spec, @Nullable String description) {
+		if (busyOrMissing(owner) != null) {
+			return busyOrMissing(owner);
 		}
-
+		MehburityEntity mehburity = CompanionManager.find(owner.level().getServer(), owner.getUUID());
 		ServerLevel level = owner.level();
-		HousePlan plan = findSpot(level, owner, palette);
+		HousePlan plan = findSpot(level, owner, spec);
 		if (plan == null) {
 			MehburitySpeech.say(owner, MehburitySpeech.text("build.no_room",
 					"I can't build here: there is something I must not touch, or no room. Try a flatter, open spot."));
@@ -98,8 +124,14 @@ public final class Building {
 		BuildJob job = new BuildJob(plan);
 		mehburity.setBuildJob(job);
 		UNDO.put(owner.getUUID(), new Undo(level.dimension(), job.before()));
-		MehburitySpeech.say(owner, MehburitySpeech.text("build.start", "Leave it to me! I'm building you a house."));
-		GameEvents.record(owner, "the player asked Mehburity to build a house; it started building right in front of them");
+		if (description == null) {
+			MehburitySpeech.say(owner, MehburitySpeech.text("build.start", "Leave it to me! I'm building you a house."));
+			GameEvents.record(owner, "the player asked Mehburity to build a house; it started building right in front of them");
+		} else {
+			MehburitySpeech.say(owner, summary(spec));
+			GameEvents.record(owner, "the player asked Mehburity to build: \"" + description
+					+ "\"; it started building it right in front of them");
+		}
 		return true;
 	}
 
@@ -170,11 +202,41 @@ public final class Building {
 		return MiningRules.isBreakable(level, pos, current) && MiningRules.ownerMayBreak(level, owner, pos, current);
 	}
 
+	/** "Leave it to me! A 9×9, 2-storey house (pool, garden)." in the owner's language. */
+	static Component summary(HouseSpec spec) {
+		List<Component> extras = new ArrayList<>();
+		feature(extras, spec.pool(), "pool", "a pool");
+		feature(extras, spec.garden(), "garden", "a garden");
+		feature(extras, spec.balcony(), "balcony", "a balcony");
+		feature(extras, spec.porch(), "porch", "a porch");
+		feature(extras, spec.tower(), "tower", "a tower");
+		feature(extras, spec.chimney(), "chimney", "a chimney");
+		feature(extras, spec.library(), "library", "a library");
+		feature(extras, spec.kitchen(), "kitchen", "a kitchen");
+		feature(extras, spec.bigWindows(), "big_windows", "big windows");
+		Component tail = Component.empty();
+		if (!extras.isEmpty()) {
+			var list = Component.literal(" (");
+			for (int i = 0; i < extras.size(); i++) {
+				list.append(i == 0 ? Component.empty() : Component.literal(", ")).append(extras.get(i));
+			}
+			tail = list.append(")");
+		}
+		return MehburitySpeech.text("build.start_spec", "Leave it to me! I'm building you a %1$s×%2$s, %3$s-storey house%4$s.",
+				spec.width(), spec.depth(), spec.floors(), tail);
+	}
+
+	private static void feature(List<Component> extras, boolean has, String key, String fallback) {
+		if (has) {
+			extras.add(MehburitySpeech.text("build.feature." + key, fallback));
+		}
+	}
+
 	/** Tries in front of the owner first, then to their right, behind and left. */
-	private static @Nullable HousePlan findSpot(ServerLevel level, ServerPlayer owner, HouseStyle.Palette palette) {
+	private static @Nullable HousePlan findSpot(ServerLevel level, ServerPlayer owner, HouseSpec spec) {
 		Direction facing = owner.getDirection();
 		for (int turn = 0; turn < 4; turn++) {
-			HousePlan plan = HousePlan.inFrontOf(level, owner.blockPosition(), facing, palette);
+			HousePlan plan = HousePlan.inFrontOf(level, owner.blockPosition(), facing, spec);
 			if (isAllowed(level, owner, plan)) {
 				return plan;
 			}

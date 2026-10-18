@@ -3,7 +3,10 @@ package com.mehbur.mehburity.test;
 import com.mehbur.mehburity.build.BuildChat;
 import com.mehbur.mehburity.build.BuildJob;
 import com.mehbur.mehburity.build.Building;
+import com.mehbur.mehburity.build.HouseDescriptions;
+import com.mehbur.mehburity.build.HouseDesignJson;
 import com.mehbur.mehburity.build.HousePlan;
+import com.mehbur.mehburity.build.HouseSpec;
 import com.mehbur.mehburity.build.HouseStyle;
 import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.MehburityEntity;
@@ -19,8 +22,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -31,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.mehbur.mehburity.test.MehburityGameTests.owner;
 import static com.mehbur.mehburity.test.MehburityGameTests.tempConfig;
@@ -93,6 +100,62 @@ public final class MehburityBuildGameTests {
 		helper.succeed();
 	}
 
+	@GameTest
+	public void house_descriptions_are_understood(GameTestHelper helper) {
+		HouseStyle.Palette wood = HouseStyle.WOOD.palette();
+		HouseSpec spec = HouseDescriptions.read("Mehburity, iki katlı, havuzlu, bahçeli, kırmızı çatılı beyaz bir ev yap", wood).build();
+		helper.assertTrue(spec.floors() == 2 && spec.pool() && spec.garden(), "two floors, a pool and a garden: " + spec);
+		helper.assertTrue(spec.palette().walls().is(Blocks.CONCRETE.white()), "white walls: " + spec.palette().walls());
+		helper.assertTrue(spec.palette().roof().is(Blocks.CONCRETE.red()), "a red roof: " + spec.palette().roof());
+
+		spec = HouseDescriptions.read("build me a big medieval stone house with a tower and a chimney", wood).build();
+		helper.assertTrue(spec.width() >= 11 && spec.tower() && spec.chimney(), "big, a tower, a chimney: " + spec);
+		helper.assertTrue(spec.palette().walls().is(Blocks.STONE_BRICKS), "stone walls: " + spec.palette().walls());
+
+		spec = HouseDescriptions.read("modern bir villa", wood).build();
+		helper.assertTrue(spec.roof() == HouseSpec.Roof.FLAT && spec.pool() && spec.bigWindows() && spec.floors() == 2,
+				"a modern villa: " + spec);
+		helper.assertTrue(HouseDescriptions.read("küçük ahşap kulübe", wood).build().width() == 5, "small");
+		spec = HouseDescriptions.read("9x13 boyutunda 3 katlı, 4 yataklı, sivri çatılı ev", wood).build();
+		helper.assertTrue(spec.width() == 9 && spec.depth() == 13 && spec.floors() == 3 && spec.beds() == 4
+				&& spec.roof() == HouseSpec.Roof.GABLE, "size, floors, beds and roof: " + spec);
+		spec = HouseDescriptions.read("büyük pencereli bir ev", wood).build();
+		helper.assertTrue(spec.bigWindows() && spec.width() == 7, "big windows, not a big house: " + spec);
+		helper.assertTrue(HouseDescriptions.read("tasarımı güzel bir ev", wood).build().palette().walls().is(Blocks.OAK_PLANKS),
+				"\"tasarım\" (design) is not stone");
+		helper.assertTrue(HouseDescriptions.read("balkonlu ev", wood).build().floors() == 2, "a balcony needs an upper floor");
+
+		helper.assertTrue(BuildChat.isPlain("Mehburity, ev yap"), "a bare order");
+		helper.assertTrue(BuildChat.isPlain("taş ev yap"), "a style is still the classic house");
+		helper.assertTrue(BuildChat.isPlain("build me a house"), "a bare order (English)");
+		helper.assertFalse(BuildChat.isPlain("iki katlı ev yap"), "floors are a description");
+		helper.assertFalse(BuildChat.isPlain("deniz kenarında romantik bir ev yap"), "any wish is a description");
+		helper.assertTrue(HouseSpec.standard(wood).equals(HouseDescriptions.read("ev yap", wood).build()),
+				"nothing said: the classic house");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void gemini_house_designs_are_checked(GameTestHelper helper) {
+		HouseSpec.Draft draft = new HouseSpec.Draft(HouseStyle.WOOD.palette());
+		String answer = "Sure! ```json {\"width\": 12, \"floors\": 9, \"roof\": \"gable\", \"walls\": \"minecraft:white_concrete\","
+				+ " \"corners\": \"minecraft:sand\", \"roof_block\": \"minecraft:command_block\", \"door\": \"minecraft:iron_door\","
+				+ " \"window\": \"minecraft:blue_stained_glass_pane\", \"pool\": true, \"beds\": 3} ```";
+		helper.assertTrue(HouseDesignJson.apply(answer, draft), "the JSON inside the answer is read");
+		HouseSpec spec = draft.build();
+		helper.assertTrue(spec.width() == 13, "widths are odd: " + spec.width());
+		helper.assertTrue(spec.floors() == HouseSpec.MAX_FLOORS, "floors are limited: " + spec.floors());
+		helper.assertTrue(spec.roof() == HouseSpec.Roof.GABLE && spec.pool() && spec.beds() == 3, "roof, pool, beds");
+		helper.assertTrue(spec.palette().walls().is(Blocks.CONCRETE.white()), "a valid wall block is used");
+		HouseStyle.Palette wood = HouseStyle.WOOD.palette();
+		helper.assertTrue(spec.palette().corners() == wood.corners(), "sand would fall: refused");
+		helper.assertTrue(spec.palette().roof() == wood.roof(), "operator blocks are refused");
+		helper.assertTrue(spec.palette().door() == wood.door(), "an iron door needs redstone: refused");
+		helper.assertTrue(spec.window().is(Blocks.STAINED_GLASS_PANE.blue()), "a stained glass pane window");
+		helper.assertFalse(HouseDesignJson.apply("I'd build a lovely house!", draft), "no JSON, nothing changes");
+		helper.succeed();
+	}
+
 	private static void assertOrder(GameTestHelper helper, String text, BuildChat.Action action, HouseStyle style) {
 		BuildChat.Order order = BuildChat.parse(text);
 		helper.assertTrue(order != null && order.action() == action && order.style() == style,
@@ -113,11 +176,13 @@ public final class MehburityBuildGameTests {
 
 	// ---------------------------------------------------------------- building in the world
 
-	@GameTest(environment = SOLO, maxTicks = 2400)
+	@GameTest(environment = SOLO, maxTicks = 5000)
 	public void builds_a_house_and_takes_it_down_again(GameTestHelper helper) {
 		ServerPlayer owner = owner(helper);
 		double speed = MehburityConfig.get().build.blocksPerSecond;
 		MehburityConfig.get().build.blocksPerSecond = 200.0;
+		AtomicReference<HousePlan> described = new AtomicReference<>();
+		AtomicReference<Map<BlockPos, BlockState>> describedBefore = new AtomicReference<>();
 		withCompanion(helper, owner, mehburity -> {
 			ServerLevel level = helper.getLevel();
 			// Test areas are walled in with barriers, which Mehburity rightly refuses to touch: build on open ground
@@ -125,9 +190,13 @@ public final class MehburityBuildGameTests {
 			BlockPos outside = helper.absolutePos(new BlockPos(2, 0, -24));
 			// Only the test area itself is kept ticking: force-load the building site for the duration of the test.
 			ChunkPos site = new ChunkPos(outside.getX() >> 4, outside.getZ() >> 4);
+			// The described house is built far away (see below); its chunks need time to load, so ask for them now.
+			BlockPos far = helper.absolutePos(new BlockPos(2, 0, -FAR_SITE));
+			ChunkPos farSite = new ChunkPos(far.getX() >> 4, far.getZ() >> 4);
 			for (int dx = -2; dx <= 2; dx++) {
 				for (int dz = -2; dz <= 2; dz++) {
 					level.setChunkForced(site.x() + dx, site.z() + dz, true);
+					level.setChunkForced(farSite.x() + dx, farSite.z() + dz, true);
 				}
 			}
 			int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING, outside.getX(), outside.getZ());
@@ -172,16 +241,77 @@ public final class MehburityBuildGameTests {
 							"the second house must get started"))
 					.thenExecute(() -> stopAndUndo(helper, owner, mehburity))
 					.thenExecute(() -> checkProtection(helper, owner, mehburity))
+					// A described house with everything: two floors, balcony, pool, garden, chimney, tower, gable roof.
+					.thenExecute(() -> {
+						if (described.get() != null) {
+							return; // already started (a step is run again when a later check in it fails)
+						}
+						// A big plot on open ground, far from every test area.
+						int farGround = level.getHeight(Heightmap.Types.MOTION_BLOCKING, far.getX(), far.getZ());
+						owner.teleportTo(far.getX() + 0.5, farGround, far.getZ() + 0.5);
+						mehburity.teleportToOwner(owner);
+						helper.assertTrue(Building.start(owner, null, DESCRIBED), "a described house must start");
+						helper.assertTrue(mehburity.getBuildJob() != null, "and Mehburity must be building it");
+						described.set(mehburity.getBuildJob().plan());
+						describedBefore.set(snapshot(level, described.get()));
+						helper.assertFalse(described.get().area().contains(owner.blockPosition()), "the owner must not be walled in");
+					})
+					.thenWaitUntil(() -> {
+						helper.assertTrue(described.get() != null, "the described house must have been planned");
+						helper.assertTrue(mehburity.getBuildJob() == null, "the described house must get finished");
+					})
+					.thenExecute(() -> {
+						checkDescribed(helper, owner, described.get(), describedBefore.get());
+					})
 					.thenExecute(() -> {
 						MehburityConfig.get().build.blocksPerSecond = speed;
 						for (int dx = -2; dx <= 2; dx++) {
 							for (int dz = -2; dz <= 2; dz++) {
 								level.setChunkForced(site.x() + dx, site.z() + dz, false);
+								level.setChunkForced(farSite.x() + dx, farSite.z() + dz, false);
 							}
 						}
 					})
 					.thenSucceed();
 		});
+	}
+
+	/**
+	 * The described house is big: it is built this far from the test area, beyond the whole grid of test areas
+	 * (whose structure blocks Mehburity rightly refuses to touch).
+	 */
+	private static final int FAR_SITE = 400;
+
+	private static final String DESCRIBED =
+			"iki katlı, havuzlu, bahçeli, balkonlu, verandalı, bacalı, kuleli, sivri çatılı, 2 yataklı tuğla bir ev yap";
+
+	/** Everything the description asked for is there, built as planned, and undoing restores the ground. */
+	private static void checkDescribed(GameTestHelper helper, ServerPlayer owner, HousePlan plan, Map<BlockPos, BlockState> before) {
+		ServerLevel level = helper.getLevel();
+		HouseSpec spec = plan.spec();
+		helper.assertTrue(spec.floors() == 2 && spec.pool() && spec.garden() && spec.balcony() && spec.porch() && spec.chimney()
+				&& spec.tower() && spec.roof() == HouseSpec.Roof.GABLE && spec.beds() == 2, "read the description: " + spec);
+		Map<BlockPos, BlockState> expected = new HashMap<>();
+		plan.steps().forEach(step -> expected.put(step.pos(), step.state()));
+		expected.forEach((pos, want) -> {
+			BlockState state = level.getBlockState(pos);
+			helper.assertTrue(state.getBlock() == want.getBlock(),
+					"at " + pos + " expected " + want.getBlock() + " but found " + state.getBlock());
+		});
+		helper.assertTrue(count(level, plan, DoorBlock.class) == 4, "the front door and the balcony door");
+		helper.assertTrue(count(level, plan, BedBlock.class) == 4, "two beds");
+		helper.assertTrue(count(level, plan, LadderBlock.class) >= spec.wallRows() + 1, "a ladder up to the first floor");
+		helper.assertTrue(count(level, plan, CampfireBlock.class) == 1, "smoke from the chimney");
+		helper.assertTrue(count(level, plan, FenceGateBlock.class) == 1, "a garden gate");
+		helper.assertTrue(plan.area().stream().anyMatch(pos -> level.getBlockState(pos).is(Blocks.WATER)), "a pool full of water");
+		helper.assertTrue(plan.area().stream().anyMatch(pos -> level.getBlockState(pos).is(Blocks.BRICKS)), "brick walls");
+
+		helper.assertTrue(Building.undo(owner), "undo must work");
+		for (Map.Entry<BlockPos, BlockState> entry : before.entrySet()) {
+			helper.assertTrue(level.getBlockState(entry.getKey()) == entry.getValue(), "undo must restore " + entry.getKey());
+		}
+		List<ItemEntity> drops = level.getEntitiesOfClass(ItemEntity.class, bounds(plan).inflate(2.0));
+		helper.assertTrue(drops.isEmpty(), "building and undoing must not drop items: " + drops);
 	}
 
 	/** "Elimdeki bloktan ev yap": a full block works, unbreakable, operator and non-full blocks are refused. */

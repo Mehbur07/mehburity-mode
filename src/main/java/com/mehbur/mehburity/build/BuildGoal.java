@@ -28,6 +28,8 @@ public final class BuildGoal extends Goal {
 	private static final int MAX_CHECKS_PER_TICK = 2000;
 	/** Blinks to this height above the stuck block and drops down beside the work. */
 	private static final double HOVER_ABOVE = 2.5;
+	/** Places blocks this far above or below itself (a four-storey house with a tower is about 40 blocks tall). */
+	private static final double VERTICAL_REACH = 48.0;
 
 	private final MehburityEntity mehburity;
 	private int repathDelay;
@@ -115,8 +117,15 @@ public final class BuildGoal extends Goal {
 		return current != step.state();
 	}
 
+	/**
+	 * Close enough sideways; any height up to {@link #VERTICAL_REACH}: rolling on the ground, it raises roofs and
+	 * towers from below (it is a magic sphere after all).
+	 */
 	private boolean inReach(BlockPos pos, double reach) {
-		return mehburity.distanceToSqr(Vec3.atCenterOf(pos)) <= reach * reach;
+		Vec3 center = Vec3.atCenterOf(pos);
+		double dx = center.x - mehburity.getX();
+		double dz = center.z - mehburity.getZ();
+		return dx * dx + dz * dz <= reach * reach && Math.abs(center.y - mehburity.getY()) <= VERTICAL_REACH;
 	}
 
 	private void approach(BlockPos pos) {

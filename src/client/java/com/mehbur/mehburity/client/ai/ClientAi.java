@@ -7,8 +7,11 @@ import com.mehbur.mehburity.ai.GeminiClient;
 import com.mehbur.mehburity.ai.GeminiException;
 import com.mehbur.mehburity.ai.MehburityPersona;
 import com.mehbur.mehburity.client.config.MehburityClientConfig;
+import com.mehbur.mehburity.build.HouseDesignJson;
 import com.mehbur.mehburity.network.AiReplyPayload;
 import com.mehbur.mehburity.network.AiRequestPayload;
+import com.mehbur.mehburity.network.HouseDesignReplyPayload;
+import com.mehbur.mehburity.network.HouseDesignRequestPayload;
 import com.mehbur.mehburity.network.SpeakPayload;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -32,6 +35,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class ClientAi {
 	private static final Deque<ChatTurn> HISTORY = new ArrayDeque<>();
+	private static final int DESIGN_MAX_TOKENS = 700;
+	private static final int DESIGN_MAX_CHARS = 8000;
 	private static @Nullable GeminiClient gemini;
 	private static String geminiFor = "";
 	/** Last connection problem shown in chat, so the same warning is not repeated every message. */
@@ -45,6 +50,7 @@ public final class ClientAi {
 		ClientPlayNetworking.registerGlobalReceiver(SpeakPayload.TYPE, (payload, context) -> VoicePlayer.speak(payload.text().getString(),
 				new VoicePlayer.Speaker(payload.speakerId(), payload.from().orElse(null)), payload.deep()));
 		ClientTickEvents.END_CLIENT_TICK.register(VoicePlayer::tick);
+		ClientPlayNetworking.registerGlobalReceiver(HouseDesignRequestPayload.TYPE, (payload, context) -> designHouse(payload));
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
 			HISTORY.clear();
 			lastProblem = null;
@@ -89,6 +95,24 @@ public final class ClientAi {
 						remember(new ChatTurn(false, text), config.historyMessages);
 					}
 					reply(request, text, true);
+				}));
+	}
+
+	/** Asks Gemini to design the described house (JSON); without a key or on failure the server builds its own reading. */
+	private static void designHouse(HouseDesignRequestPayload request) {
+		MehburityClientConfig config = MehburityClientConfig.get();
+		if (config.geminiApiKey.isBlank()) {
+			ClientPlayNetworking.send(new HouseDesignReplyPayload(request.id(), ""));
+			return;
+		}
+		gemini().chat(config.chatModel, HouseDesignJson.SYSTEM_INSTRUCTION, List.of(), request.description(), DESIGN_MAX_TOKENS)
+				.whenComplete((text, error) -> Minecraft.getInstance().execute(() -> {
+					if (error != null) {
+						MehburityMod.LOGGER.warn("Gemini house design failed: {}", GeminiException.of(error).getMessage());
+					}
+					String design = error != null || text == null ? "" : text;
+					ClientPlayNetworking.send(new HouseDesignReplyPayload(request.id(),
+							design.length() > DESIGN_MAX_CHARS ? design.substring(0, DESIGN_MAX_CHARS) : design));
 				}));
 	}
 

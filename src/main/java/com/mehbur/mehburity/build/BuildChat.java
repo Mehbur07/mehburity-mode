@@ -15,9 +15,22 @@ import java.util.regex.Pattern;
 public final class BuildChat {
 	public enum Action { BUILD, STOP, UNDO }
 
-	/** The order and, for {@link Action#BUILD}, the style asked for (null: the default one). */
-	public record Order(Action action, @Nullable HouseStyle style) {
+	/**
+	 * The order and, for {@link Action#BUILD}, the style asked for (null: the default one) and the whole description,
+	 * which may ask for much more ("iki katlı, havuzlu, kırmızı çatılı bir ev").
+	 */
+	public record Order(Action action, @Nullable HouseStyle style, String description) {
+		public Order(Action action, @Nullable HouseStyle style) {
+			this(action, style, "");
+		}
 	}
+
+	/** Words of the order itself, which describe nothing about the house (accent-free). */
+	private static final Pattern ORDER_WORDS = Pattern.compile(
+			"\\b(mehburity|lutfen|please|bana|bize|benim|icin|bir|ev|evi|evim|eve|kulube\\w*|insa\\w*|yap\\w*|kur\\w*|"
+			+ "misin|musun|mi|mu|hadi|haydi|simdi|bi|house|home|hut|cabin|build\\w*|make|me|us|a|an|the|for|can|you|could|"
+			+ "would|now|please|tas|stone|tugla|brick\\w*|ahsap|tahta\\w*|wood\\w*|oak|elimdeki\\w*|elindeki\\w*|bu|blok\\w*|"
+			+ "bununla|holding|this|block|my|in|hand)\\b");
 
 	/** "ev", "evi", "evim"... but not "evet" (yes); a building verb is needed too, so "eve gidiyorum" is no order. */
 	private static final Pattern HOUSE = Pattern.compile(
@@ -53,9 +66,15 @@ public final class BuildChat {
 			return new Order(Action.STOP, null);
 		}
 		if (BUILD_VERB.matcher(text).find()) {
-			return new Order(Action.BUILD, style(text));
+			return new Order(Action.BUILD, style(text), message);
 		}
 		return null;
+	}
+
+	/** Nothing asked beyond a house (and a style): build the classic one without designing anything. */
+	public static boolean isPlain(String description) {
+		String rest = ORDER_WORDS.matcher(ChatAddress.fold(description)).replaceAll(" ").replaceAll("[^a-z0-9]+", "");
+		return rest.isEmpty();
 	}
 
 	private static @Nullable HouseStyle style(String text) {
@@ -81,7 +100,7 @@ public final class BuildChat {
 		}
 		return () -> {
 			switch (order.action()) {
-				case BUILD -> Building.start(owner, order.style());
+				case BUILD -> Building.start(owner, order.style(), order.description());
 				case STOP -> Building.stop(owner);
 				case UNDO -> Building.undo(owner);
 			}
