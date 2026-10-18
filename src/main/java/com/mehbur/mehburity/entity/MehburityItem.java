@@ -23,7 +23,8 @@ import java.util.UUID;
 
 /**
  * Mehburity carried in the inventory. Its owner picks it up with a right click (see {@link MehburityEntity}); right
- * clicking a block (or the air) with it lets Mehburity out again there. Only the owner can let it out, and a stale
+ * clicking a block (or the air) with it lets Mehburity out again there, and so does throwing it out of the inventory
+ * (Q; see {@link CompanionManager}). Only the owner can let it out, and a stale
  * copy (Mehburity was called back with {@code /mehburity cagir} meanwhile) just goes away.
  */
 public final class MehburityItem extends Item {

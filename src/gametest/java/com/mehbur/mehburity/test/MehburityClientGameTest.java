@@ -128,18 +128,8 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		return new float[] {player.getYRot(), (float) Math.toDegrees(Math.atan2(drop, distance))};
 	}
 
-	/** A real right click picks Mehburity up into the inventory; a right click on the ground with it lets it out. */
-	private static void checkCarrying(ClientGameTestContext context, TestServerContext server, UUID playerId) {
-		float[] view = server.computeOnServer(s -> {
-			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
-			CompanionManager.setMode(player, CompanionMode.STAY);
-			return placeInFront(s, player, 2.5);
-		});
-		float yaw = view[0];
-		context.getInput().lookAt(yaw, view[1]);
-		context.waitTicks(5);
-		context.getInput().pressKey(options -> options.keyUse);
-		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.CARRIED, 100);
+	/** The hotbar slot holding the carried Mehburity. */
+	private static int hotbarSlot(TestServerContext server, UUID playerId) {
 		int slot = server.computeOnServer(s -> {
 			var inventory = s.getPlayerList().getPlayer(playerId).getInventory();
 			for (int i = 0; i < 9; i++) {
@@ -152,6 +142,22 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		if (slot < 0) {
 			throw new AssertionError("Mehburity must be in the hotbar after the right click");
 		}
+		return slot;
+	}
+
+	/** A real right click picks Mehburity up into the inventory; a right click on the ground with it lets it out. */
+	private static void checkCarrying(ClientGameTestContext context, TestServerContext server, UUID playerId) {
+		float[] view = server.computeOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			CompanionManager.setMode(player, CompanionMode.STAY);
+			return placeInFront(s, player, 2.5);
+		});
+		float yaw = view[0];
+		context.getInput().lookAt(yaw, view[1]);
+		context.waitTicks(5);
+		context.getInput().pressKey(options -> options.keyUse);
+		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.CARRIED, 100);
+		int slot = hotbarSlot(server, playerId);
 		context.getInput().pressKey(options -> options.keyHotbarSlots[slot]);
 		context.waitTicks(5);
 		context.takeScreenshot("mehburity-3b-carried");
@@ -193,6 +199,31 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		context.takeScreenshot("mehburity-3e-settled");
 		context.getInput().pressKey(options -> options.keyToggleGui);
 		server.runOnServer(s -> CompanionManager.setMode(s.getPlayerList().getPlayer(playerId), CompanionMode.FOLLOW));
+
+		// Q with Mehburity in hand throws it out: it lands as the ball, not as an item.
+		float[] throwView = server.computeOnServer(s -> placeInFront(s, s.getPlayerList().getPlayer(playerId), 2.0));
+		context.getInput().lookAt(throwView[0], throwView[1]);
+		context.waitTicks(5);
+		context.getInput().pressKey(options -> options.keyUse);
+		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.CARRIED, 100);
+		int throwSlot = hotbarSlot(server, playerId);
+		context.getInput().pressKey(options -> options.keyHotbarSlots[throwSlot]);
+		context.getInput().lookAt(throwView[0], 10.0F);
+		context.waitTicks(2);
+		context.getInput().pressKey(options -> options.keyDrop);
+		server.waitFor(s -> CompanionManager.find(s, playerId) != null, 100);
+		boolean itemLeft = server.computeOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			return player.getInventory().contains(stack -> stack.is(MehburityItem.ITEM))
+					|| !player.level().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(8.0),
+							item -> item.getItem().is(MehburityItem.ITEM)).isEmpty();
+		});
+		if (itemLeft) {
+			throw new AssertionError("a thrown Mehburity must come out as the ball, not stay an item");
+		}
+		context.waitTicks(15);
+		context.takeScreenshot("mehburity-3f-thrown");
+		context.getInput().pressKey(options -> options.keyHotbarSlots[0]);
 	}
 
 	/**

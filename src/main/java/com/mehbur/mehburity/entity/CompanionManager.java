@@ -4,6 +4,7 @@ import com.mehbur.mehburity.MehburityMod;
 import com.mehbur.mehburity.ai.GameEvents;
 import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.verity.FlashlightItem;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.core.BlockPos;
@@ -17,9 +18,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -31,6 +35,8 @@ import java.util.function.UnaryOperator;
 public final class CompanionManager {
 	private static final int CHECK_INTERVAL = 20;
 	private static final double BUILD_LEASH = 96.0;
+	/** Carried Mehburities that landed in the world as items this tick (Q, dragged out, dropped on death). */
+	private static final List<ItemEntity> DROPPED = new ArrayList<>();
 
 	private CompanionManager() {
 	}
@@ -38,7 +44,17 @@ public final class CompanionManager {
 	public static void register() {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> onJoin(handler.player));
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> onLeave(handler.player));
+		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
+			if (entity instanceof ItemEntity item && item.getItem().is(MehburityItem.ITEM)) {
+				DROPPED.add(item); // turned back into the ball at the end of the tick, not while the level adds it
+			}
+		});
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
+			if (!DROPPED.isEmpty()) {
+				List<ItemEntity> dropped = new ArrayList<>(DROPPED);
+				DROPPED.clear();
+				dropped.forEach(CompanionManager::unpackDropped);
+			}
 			if (server.getTickCount() % CHECK_INTERVAL == 0) {
 				for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 					keepNear(player, false);
@@ -263,6 +279,33 @@ public final class CompanionManager {
 				SoundSource.NEUTRAL, 0.8F, 1.3F);
 		MehburitySpeech.say(owner, MehburitySpeech.text("carry.released", "Phew, it was dark in there!"));
 		return true;
+	}
+
+	/**
+	 * A carried Mehburity thrown out of the inventory (Q) does not lie there as an item: it comes out as the ball
+	 * where it landed and keeps the throw, so it rolls on. Waits as an item (that never despawns) while its owner
+	 * is offline; a stale copy just goes away.
+	 */
+	private static void unpackDropped(ItemEntity item) {
+		if (item.isRemoved() || !(item.level() instanceof ServerLevel level)) {
+			return;
+		}
+		UUID ownerId = item.getItem().get(MehburityItem.OWNER);
+		ServerPlayer owner = ownerId == null ? null : level.getServer().getPlayerList().getPlayer(ownerId);
+		if (owner == null) {
+			item.setUnlimitedLifetime();
+			return;
+		}
+		Vec3 velocity = item.getDeltaMovement();
+		// Thrown in another dimension than its owner: it comes out beside them instead.
+		Vec3 spot = owner.level() == level ? item.position() : null;
+		item.discard();
+		if (release(owner, spot)) {
+			MehburityEntity mehburity = find(level.getServer(), ownerId);
+			if (mehburity != null && spot != null) {
+				mehburity.setDeltaMovement(velocity);
+			}
+		}
 	}
 
 	// ---------------------------------------------------------------- commands

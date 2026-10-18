@@ -283,6 +283,29 @@ public final class MehburityGameTests {
 		});
 	}
 
+	@GameTest(maxTicks = 200)
+	public void thrown_mehburity_comes_out_as_the_ball(GameTestHelper helper) {
+		ServerPlayer owner = owner(helper);
+		ServerLevel level = helper.getLevel();
+		withCompanion(helper, owner, mehburity -> {
+			mehburity.interact(owner, InteractionHand.MAIN_HAND, Vec3.ZERO);
+			helper.assertTrue(mehburity.isRemoved(), "right click picks Mehburity up");
+			// Q: the held stack is thrown out of the hand.
+			ItemStack stack = mehburityInHand(owner);
+			owner.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+			var thrown = owner.drop(stack, false, true);
+			helper.assertTrue(thrown != null, "the item must be thrown");
+			helper.succeedWhen(() -> {
+				helper.assertTrue(thrown.isRemoved(), "the thrown item must not stay in the world");
+				MehburityEntity out = CompanionManager.find(level.getServer(), owner.getUUID());
+				helper.assertTrue(out != null && out.getMode() == CompanionMode.FOLLOW, "it comes out as the ball and follows");
+				helper.assertTrue(out.distanceTo(owner) < 5.0F, "it comes out where it was thrown");
+				helper.assertTrue(companionsOf(level, owner) == 1, "exactly one Mehburity");
+				helper.assertFalse(owner.getInventory().contains(s -> s.is(MehburityItem.ITEM)), "no item left behind");
+			});
+		});
+	}
+
 	// ---------------------------------------------------------------- companion
 
 	@GameTest(maxTicks = 120)
