@@ -42,6 +42,9 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	private static final RenderType TALK_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_talk.png"));
 	private static final RenderType ANNOYED_TALK_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_annoyed_talk.png"));
 	private static final RenderType MAD_TALK_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_mad_talk.png"));
+	/** The demon's face (rage form). */
+	private static final RenderType DEMON_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_demon.png"));
+	private static final RenderType DEMON_TALK_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_demon_talk.png"));
 	private static final RenderType ANGRY_TALK_RENDER_TYPE = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_angry_talk.png"));
 	/** From this anger on it looks annoyed (a third of the default rage threshold). */
 	private static final float ANNOYED_ANGER = 33.0F;
@@ -86,7 +89,9 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		state.monsterHeight = entity.getMonsterHeight();
 		state.transformProgress = entity.getTransformProgress(partialTicks);
 		state.swipeProgress = entity.getSwipeProgress(partialTicks);
-		state.bodyRot = Mth.rotLerp(partialTicks, entity.yBodyRotO, entity.yBodyRot);
+		// The demon turns its whole body to whom it hunts (the server sets its yaw); a standing mob's body yaw is not
+		// synced and would leave it side-on with the head twisted as far as it goes.
+		state.bodyRot = entity.isMonster() ? entity.getYRot(partialTicks) : Mth.rotLerp(partialTicks, entity.yBodyRotO, entity.yBodyRot);
 		state.walkPosition = entity.walkAnimation.position(partialTicks);
 		state.walkSpeed = entity.walkAnimation.speed(partialTicks);
 		LivingEntity target = entity.getBeamTarget();
@@ -182,6 +187,11 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		return open ? TALK_RENDER_TYPE : RENDER_TYPE;
 	}
 
+	/** The demon's head: hollow eyes and a crooked grin, opening as it talks. */
+	private static RenderType demonFace(MehburityRenderState state) {
+		return state.mouthOpen ? DEMON_TALK_RENDER_TYPE : DEMON_RENDER_TYPE;
+	}
+
 	/** A line from the server, or its voice coming out of this player's speakers. */
 	private static boolean isTalking(MehburityEntity entity) {
 		return entity.isTalking() || VoicePlayer.isVoiceOf(entity.getId());
@@ -213,13 +223,13 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 			poseStack.mulPose(Axis.YP.rotationDegrees(-state.yRot));
 			poseStack.scale(swell, swell, swell);
 			int light = state.lightCoords;
-			collector.submitCustomGeometry(poseStack, MAD_RENDER_TYPE,
+			collector.submitCustomGeometry(poseStack, demonFace(state),
 					(pose, buffer) -> buildSphere(pose, buffer, light, OverlayTexture.NO_OVERLAY));
 		} else {
 			float grow = (progress - TRANSFORM_SPHERE_PART) / (1.0F - TRANSFORM_SPHERE_PART);
 			grow = grow * grow * (3.0F - 2.0F * grow);
 			float size = state.monsterHeight / MehburityMonsterModel.MODEL_HEIGHT;
-			MehburityMonsterModel.submit(state, poseStack, collector, size * (0.1F + 0.9F * grow), MehburityMonsterModel.SKIN, MAD_RENDER_TYPE);
+			MehburityMonsterModel.submit(state, poseStack, collector, size * (0.1F + 0.9F * grow), MehburityMonsterModel.SKIN, demonFace(state));
 		}
 		poseStack.popPose();
 	}

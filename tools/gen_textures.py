@@ -197,14 +197,52 @@ def dot(a, b):
     return sum(x * y for x, y in zip(a, b))
 
 
+def demon_face_ink(open_mouth: bool):
+    """The demon's face: big empty black eyes and a wide, crooked grin full of jagged teeth.
+
+    The grin is tilted (one corner higher than the other), which is what makes it look wrong.
+    """
+
+    def ink(fx: float, fy: float) -> bool:
+        for ex in (-0.27, 0.27):
+            # Tall, slightly drooping hollow eyes, the outer side lower.
+            dy = fy + 0.2 - 0.05 * (abs(fx) - 0.27) / 0.12
+            if ((fx - ex) / 0.135) ** 2 + (dy / 0.23) ** 2 <= 1.0:
+                return True
+        half = 0.66
+        if abs(fx) >= half:
+            return False
+        k = 1.0 - (fx / half) ** 2
+        twist = 0.08 * fx
+        top = 0.1 + 0.05 * k - twist
+        bottom = 0.13 + (0.45 if open_mouth else 0.34) * k - twist
+        if not top < fy < bottom:
+            return False
+        # Jagged teeth: triangles hanging from the top, smaller ones standing on the bottom.
+        saw = 1.0 - abs(((fx + 1.0) * 14.0) % 2.0 - 1.0)
+        if fy < top + 0.06 * saw * min(1.0, k * 3.0):
+            return False
+        if fy > bottom - 0.04 * saw * min(1.0, k * 3.0):
+            return False
+        return True
+
+    return ink
+
+
 def monster_skin(width: int, height: int):
-    """The rage form's skin. Top half: smooth neon cyan with a faint glow along the limbs. Bottom half: deep teal
-    for the horns, claws and spikes."""
+    """The rage form's skin. Top half: smooth neon cyan with a faint glow along the limbs. Third quarter: deep
+    teal for the long fingers and toes. Last quarter: the ribcage, dark bands across the chest."""
 
     def px(x, y):
         n = noise(x, y) // 3
+        if y >= height * 3 // 4:
+            t = (y - height * 3 // 4) / (height // 4)
+            rib = (t * 6.0) % 1.0 < 0.32 and abs((x % 32) - 16) > 3  # broken at the breastbone
+            if rib:
+                return (0, 120 + n, 140 + n, 255)
+            return (10, min(255, 205 + n), min(255, 228 + n), 255)
         if y >= height // 2:
-            t = (y - height // 2) / (height // 2 - 1)  # darker towards the tips
+            t = (y - height // 2) / (height // 4 - 1)  # darker towards the tips
             return (0, max(0, int(110 - 50 * t) + n), max(0, int(130 - 50 * t) + n), 255)
         # A soft brighter band down the middle of each face (u), like light running along the limb.
         band = 1.0 - abs((x % 16) - 7.5) / 7.5
@@ -313,6 +351,9 @@ if __name__ == "__main__":
         (ENTITY / "mehburity_annoyed_talk.png", 256, 128, sphere(256, 128, NEON_CYAN, talk_annoyed_face_ink)),
         (ENTITY / "mehburity_mad_talk.png", 256, 128, sphere(256, 128, NEON_CYAN, talk_angry_face_ink)),
         (ENTITY / "mehburity_angry_talk.png", 256, 128, sphere(256, 128, RAGE_RED, talk_angry_face_ink)),
+        # The demon's head: hollow eyes and a crooked, toothy grin (and the same, talking).
+        (ENTITY / "mehburity_demon.png", 256, 128, sphere(256, 128, NEON_CYAN, demon_face_ink(False))),
+        (ENTITY / "mehburity_demon_talk.png", 256, 128, sphere(256, 128, NEON_CYAN, demon_face_ink(True))),
         (ENTITY / "mehburity_monster.png", 64, 64, monster_skin(64, 64)),
         # The watcher: Mehburity's smile, glowing white on a near-black head, and a black body with red veins.
         (ENTITY / "watcher.png", 256, 128, sphere(256, 128, (22, 12, 16, 255), face_ink, (245, 240, 235, 255))),

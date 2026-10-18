@@ -198,16 +198,19 @@ biraz sonra. Sunucu isterse `anger.makeUpCakeCooldownSeconds` ile pastayı seyre
 
 ### Canavar formu
 
-Öfke nöbetinde Mehburity **18 blok boyunda, sıska, neon cyan bir iblise** dönüşür. Önce kızgın yüzlü küre olarak yere
-iner, titrer ve dumanlar içinde 2 saniyede büyür. Bu iki saniye, suçlunun kaçmak için kazandığı süredir.
+Öfke nöbetinde Mehburity **18 blok boyunda, iskelet gibi sıska, neon cyan bir iblise** dönüşür (Verity JE'nin
+canavarından esinlenmiştir; model ve dokular bu mod için sıfırdan yapılmıştır). Önce sırıtan küre olarak yere iner,
+titrer ve dumanlar içinde 2 saniyede büyür. Bu iki saniye, suçlunun kaçmak için kazandığı süredir.
 
 İblisin görünüşü:
 
-- **Gövde:** yuvarlak, uca doğru incelen uzuvlar ve eklemleri; kambur, geniş bir göğüs, dar bir bel ve sırtında dikenler.
-- **Kollar ve bacaklar:** dizlerine inen uzun kollar, ellerinde üçer kıvrık pençe; parmak uçlarında basan, pençeli
+- **Gövde:** ince, uca doğru incelen uzuvlar ve eklemleri; derin bir kamburluk, kaburgaları görünen dar bir göğüs,
+  ince bir bel ve sırtından çıkan omur kabartıları.
+- **Kollar ve bacaklar:** dizlerin altına inen çok uzun kollar, ellerinde dörder uzun, kemiksi parmak; uzun parmaklı
   ayaklar.
-- **Kafa:** Mehburity'nin cyan küresi, yüzünde kızgın ifade, üstünde geriye kıvrılan iki boynuz.
-- **Renk:** neon cyan. Boynuz, pençe ve dikenler koyu turkuaz. Karanlıkta parlar.
+- **Kafa:** yumurta biçimli cyan bir kafa, **içi boş kapkara gözler** ve **çarpık, dişli, geniş bir sırıtış**. Başını
+  yana yatık tutar, arada bir aniden seğirir; konuşurken ağzı açılır.
+- **Renk:** neon cyan, parmak uçları koyu turkuaz. Karanlıkta parlar.
 
 - **Yürüyerek** kovalar: saniyede 6,5 blok, yani koşan bir oyuncudan hızlıdır. Blokların **içinden geçer**, hiçbir
   şeyi kırmaz. Ayakları yüzeydedir; suçlu yerin altına saklanırsa onun hizasına iner.

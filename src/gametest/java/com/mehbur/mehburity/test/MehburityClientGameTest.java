@@ -516,6 +516,32 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		server.waitFor(s -> !CompanionManager.find(s, playerId).isTransforming(), 200);
 		context.waitTicks(10);
 		context.takeScreenshot("mehburity-m2-demon");
+		// Face to face with it, up at its head (flying, in creative).
+		Vec3 standAt = server.computeOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			player.getAbilities().flying = true;
+			player.onUpdateAbilities();
+			return player.position();
+		});
+		Vec3 headAt = server.computeOnServer(s -> {
+			MehburityEntity mehburity = CompanionManager.find(s, playerId);
+			Vec3 face = mehburity.position().add(0.0, mehburity.getBbHeight() * 0.86, 0.0);
+			Vec3 front = face.add(Vec3.directionFromRotation(0.0F, yaw).scale(-7.0));
+			s.getPlayerList().getPlayer(playerId).teleportTo(front.x, front.y - 1.6, front.z);
+			return face;
+		});
+		context.waitTicks(10);
+		context.getInput().lookAt(BlockPos.containing(headAt));
+		context.waitTicks(10);
+		context.takeScreenshot("mehburity-m2b-demon-face");
+		server.runOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			player.teleportTo(standAt.x, standAt.y, standAt.z);
+			player.getAbilities().flying = false;
+			player.onUpdateAbilities();
+		});
+		context.getInput().lookAt(yaw, -18.0F);
+		context.waitTicks(10);
 		float height = server.computeOnServer(s -> CompanionManager.find(s, playerId).getBbHeight());
 		if (Math.abs(height - MehburityConfig.get().monster.height) > 0.01) {
 			throw new AssertionError("the demon must be " + MehburityConfig.get().monster.height + " blocks tall, was " + height);

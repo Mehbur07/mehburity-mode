@@ -8,43 +8,54 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 /**
- * The rage form (and the watcher of the scripted scares): a tall, skinny demon. Its limbs are smooth, tapering
- * round segments joined by ball joints; it has a hunched chest, spikes down its back, long arms with three curved
- * claws per hand, digitigrade feet and curved horns, with a sphere for a head. Modelled 18 blocks tall with the feet
- * at y = 0 and the face towards +Z; other heights are the same model scaled.
+ * The rage form (and the watcher of the scripted scares): a tall, starved, skeletal humanoid. Thin limbs made of
+ * smooth tapering round segments with ball joints, a narrow ribcage over a wasp waist, a deep hunch, arms that hang
+ * down past the knees and end in long bony fingers, and an egg-shaped head with hollow black eyes and a crooked grin
+ * that it tilts to one side and jerks now and then. Modelled 18 blocks tall with the feet at y = 0 and the face
+ * towards +Z; other heights are the same model scaled.
  *
- * <p>Skin textures are 64x64: the top half covers the body, the bottom half the horns, claws and spikes.
+ * <p>Skin textures are 64x64: the top half covers the limbs, the third quarter the fingers and toes, the last quarter
+ * the ribcage.
  */
 final class MehburityMonsterModel {
-	/** Rage form skin: neon cyan body, deep teal horns and claws. Replace the PNG (same size) to change it. */
+	/** Rage form skin: neon cyan limbs, deep teal fingertips, a ribbed chest. Replace the PNG (same size) to change it. */
 	static final RenderType SKIN = RenderTypes.entityCutout(MehburityMod.id("textures/entity/mehburity/mehburity_monster.png"));
 	/** The height the model is built at. */
 	static final float MODEL_HEIGHT = 18.0F;
 
-	private static final float HIP_Y = 8.6F;
+	private static final float HIP_Y = 8.4F;
 	private static final float THIGH = 4.3F;
-	private static final float SHIN = 4.2F;
-	private static final float UPPER_ARM = 4.0F;
-	private static final float FOREARM = 3.8F;
-	private static final float CHEST_TOP = 5.2F;
+	private static final float SHIN = 4.3F;
+	private static final float UPPER_ARM = 4.7F;
+	private static final float FOREARM = 4.7F;
+	private static final float CHEST_TOP = 5.4F;
 	private static final float WAIST = 2.0F;
 	/** Front-to-back flattening of the torso. */
-	private static final float TORSO_DEPTH = 0.62F;
-	private static final float NECK = 1.3F;
-	private static final float HEAD_RADIUS = 1.2F;
+	private static final float TORSO_DEPTH = 0.6F;
+	private static final float SHOULDER_X = 0.95F;
+	private static final float NECK = 1.7F;
+	private static final float HEAD_RADIUS = 1.15F;
+	/** The head is an egg: this much taller than wide. */
+	private static final float HEAD_STRETCH = 1.2F;
 	/** Leaning forward, in degrees. */
-	private static final float HUNCH = 14.0F;
-	private static final float NECK_TILT = 15.0F;
+	private static final float HUNCH = 24.0F;
+	private static final float NECK_TILT = 22.0F;
+	/** The head hangs to one side, in degrees. */
+	private static final float HEAD_TILT = 11.0F;
+	/** Every this many ticks the head jerks for {@link #TWITCH_TICKS}. */
+	private static final float TWITCH_PERIOD = 53.0F;
+	private static final float TWITCH_TICKS = 4.0F;
 
-	/** Body (top half of the texture) and horns/claws (bottom half). */
+	/** Limbs (top half of the texture), fingers and toes (third quarter), ribcage (last quarter). */
 	private static final float BODY_V0 = 0.0F;
 	private static final float BODY_V1 = 0.5F;
-	private static final float HORN_V0 = 0.5F;
-	private static final float HORN_V1 = 1.0F;
+	private static final float CLAW_V0 = 0.5F;
+	private static final float CLAW_V1 = 0.75F;
+	private static final float RIBS_V0 = 0.75F;
+	private static final float RIBS_V1 = 1.0F;
 	private static final int SIDES = 10;
 	private static final int BALL_STACKS = 6;
 
@@ -53,7 +64,7 @@ final class MehburityMonsterModel {
 
 	/**
 	 * Draws the demon at {@code scale} (1 = 18 blocks tall), in the entity's local space (feet at the origin), with
-	 * {@code skin} on its body and {@code head} as the sphere's texture.
+	 * {@code skin} on its body and {@code head} as the head's texture.
 	 */
 	static void submit(MehburityRenderState state, PoseStack poseStack, SubmitNodeCollector collector, float scale,
 			RenderType skin, RenderType head) {
@@ -72,27 +83,27 @@ final class MehburityMonsterModel {
 		}
 		poseStack.pushPose();
 		poseStack.translate(0.0F, HIP_Y, 0.0F);
-		poseStack.scale(1.5F, 0.8F, 1.0F);
-		parts.ball(0.42F, BODY_V0, BODY_V1);
+		poseStack.scale(1.4F, 0.75F, 1.0F);
+		parts.ball(0.34F, BODY_V0, BODY_V1);
 		poseStack.popPose();
 
-		// Torso, hunched forward from the hips: a narrow waist under a wide, flat chest.
+		// Torso, hunched forward from the hips: a wasp waist under a narrow, ribbed chest.
 		poseStack.pushPose();
 		poseStack.translate(0.0F, HIP_Y + 0.1F, 0.0F);
 		poseStack.mulPose(Axis.XP.rotationDegrees(HUNCH + breathe * 1.5F));
 		poseStack.pushPose();
-		poseStack.scale(1.0F, 1.0F, 0.7F);
+		poseStack.scale(1.0F, 1.0F, 0.75F);
 		poseStack.translate(0.0F, WAIST, 0.0F);
-		parts.segment(0.42F, 0.5F, WAIST, BODY_V0, BODY_V1);
+		parts.segment(0.26F, 0.32F, WAIST, BODY_V0, BODY_V1);
 		poseStack.popPose();
 		poseStack.pushPose();
 		poseStack.scale(1.0F, 1.0F, TORSO_DEPTH);
 		poseStack.translate(0.0F, CHEST_TOP, 0.0F);
-		parts.segment(0.95F, 0.42F, CHEST_TOP - WAIST, BODY_V0, BODY_V1);
+		parts.segment(0.8F, 0.26F, CHEST_TOP - WAIST, RIBS_V0, RIBS_V1);
 		poseStack.scale(1.0F, 0.3F, 1.0F);
-		parts.ball(0.95F, BODY_V0, BODY_V1);
+		parts.ball(0.8F, BODY_V0, BODY_V1);
 		poseStack.popPose();
-		backSpikes(parts);
+		spine(parts);
 		for (int side = -1; side <= 1; side += 2) {
 			arm(state, parts, side, legSwing);
 		}
@@ -102,56 +113,56 @@ final class MehburityMonsterModel {
 		poseStack.popPose();
 	}
 
-	/** Thigh, knee, shin bending backwards on the way forward, and a long clawed foot. */
+	/** Bony thigh, knee, shin bending backwards on the way forward, and a long-toed foot. */
 	private static void leg(Parts parts, int side, float swing, float walk, float stride) {
 		PoseStack poseStack = parts.poseStack;
-		float knee = 0.15F + Math.max(0.0F, -Mth.sin(walk + side * Mth.HALF_PI)) * 0.6F * stride;
+		float knee = 0.2F + Math.max(0.0F, -Mth.sin(walk + side * Mth.HALF_PI)) * 0.6F * stride;
 		float hip = swing - knee * 0.5F;
 		poseStack.pushPose();
-		poseStack.translate(side * 0.45F, HIP_Y, 0.0F);
+		poseStack.translate(side * 0.42F, HIP_Y, 0.0F);
 		poseStack.mulPose(Axis.XP.rotation(hip));
 		poseStack.mulPose(Axis.ZP.rotationDegrees(side * 3.0F));
-		parts.ball(0.33F, BODY_V0, BODY_V1);
-		parts.segment(0.32F, 0.2F, THIGH, BODY_V0, BODY_V1);
+		parts.ball(0.25F, BODY_V0, BODY_V1);
+		parts.segment(0.23F, 0.13F, THIGH, BODY_V0, BODY_V1);
 		poseStack.translate(0.0F, -THIGH, 0.0F);
-		parts.ball(0.21F, BODY_V0, BODY_V1);
+		parts.ball(0.17F, BODY_V0, BODY_V1);
 		poseStack.mulPose(Axis.XP.rotation(knee));
-		parts.segment(0.2F, 0.11F, SHIN, BODY_V0, BODY_V1);
+		parts.segment(0.14F, 0.08F, SHIN, BODY_V0, BODY_V1);
 		poseStack.translate(0.0F, -SHIN, 0.0F);
-		parts.ball(0.13F, BODY_V0, BODY_V1);
+		parts.ball(0.11F, BODY_V0, BODY_V1);
 		// Keep the foot flat on the ground whatever the leg does, then point it forward.
 		poseStack.mulPose(Axis.XP.rotation(-hip - knee));
 		poseStack.mulPose(Axis.ZP.rotationDegrees(-side * 3.0F));
 		for (int toe = -1; toe <= 1; toe++) {
 			poseStack.pushPose();
-			poseStack.mulPose(Axis.YP.rotationDegrees(toe * 22.0F));
+			poseStack.mulPose(Axis.YP.rotationDegrees(toe * 20.0F));
 			poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
-			parts.segment(0.1F, 0.05F, 0.75F, BODY_V0, BODY_V1);
-			poseStack.translate(0.0F, -0.75F, 0.0F);
-			poseStack.mulPose(Axis.XP.rotationDegrees(-35.0F));
-			parts.segment(0.05F, 0.005F, 0.35F, HORN_V0, HORN_V1);
+			parts.segment(0.07F, 0.04F, 0.85F, BODY_V0, BODY_V1);
+			poseStack.translate(0.0F, -0.85F, 0.0F);
+			poseStack.mulPose(Axis.XP.rotationDegrees(-30.0F));
+			parts.segment(0.04F, 0.004F, 0.45F, CLAW_V0, CLAW_V1);
 			poseStack.popPose();
 		}
 		poseStack.popPose();
 	}
 
-	/** Four spikes down the back, pointing up and back. */
-	private static void backSpikes(Parts parts) {
+	/** Knobs of the spine showing through the skin of the hunched back. */
+	private static void spine(Parts parts) {
 		PoseStack poseStack = parts.poseStack;
-		for (int i = 0; i < 4; i++) {
-			float y = 2.3F + i * 0.8F;
-			float depth = (0.42F + (0.95F - 0.42F) * (y - WAIST) / (CHEST_TOP - WAIST)) * TORSO_DEPTH;
+		for (int i = 0; i < 6; i++) {
+			float y = 0.6F + i * 0.75F;
+			float radius = y < WAIST ? Mth.lerp(y / WAIST, 0.26F, 0.32F)
+					: Mth.lerp((y - WAIST) / (CHEST_TOP - WAIST), 0.26F, 0.8F);
 			poseStack.pushPose();
-			poseStack.translate(0.0F, y, -depth * 0.85F);
-			poseStack.mulPose(Axis.XP.rotationDegrees(120.0F));
-			parts.segment(0.13F, 0.01F, 0.55F + i * 0.1F, HORN_V0, HORN_V1);
+			poseStack.translate(0.0F, y, -radius * (y < WAIST ? 0.75F : TORSO_DEPTH) * 0.92F);
+			parts.ball(0.12F, BODY_V0, BODY_V1);
 			poseStack.popPose();
 		}
 	}
 
 	/**
-	 * A long arm hanging from the shoulder, swinging against the legs, ending in three curved claws. The right arm
-	 * (side +1) does the claw swipe: raised high, then slammed down in front.
+	 * A very long arm hanging from the shoulder past the knee, swinging against the legs, ending in four long bony
+	 * fingers. The right arm (side +1) does the claw swipe: raised high, then slammed down in front.
 	 */
 	private static void arm(MehburityRenderState state, Parts parts, int side, float legSwing) {
 		PoseStack poseStack = parts.poseStack;
@@ -165,40 +176,45 @@ final class MehburityMonsterModel {
 					: Mth.lerp((s - 0.7F) / 0.3F, slammed, 0.0F);
 		}
 		poseStack.pushPose();
-		poseStack.translate(side * 1.08F, CHEST_TOP - 0.35F, 0.0F);
-		parts.ball(0.32F, BODY_V0, BODY_V1);
+		poseStack.translate(side * SHOULDER_X, CHEST_TOP - 0.3F, 0.0F);
+		parts.ball(0.24F, BODY_V0, BODY_V1);
 		// Undo most of the hunch so the arms hang down instead of reaching forward.
-		poseStack.mulPose(Axis.XP.rotationDegrees(-HUNCH * 0.7F));
+		poseStack.mulPose(Axis.XP.rotationDegrees(-HUNCH * 0.75F));
 		poseStack.mulPose(Axis.XP.rotation(swing));
-		poseStack.mulPose(Axis.ZP.rotationDegrees(side * 8.0F));
-		parts.segment(0.22F, 0.15F, UPPER_ARM, BODY_V0, BODY_V1);
+		poseStack.mulPose(Axis.ZP.rotationDegrees(side * 6.0F));
+		parts.segment(0.15F, 0.1F, UPPER_ARM, BODY_V0, BODY_V1);
 		poseStack.translate(0.0F, -UPPER_ARM, 0.0F);
-		parts.ball(0.17F, BODY_V0, BODY_V1);
-		poseStack.mulPose(Axis.XP.rotationDegrees(-20.0F));
-		poseStack.mulPose(Axis.ZP.rotationDegrees(-side * 6.0F));
-		parts.segment(0.15F, 0.1F, FOREARM, BODY_V0, BODY_V1);
-		poseStack.translate(0.0F, -FOREARM, 0.0F);
 		parts.ball(0.13F, BODY_V0, BODY_V1);
+		poseStack.mulPose(Axis.XP.rotationDegrees(-16.0F));
+		poseStack.mulPose(Axis.ZP.rotationDegrees(-side * 5.0F));
+		parts.segment(0.11F, 0.07F, FOREARM, BODY_V0, BODY_V1);
+		poseStack.translate(0.0F, -FOREARM, 0.0F);
+		parts.ball(0.09F, BODY_V0, BODY_V1);
 		poseStack.pushPose();
-		poseStack.translate(0.0F, -0.18F, 0.0F);
-		poseStack.scale(1.0F, 1.0F, 0.55F);
-		parts.ball(0.27F, BODY_V0, BODY_V1);
+		poseStack.translate(0.0F, -0.15F, 0.0F);
+		poseStack.scale(1.0F, 1.2F, 0.5F);
+		parts.ball(0.2F, BODY_V0, BODY_V1);
 		poseStack.popPose();
-		for (int finger = -1; finger <= 1; finger++) {
+		for (int finger = 0; finger < 4; finger++) {
+			float spread = finger - 1.5F;
 			poseStack.pushPose();
-			poseStack.translate(finger * 0.15F, -0.32F, 0.04F);
-			poseStack.mulPose(Axis.XP.rotationDegrees(-12.0F));
-			poseStack.mulPose(Axis.ZP.rotationDegrees(finger * 9.0F));
-			parts.segment(0.065F, 0.045F, 0.55F, BODY_V0, BODY_V1);
-			poseStack.translate(0.0F, -0.55F, 0.0F);
-			poseStack.mulPose(Axis.XP.rotationDegrees(-28.0F));
-			parts.segment(0.045F, 0.005F, 0.75F, HORN_V0, HORN_V1);
+			poseStack.translate(spread * 0.1F, -0.3F, 0.03F);
+			poseStack.mulPose(Axis.XP.rotationDegrees(-10.0F - Math.abs(spread) * 4.0F));
+			poseStack.mulPose(Axis.ZP.rotationDegrees(spread * 7.0F));
+			parts.segment(0.045F, 0.035F, 0.8F, BODY_V0, BODY_V1);
+			poseStack.translate(0.0F, -0.8F, 0.0F);
+			parts.ball(0.04F, BODY_V0, BODY_V1);
+			poseStack.mulPose(Axis.XP.rotationDegrees(-22.0F));
+			parts.segment(0.035F, 0.004F, 1.0F, CLAW_V0, CLAW_V1);
 			poseStack.popPose();
 		}
 		poseStack.popPose();
 	}
 
-	/** The neck leaning forward out of the chest, and the head turned towards whatever it looks at. */
+	/**
+	 * The neck jutting forward out of the chest, and the egg-shaped head: hanging to one side, turned towards
+	 * whatever it looks at, and jerking sideways now and then.
+	 */
 	private static void neckAndHead(MehburityRenderState state, Parts parts, RenderType head) {
 		PoseStack poseStack = parts.poseStack;
 		poseStack.pushPose();
@@ -206,42 +222,29 @@ final class MehburityMonsterModel {
 		poseStack.mulPose(Axis.XP.rotationDegrees(NECK_TILT));
 		// Segments hang down -Y: turned upside down, this one grows up out of the chest.
 		poseStack.mulPose(Axis.ZP.rotationDegrees(180.0F));
-		parts.segment(0.36F, 0.26F, NECK, BODY_V0, BODY_V1);
+		parts.segment(0.22F, 0.16F, NECK, BODY_V0, BODY_V1);
 		poseStack.translate(0.0F, -NECK, 0.0F);
 		poseStack.mulPose(Axis.ZP.rotationDegrees(180.0F));
-		poseStack.translate(0.0F, HEAD_RADIUS * 0.8F, 0.0F);
+		poseStack.translate(0.0F, HEAD_RADIUS * HEAD_STRETCH * 0.75F, 0.0F);
 		// Undo the hunch and the neck's tilt so the face looks level, then turn it like the head.
 		poseStack.mulPose(Axis.XP.rotationDegrees(-HUNCH - NECK_TILT));
 		float headYaw = Mth.clamp(Mth.wrapDegrees(state.yRot - state.bodyRot), -70.0F, 70.0F);
-		poseStack.mulPose(Axis.YP.rotationDegrees(-headYaw));
+		float twitch = twitch(state.ageInTicks);
+		poseStack.mulPose(Axis.YP.rotationDegrees(-headYaw + twitch * 14.0F));
 		poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot * 0.6F));
-		for (int side = -1; side <= 1; side += 2) {
-			horn(parts, side);
-		}
-		poseStack.scale(HEAD_RADIUS / MehburityRenderer.RADIUS, HEAD_RADIUS / MehburityRenderer.RADIUS, HEAD_RADIUS / MehburityRenderer.RADIUS);
+		poseStack.mulPose(Axis.ZP.rotationDegrees(HEAD_TILT + twitch * 28.0F));
+		float radius = HEAD_RADIUS / MehburityRenderer.RADIUS;
+		poseStack.scale(radius, radius * HEAD_STRETCH, radius);
 		int light = parts.light;
 		parts.collector.submitCustomGeometry(poseStack, head,
 				(pose, buffer) -> MehburityRenderer.buildSphere(pose, buffer, light, OverlayTexture.NO_OVERLAY));
 		poseStack.popPose();
 	}
 
-	/** A horn rising from the top of the head and curving back, its tip flaring out, in three tapering pieces. */
-	private static void horn(Parts parts, int side) {
-		PoseStack poseStack = parts.poseStack;
-		poseStack.pushPose();
-		poseStack.translate(side * HEAD_RADIUS * 0.55F, HEAD_RADIUS * 0.7F, -0.1F);
-		// Pointing up and a little outwards (a segment hangs down -Y, so about 160 degrees around Z).
-		poseStack.mulPose(Axis.ZP.rotationDegrees(side * 160.0F));
-		parts.segment(0.26F, 0.18F, 0.8F, HORN_V0, HORN_V1);
-		poseStack.translate(0.0F, -0.8F, 0.0F);
-		// Positive X turns the tip backwards.
-		poseStack.mulPose(Axis.XP.rotationDegrees(30.0F));
-		parts.segment(0.18F, 0.1F, 0.7F, HORN_V0, HORN_V1);
-		poseStack.translate(0.0F, -0.7F, 0.0F);
-		poseStack.mulPose(Axis.XP.rotationDegrees(35.0F));
-		poseStack.mulPose(Axis.ZP.rotationDegrees(-side * 15.0F));
-		parts.segment(0.1F, 0.005F, 0.7F, HORN_V0, HORN_V1);
-		poseStack.popPose();
+	/** 0 most of the time; a quick 0 → 1 → 0 jerk for a few ticks every {@link #TWITCH_PERIOD} ticks. */
+	private static float twitch(float ageInTicks) {
+		float phase = ageInTicks % TWITCH_PERIOD;
+		return phase < TWITCH_TICKS ? Mth.sin(phase / TWITCH_TICKS * Mth.PI) : 0.0F;
 	}
 
 	/** Submits each part with the pose current at the time of the call. */
