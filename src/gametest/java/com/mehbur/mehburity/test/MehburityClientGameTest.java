@@ -6,6 +6,7 @@ import com.mehbur.mehburity.client.ai.VoiceInput;
 import com.mehbur.mehburity.client.config.MehburityClientConfig;
 import com.mehbur.mehburity.client.screen.MehburityConfigScreen;
 import com.mehbur.mehburity.config.ConfigReloadedCallback;
+import com.mehbur.mehburity.client.ai.VoicePlayer;
 import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
 import com.mehbur.mehburity.entity.CompanionMode;
@@ -96,6 +97,7 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 			server.waitFor(s -> CompanionManager.find(s, playerId) != null, 200);
 			context.waitTicks(40);
 			context.takeScreenshot("mehburity-3-out");
+			checkVoiceDistance();
 			checkCarrying(context, server, playerId);
 
 			checkTalking(context, server, playerId);
@@ -148,6 +150,21 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 	}
 
 	/** A real right click picks Mehburity up into the inventory; a right click on the ground with it lets it out. */
+	/** The voice is at full volume up close, fades with distance, and is gone 32 blocks away. */
+	private static void checkVoiceDistance() {
+		Vec3 ear = Vec3.ZERO;
+		assertEquals(1.0F, VoicePlayer.volumeAt(ear, new Vec3(2.0, 0.0, 0.0)), "full volume up close");
+		float mid = VoicePlayer.volumeAt(ear, new Vec3(15.0, 0.0, 0.0));
+		if (!(mid > 0.3F && mid < 0.8F)) {
+			throw new AssertionError("15 blocks away the voice must be quieter, but not gone: " + mid);
+		}
+		if (!(VoicePlayer.volumeAt(ear, new Vec3(25.0, 0.0, 0.0)) < mid)) {
+			throw new AssertionError("farther must be quieter");
+		}
+		assertEquals(0.0F, VoicePlayer.volumeAt(ear, new Vec3(40.0, 0.0, 0.0)), "silent far away");
+		assertEquals(1.0F, VoicePlayer.volumeAt(ear, null), "full volume when Mehburity is not out (carried)");
+	}
+
 	private static void checkCarrying(ClientGameTestContext context, TestServerContext server, UUID playerId) {
 		float[] view = server.computeOnServer(s -> {
 			ServerPlayer player = s.getPlayerList().getPlayer(playerId);

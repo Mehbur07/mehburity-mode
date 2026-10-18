@@ -10,6 +10,7 @@ import com.mehbur.mehburity.client.config.MehburityClientConfig;
 import com.mehbur.mehburity.network.AiReplyPayload;
 import com.mehbur.mehburity.network.AiRequestPayload;
 import com.mehbur.mehburity.network.SpeakPayload;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
@@ -41,7 +42,9 @@ public final class ClientAi {
 
 	public static void register() {
 		ClientPlayNetworking.registerGlobalReceiver(AiRequestPayload.TYPE, (payload, context) -> handle(payload));
-		ClientPlayNetworking.registerGlobalReceiver(SpeakPayload.TYPE, (payload, context) -> VoicePlayer.speak(payload.text().getString()));
+		ClientPlayNetworking.registerGlobalReceiver(SpeakPayload.TYPE, (payload, context) -> VoicePlayer.speak(payload.text().getString(),
+				new VoicePlayer.Speaker(payload.speakerId(), payload.from().orElse(null))));
+		ClientTickEvents.END_CLIENT_TICK.register(VoicePlayer::tick);
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
 			HISTORY.clear();
 			lastProblem = null;

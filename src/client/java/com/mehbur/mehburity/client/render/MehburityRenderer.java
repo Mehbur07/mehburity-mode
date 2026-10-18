@@ -6,7 +6,6 @@ import com.mehbur.mehburity.entity.MehburityEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -183,13 +182,9 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		return open ? TALK_RENDER_TYPE : RENDER_TYPE;
 	}
 
-	/** A line from the server, or (for the local player's own Mehburity) its voice coming out of the speakers. */
+	/** A line from the server, or its voice coming out of this player's speakers. */
 	private static boolean isTalking(MehburityEntity entity) {
-		if (entity.isTalking()) {
-			return true;
-		}
-		var player = Minecraft.getInstance().player;
-		return VoicePlayer.isPlaying() && player != null && entity.isOwnedBy(player.getUUID());
+		return entity.isTalking() || VoicePlayer.isVoiceOf(entity.getId());
 	}
 
 	/**

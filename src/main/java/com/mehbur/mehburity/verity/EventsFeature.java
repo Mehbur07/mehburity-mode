@@ -189,7 +189,7 @@ public final class EventsFeature implements VerityFeature {
 		}
 		mehburity.setScared(SCARED_TICKS);
 		int line = RANDOM.nextInt(WHISPERS);
-		MehburitySpeech.speak(player, MehburitySpeech.text("verity.whisper." + (line + 1), WHISPER_FALLBACK[line]));
+		MehburitySpeech.say(player, MehburitySpeech.text("verity.whisper." + (line + 1), WHISPER_FALLBACK[line]));
 		GameEvents.record(player, "Mehburity got scared in the dark and whispered: " + WHISPER_FALLBACK[line]);
 		return true;
 	}
@@ -230,7 +230,7 @@ public final class EventsFeature implements VerityFeature {
 		MehburityEntity mehburity = CompanionManager.find(player.level().getServer(), player.getUUID());
 		if (mehburity != null && !mehburity.isRaging()) {
 			mehburity.setScared(SCARED_TICKS);
-			LATER.add(new Later(now + SAW_IT_DELAY, () -> MehburitySpeech.speak(player,
+			LATER.add(new Later(now + SAW_IT_DELAY, () -> MehburitySpeech.say(player,
 					MehburitySpeech.text("verity.watcher_seen", "...You saw it too, didn't you?"))));
 		}
 	}

@@ -87,7 +87,7 @@ public final class Building {
 		ServerLevel level = owner.level();
 		HousePlan plan = findSpot(level, owner, palette);
 		if (plan == null) {
-			MehburitySpeech.speak(owner, MehburitySpeech.text("build.no_room",
+			MehburitySpeech.say(owner, MehburitySpeech.text("build.no_room",
 					"I can't build here: there is something I must not touch, or no room. Try a flatter, open spot."));
 			return false;
 		}
@@ -98,7 +98,7 @@ public final class Building {
 		BuildJob job = new BuildJob(plan);
 		mehburity.setBuildJob(job);
 		UNDO.put(owner.getUUID(), new Undo(level.dimension(), job.before()));
-		MehburitySpeech.speak(owner, MehburitySpeech.text("build.start", "Leave it to me! I'm building you a house."));
+		MehburitySpeech.say(owner, MehburitySpeech.text("build.start", "Leave it to me! I'm building you a house."));
 		GameEvents.record(owner, "the player asked Mehburity to build a house; it started building right in front of them");
 		return true;
 	}
@@ -138,7 +138,7 @@ public final class Building {
 		level.sendParticles(new DustParticleOptions(MehburityBoxEntity.NEON_CYAN, 1.5F), middle.x, middle.y, middle.z,
 				60, 3.0, 2.0, 3.0, 0.0);
 		level.playSound(null, middle.x, middle.y, middle.z, SoundEvents.ILLUSIONER_MIRROR_MOVE, SoundSource.NEUTRAL, 1.0F, 1.0F);
-		MehburitySpeech.speak(owner, MehburitySpeech.text("build.undone", "Poof! The house is gone and everything is back as it was."));
+		MehburitySpeech.say(owner, MehburitySpeech.text("build.undone", "Poof! The house is gone and everything is back as it was."));
 		GameEvents.record(owner, "Mehburity took the house down again, as the player asked");
 		return true;
 	}
@@ -147,11 +147,11 @@ public final class Building {
 	static void finish(MehburityEntity mehburity, ServerPlayer owner, End end) {
 		mehburity.setBuildJob(null);
 		if (end == End.DONE) {
-			MehburitySpeech.speak(owner, MehburitySpeech.text("build.done",
+			MehburitySpeech.say(owner, MehburitySpeech.text("build.done",
 					"Your house is ready! There's a bed, a chest and torches inside. Do you like it?"));
 			GameEvents.record(owner, "Mehburity finished building the player's house");
 		} else {
-			MehburitySpeech.speak(owner, MehburitySpeech.text("build.stopped",
+			MehburitySpeech.say(owner, MehburitySpeech.text("build.stopped",
 					"Okay, I stopped building. Say \"evi geri al\" if you want it gone."));
 		}
 	}

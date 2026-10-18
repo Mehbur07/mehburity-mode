@@ -51,7 +51,7 @@ public final class Mining {
 			return true;
 		}
 		mehburity.setMiningJob(MiningJob.ores());
-		MehburitySpeech.speak(owner, MehburitySpeech.text("mining.start", "Off I go! I'll mine the ores around here."));
+		MehburitySpeech.say(owner, MehburitySpeech.text("mining.start", "Off I go! I'll mine the ores around here."));
 		GameEvents.record(owner, "the player asked Mehburity to mine the ores nearby");
 		return true;
 	}
@@ -78,7 +78,7 @@ public final class Mining {
 			mehburity = mehburity.teleportToOwner(owner);
 		}
 		mehburity.setMiningJob(MiningJob.single(pos));
-		MehburitySpeech.speak(owner, MehburitySpeech.text("mining.start_one", "On it!"));
+		MehburitySpeech.say(owner, MehburitySpeech.text("mining.start_one", "On it!"));
 		return true;
 	}
 
@@ -104,7 +104,7 @@ public final class Mining {
 			mehburity = mehburity.teleportToOwner(owner);
 		}
 		mehburity.setMiningJob(MiningJob.tree(logs));
-		MehburitySpeech.speak(owner, MehburitySpeech.text("mining.start_tree", "Timber! I'll cut it down."));
+		MehburitySpeech.say(owner, MehburitySpeech.text("mining.start_tree", "Timber! I'll cut it down."));
 		GameEvents.record(owner, "the player asked Mehburity to cut down a tree (" + logs.size() + " logs)");
 		return true;
 	}
@@ -153,7 +153,7 @@ public final class Mining {
 	/** Hands the whole bag to the owner; whatever does not fit in their inventory drops at their feet. */
 	public static boolean give(ServerPlayer owner) {
 		if (MiningBag.isEmpty(owner)) {
-			MehburitySpeech.speak(owner, MehburitySpeech.text("mining.bag_empty", "My bag is empty. Want me to go mining?"));
+			MehburitySpeech.say(owner, MehburitySpeech.text("mining.bag_empty", "My bag is empty. Want me to go mining?"));
 			return false;
 		}
 		String summary = MiningBag.describe(owner);
@@ -166,7 +166,7 @@ public final class Mining {
 				0.6F, 1.0F);
 		level.sendParticles(new DustParticleOptions(MehburityBoxEntity.NEON_CYAN, 1.0F),
 				owner.getX(), owner.getY() + 1.0, owner.getZ(), 15, 0.3, 0.4, 0.3, 0.0);
-		MehburitySpeech.speak(owner, MehburitySpeech.text("mining.given", "Here you go: %s", summary));
+		MehburitySpeech.say(owner, MehburitySpeech.text("mining.given", "Here you go: %s", summary));
 		GameEvents.record(owner, "Mehburity gave the player everything it had mined: " + summary);
 		return true;
 	}
@@ -198,7 +198,7 @@ public final class Mining {
 			case UNREACHABLE -> MehburitySpeech.text("mining.unreachable", "I can't reach that block.");
 			case STOPPED -> MehburitySpeech.text("mining.stopped", "Okay, I stopped mining.");
 		};
-		MehburitySpeech.speak(owner, line);
+		MehburitySpeech.say(owner, line);
 		if (mined > 0) {
 			GameEvents.record(owner, "Mehburity finished mining (" + mined + " blocks). Its bag: " + MiningBag.describe(owner));
 		}

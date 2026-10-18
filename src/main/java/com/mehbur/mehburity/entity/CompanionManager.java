@@ -125,7 +125,7 @@ public final class CompanionManager {
 		if (companion.mode() == CompanionMode.FOLLOW || companion.stowed()) {
 			MehburityEntity created = spawnCompanion(player, companion.mode());
 			if (created != null && joining) {
-				MehburitySpeech.speak(player, MehburitySpeech.text("welcome_back", "Welcome back, %s!", player.getDisplayName()));
+				MehburitySpeech.say(player, MehburitySpeech.text("welcome_back", "Welcome back, %s!", player.getDisplayName()));
 			}
 		}
 	}
@@ -201,7 +201,7 @@ public final class CompanionManager {
 		level.playSound(null, start.x, start.y, start.z, MehburitySounds.EMERGE, SoundSource.NEUTRAL, 1.0F, 1.0F);
 		if (owner != null) {
 			// Verity's line, word for word; spoken with Mehburity's voice. Editable in the config (ai.greeting).
-			MehburitySpeech.speak(owner, Component.literal(MehburityConfig.get().ai.greeting));
+			MehburitySpeech.say(owner, Component.literal(MehburityConfig.get().ai.greeting));
 			GameEvents.record(owner, "Mehburity came out of its box and met the player for the first time");
 			FlashlightItem.gift(owner);
 		}

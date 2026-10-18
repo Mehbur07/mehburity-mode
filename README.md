@@ -57,8 +57,11 @@ Kutuyu kaybettiysen `/mehburity cagir` yeni bir kutu verir (hiç açmadıysan) y
 - **Ne bildiği:** konumun, boyut ve biyom, canın ve açlığın, gündüz/gece ve hava, yakındaki düşmanlar, çantasındakiler,
   inşaat durumu, öfkesi ve son olaylar (savaştıkları, kazdıkları, gördüğün iblis…). Konuşmayı hatırlar (son 10 mesaj).
 - **Kendiliğinden yorum yapar:** saldırıya uğrayınca ya da ölünce (en fazla 90 saniyede bir).
-- **Sesli okur** (Gemini TTS, varsayılan ses *Puck*). Sesi yalnızca sahibi duyar. Sık söylenen kısa cümleler
-  önbelleğe alınır.
+- **Sesli okur** (Gemini TTS, varsayılan ses *Puck*): söylediği her cümleyi. Sesi yalnızca sahibi duyar. Sık söylenen
+  kısa cümleler önbelleğe alınır.
+- **Uzaklık hissi:** ses Mehburity'nin olduğu yerden gelir. 3 bloğa kadar tam ses, uzaklaştıkça kısılır ve 32 blokta
+  duyulmaz olur (yazı yine sohbete düşer). Konuşurken uzaklaşırsan ya da yaklaşırsan ses anında değişir. Cebindeyken
+  tam sesle konuşur. Anahtar yokken çalan kısa ses de aynı şekilde uzaktan gelir.
 - **Gemini yoksa da çalışır:** anahtar, internet ya da kota yoksa veya cevap 30 sn'de gelmezse yerleşik Türkçe/İngilizce
   cevaplarla devam eder ve bağlantı sorununu söyler. Ses yerine kısa bir "cıvıltı" çalar.
 

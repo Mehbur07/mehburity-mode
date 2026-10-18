@@ -272,7 +272,7 @@ public final class Anger {
 		if (culprit != null) {
 			tell(back, culprit, line);
 		} else if (owner != null) {
-			MehburitySpeech.speak(owner, line);
+			MehburitySpeech.say(owner, line);
 		}
 		if (owner != null) {
 			GameEvents.record(owner, "Mehburity's rage ended (" + end.name().toLowerCase(java.util.Locale.ROOT) + ")");
@@ -413,10 +413,10 @@ public final class Anger {
 	private static void tell(MehburityEntity mehburity, @Nullable LivingEntity culprit, Component line) {
 		ServerPlayer owner = mehburity.getOwnerPlayer();
 		if (owner != null) {
-			MehburitySpeech.speak(owner, line);
+			MehburitySpeech.say(owner, line, mehburity);
 		}
 		if (culprit instanceof ServerPlayer player && player != owner) {
-			MehburitySpeech.speak(player, line);
+			MehburitySpeech.say(player, line, mehburity); // from this Mehburity, not the culprit's own
 		}
 	}
 
