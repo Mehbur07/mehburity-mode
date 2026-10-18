@@ -169,6 +169,11 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		public boolean rageAtOwner = true;
 		/** Once it has calmed down, it says sorry to the player it got really angry with and gives them a cake. */
 		public boolean makeUpCake = true;
+		/**
+		 * A player who drives it into a rage is not hunted at once: it vanishes for this many in-game days and comes
+		 * back for them some time on the day after. 0: rages at once. Mobs are always hunted at once.
+		 */
+		public int revengeDays = 3;
 		/** At most one make-up cake per player in this many seconds (0: every time it calms down). */
 		public int makeUpCakeCooldownSeconds = 0;
 		/** Words that count as insults when said to Mehburity (accents and case do not matter). */
@@ -386,6 +391,7 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		anger.apologyCalm = Mth.clamp(anger.apologyCalm, 0.0, 100.0);
 		anger.apologyCooldownSeconds = Mth.clamp(anger.apologyCooldownSeconds, 0, 3600);
 		anger.makeUpCakeCooldownSeconds = Mth.clamp(anger.makeUpCakeCooldownSeconds, 0, 86400);
+		anger.revengeDays = Mth.clamp(anger.revengeDays, 0, 30);
 		anger.rageDamage = Mth.clamp(anger.rageDamage, 0.0, 1000.0);
 		anger.rageCooldownTicks = Mth.clamp(anger.rageCooldownTicks, 0, 200);
 		anger.rageSpeed = Mth.clamp(anger.rageSpeed, 0.1, 10.0);

@@ -2,6 +2,7 @@ package com.mehbur.mehburity.command;
 
 import com.mehbur.mehburity.MehburityMod;
 import com.mehbur.mehburity.anger.Anger;
+import com.mehbur.mehburity.anger.Revenge;
 import com.mehbur.mehburity.build.Building;
 import com.mehbur.mehburity.build.HouseStyle;
 import com.mehbur.mehburity.config.ConfigReloadedCallback;
@@ -25,10 +26,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.entity.EntityTypeTest;
 
+import java.util.UUID;
 import java.util.function.Predicate;
 
 /**
@@ -69,6 +72,9 @@ public final class MehburityCommands {
 				.then(Commands.literal("sakin")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(MehburityCommands::calmAll))
+				.then(Commands.literal("intikam")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(MehburityCommands::revengeNow))
 				.then(Commands.literal("olay")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.then(Commands.literal("ses").executes(ctx -> scare(ctx, EventsFeature.Kind.SOUND)))
@@ -93,6 +99,8 @@ public final class MehburityCommands {
 			case BOX_GIVEN -> {
 				// spawnBox already told the player where the box is.
 			}
+			case GONE -> player.sendSystemMessage(Component.translatableWithFallback(KEY + "gone",
+					"Mehburity is nowhere to be found... It will be back.").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
 		}
 		return 1;
 	}
@@ -173,10 +181,28 @@ public final class MehburityCommands {
 				calmed++;
 			}
 		}
+		// A Mehburity that vanished for revenge forgives and comes back calm.
+		MinecraftServer server = ctx.getSource().getServer();
+		for (UUID owner : java.util.List.copyOf(CompanionRegistry.companions(server).keySet())) {
+			if (CompanionManager.forgive(server, owner)) {
+				calmed++;
+			}
+		}
 		int count = calmed;
 		ctx.getSource().sendSuccess(() -> Component.translatableWithFallback(KEY + "calmed",
 				"Calmed %s Mehburity.", count), true);
 		return count;
+	}
+
+	/** {@code /mehburity intikam} (operators): every vanished Mehburity whose culprit is online comes back now. */
+	private static int revengeNow(CommandContext<CommandSourceStack> ctx) {
+		MinecraftServer server = ctx.getSource().getServer();
+		long pending = CompanionRegistry.companions(server).values().stream()
+				.filter(companion -> companion.mode() == CompanionMode.GONE).count();
+		Revenge.advance(server, Long.MAX_VALUE / 2);
+		ctx.getSource().sendSuccess(() -> Component.translatableWithFallback(KEY + "revenge_now",
+				"%s vanished Mehburity were sent for their revenge.", pending), true);
+		return (int) pending;
 	}
 
 	/** {@code /mehburity olay ses|fisilti|izleyen} (operators): one of Verity's scripted scares, right now. */

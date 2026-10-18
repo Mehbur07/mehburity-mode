@@ -38,7 +38,16 @@ public final class MehburitySpeech {
 		if (speaker != null) {
 			speaker.talk(message.getString());
 		}
-		sendVoice(player, message, speaker);
+		sendVoice(player, message, speaker, false);
+	}
+
+	/** Like {@link #say}, but in a deep, slow, demonic voice (and dark red in chat): its revenge. */
+	public static void sayDeep(ServerPlayer player, Component message, MehburityEntity speaker) {
+		player.sendSystemMessage(Component.empty()
+				.append(Component.literal("[Mehburity] ").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD))
+				.append(message.copy().withStyle(ChatFormatting.DARK_RED, ChatFormatting.ITALIC)));
+		speaker.talk(message.getString());
+		sendVoice(player, message, speaker, true);
 	}
 
 	/** Moves the mouth of {@code player}'s Mehburity while it says {@code text}, if it is out in the world. */
@@ -51,17 +60,17 @@ public final class MehburitySpeech {
 
 	/** Asks the player's client to say {@code message} out loud in their own Mehburity's voice. */
 	public static void sendVoice(ServerPlayer player, Component message) {
-		sendVoice(player, message, companionOf(player));
+		sendVoice(player, message, companionOf(player), false);
 	}
 
 	/** Gemini TTS (or a chirp without a key) on the player's client, coming from {@code speaker}. */
-	public static void sendVoice(ServerPlayer player, Component message, @Nullable MehburityEntity speaker) {
+	public static void sendVoice(ServerPlayer player, Component message, @Nullable MehburityEntity speaker, boolean deep) {
 		if (!ServerPlayNetworking.canSend(player, SpeakPayload.TYPE)) {
 			return;
 		}
 		SpeakPayload payload = speaker != null && speaker.level() == player.level()
-				? new SpeakPayload(message, speaker.getId(), Optional.of(speaker.position()))
-				: new SpeakPayload(message, SpeakPayload.NO_SPEAKER, Optional.empty());
+				? new SpeakPayload(message, speaker.getId(), Optional.of(speaker.position()), deep)
+				: new SpeakPayload(message, SpeakPayload.NO_SPEAKER, Optional.empty(), deep);
 		ServerPlayNetworking.send(player, payload);
 	}
 

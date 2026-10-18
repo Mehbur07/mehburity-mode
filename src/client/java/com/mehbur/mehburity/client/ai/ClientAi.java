@@ -43,7 +43,7 @@ public final class ClientAi {
 	public static void register() {
 		ClientPlayNetworking.registerGlobalReceiver(AiRequestPayload.TYPE, (payload, context) -> handle(payload));
 		ClientPlayNetworking.registerGlobalReceiver(SpeakPayload.TYPE, (payload, context) -> VoicePlayer.speak(payload.text().getString(),
-				new VoicePlayer.Speaker(payload.speakerId(), payload.from().orElse(null))));
+				new VoicePlayer.Speaker(payload.speakerId(), payload.from().orElse(null)), payload.deep()));
 		ClientTickEvents.END_CLIENT_TICK.register(VoicePlayer::tick);
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
 			HISTORY.clear();

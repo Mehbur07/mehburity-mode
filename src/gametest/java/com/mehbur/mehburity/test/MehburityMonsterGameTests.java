@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
+import static com.mehbur.mehburity.test.MehburityGameTests.instantRage;
 import static com.mehbur.mehburity.test.MehburityGameTests.owner;
 import static com.mehbur.mehburity.test.MehburityGameTests.survivalOwner;
 import static com.mehbur.mehburity.test.MehburityGameTests.tempConfig;
@@ -69,7 +70,7 @@ public final class MehburityMonsterGameTests {
 		ServerPlayer stranger = survivalOwner(helper);
 		stranger.teleportTo(stranger.getX() + 3.0, stranger.getY(), stranger.getZ() + 3.0);
 		withCompanion(helper, owner, mehburity -> {
-			Anger.provoke(mehburity, stranger, 100.0);
+			instantRage(() -> Anger.provoke(mehburity, stranger, 100.0));
 			helper.assertTrue(mehburity.isMonster() && mehburity.getRageCulprit() == stranger, "the demon is after the stranger");
 			helper.startSequence()
 					.thenWaitUntil(() -> helper.assertTrue(stranger.isDeadOrDying(), "the culprit must be killed"))
@@ -91,7 +92,7 @@ public final class MehburityMonsterGameTests {
 	public void cake_shrinks_the_demon_back(GameTestHelper helper) {
 		ServerPlayer owner = survivalOwner(helper);
 		withCompanion(helper, owner, mehburity -> {
-			Anger.provoke(mehburity, owner, 100.0);
+			instantRage(() -> Anger.provoke(mehburity, owner, 100.0));
 			helper.assertTrue(mehburity.isMonster() && mehburity.getRageCulprit() == owner, "a demon after its own owner");
 			owner.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CAKE));
 			mehburity.interact(owner, InteractionHand.MAIN_HAND, Vec3.ZERO);

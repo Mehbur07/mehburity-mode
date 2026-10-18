@@ -6,6 +6,7 @@ import com.mehbur.mehburity.client.ai.VoiceInput;
 import com.mehbur.mehburity.client.config.MehburityClientConfig;
 import com.mehbur.mehburity.client.screen.MehburityConfigScreen;
 import com.mehbur.mehburity.config.ConfigReloadedCallback;
+import com.mehbur.mehburity.anger.Anger;
 import com.mehbur.mehburity.client.ai.VoicePlayer;
 import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
@@ -483,6 +484,9 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		double speed = MehburityConfig.get().monster.blocksPerSecond;
 		// The demon stands still for the photos.
 		server.runOnServer(s -> MehburityConfig.get().monster.blocksPerSecond = 0.0);
+		// The rage breaks out at once here; the revenge (vanishing for days) has its own server test.
+		int revengeDays = server.computeOnServer(s -> MehburityConfig.get().anger.revengeDays);
+		server.runOnServer(s -> MehburityConfig.get().anger.revengeDays = 0);
 		// Mehburity sits on the ground straight ahead; the player looks down at it.
 		float[] view = server.computeOnServer(s -> {
 			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
@@ -571,11 +575,27 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		context.getInput().pressKey(options -> options.keyUse);
 		server.waitFor(s -> !CompanionManager.find(s, playerId).isRaging(), 100);
 		server.runOnServer(s -> MehburityConfig.get().monster.blocksPerSecond = speed);
+		server.runOnServer(s -> MehburityConfig.get().anger.revengeDays = revengeDays);
 		if (server.computeOnServer(s -> CompanionManager.find(s, playerId).isMonster())) {
 			throw new AssertionError("calming down must shrink the demon back into a sphere");
 		}
 		context.waitTicks(10);
 		context.takeScreenshot("mehburity-a2-calmed");
+
+		// Revenge: driven into a rage, it vanishes; brought back early, it appears behind the player in the dark.
+		server.runOnServer(s -> Anger.provoke(CompanionManager.find(s, playerId), s.getPlayerList().getPlayer(playerId), 100.0));
+		if (server.computeOnServer(s -> CompanionManager.find(s, playerId) != null)) {
+			throw new AssertionError("driven into a rage at a player, Mehburity must vanish");
+		}
+		context.waitTicks(20);
+		server.runCommand("mehburity intikam");
+		server.waitFor(s -> CompanionManager.find(s, playerId) != null && CompanionManager.find(s, playerId).isRaging(), 100);
+		context.waitTicks(15);
+		context.getInput().lookAt(yaw + 180.0F, -25.0F);
+		context.waitTicks(30);
+		context.takeScreenshot("mehburity-r1-revenge");
+		server.runOnServer(s -> Anger.endRage(CompanionManager.find(s, playerId), Anger.RageEnd.FORCED));
+		context.getInput().lookAt(yaw, 0.0F);
 		context.getInput().pressKey(options -> options.keyToggleGui);
 		context.runOnClient(mc -> mc.player.connection.sendCommand("mehburity takip"));
 		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.FOLLOW, 100);

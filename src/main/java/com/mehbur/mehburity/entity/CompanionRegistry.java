@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -23,39 +24,56 @@ public final class CompanionRegistry {
 	/**
 	 * One player's Mehburity. {@code stowed} means it travelled with the owner when they logged out;
 	 * {@code combat} is the owner's choice whether Mehburity fights for them ({@code /mehburity savas});
-	 * {@code anger} is its temper (0-100) when it was last stored.
+	 * {@code anger} is its temper (0-100) when it was last stored. While {@link CompanionMode#GONE}, {@code revengeOn}
+	 * is the player it will come back for, in {@code revengeIn} more ticks of in-game time.
 	 */
-	public record Companion(UUID entityId, CompanionMode mode, boolean stowed, boolean combat, float anger) {
+	public record Companion(UUID entityId, CompanionMode mode, boolean stowed, boolean combat, float anger,
+			Optional<UUID> revengeOn, long revengeIn) {
 		static final Codec<Companion> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 				UUIDUtil.STRING_CODEC.fieldOf("entity").forGetter(Companion::entityId),
 				CompanionMode.CODEC.optionalFieldOf("mode", CompanionMode.FOLLOW).forGetter(Companion::mode),
 				Codec.BOOL.optionalFieldOf("stowed", false).forGetter(Companion::stowed),
 				Codec.BOOL.optionalFieldOf("combat", true).forGetter(Companion::combat),
-				Codec.FLOAT.optionalFieldOf("anger", 0.0F).forGetter(Companion::anger)
+				Codec.FLOAT.optionalFieldOf("anger", 0.0F).forGetter(Companion::anger),
+				UUIDUtil.STRING_CODEC.optionalFieldOf("revenge_on").forGetter(Companion::revengeOn),
+				Codec.LONG.optionalFieldOf("revenge_in", 0L).forGetter(Companion::revengeIn)
 		).apply(instance, Companion::new));
 
 		public Companion(UUID entityId, CompanionMode mode) {
-			this(entityId, mode, false, true, 0.0F);
+			this(entityId, mode, false, true, 0.0F, Optional.empty(), 0L);
 		}
 
 		public Companion withEntity(UUID newEntityId) {
-			return new Companion(newEntityId, mode, stowed, combat, anger);
+			return new Companion(newEntityId, mode, stowed, combat, anger, revengeOn, revengeIn);
 		}
 
 		public Companion withMode(CompanionMode newMode) {
-			return new Companion(entityId, newMode, stowed, combat, anger);
+			return new Companion(entityId, newMode, stowed, combat, anger, revengeOn, revengeIn);
 		}
 
 		public Companion withStowed(boolean newStowed) {
-			return new Companion(entityId, mode, newStowed, combat, anger);
+			return new Companion(entityId, mode, newStowed, combat, anger, revengeOn, revengeIn);
 		}
 
 		public Companion withCombat(boolean newCombat) {
-			return new Companion(entityId, mode, stowed, newCombat, anger);
+			return new Companion(entityId, mode, stowed, newCombat, anger, revengeOn, revengeIn);
 		}
 
 		public Companion withAnger(float newAnger) {
-			return new Companion(entityId, mode, stowed, combat, newAnger);
+			return new Companion(entityId, mode, stowed, combat, newAnger, revengeOn, revengeIn);
+		}
+
+		/** Gone, coming back for {@code culprit} after {@code ticks} of in-game time. */
+		public Companion withRevenge(UUID culprit, long ticks) {
+			return new Companion(entityId, CompanionMode.GONE, false, combat, anger, Optional.of(culprit), ticks);
+		}
+
+		public Companion withRevengeIn(long ticks) {
+			return new Companion(entityId, mode, stowed, combat, anger, revengeOn, ticks);
+		}
+
+		public Companion withoutRevenge() {
+			return new Companion(entityId, mode, stowed, combat, anger, Optional.empty(), 0L);
 		}
 	}
 
@@ -89,6 +107,11 @@ public final class CompanionRegistry {
 
 	public static @Nullable Companion companion(MinecraftServer server, UUID owner) {
 		return data(server).companions().get(owner);
+	}
+
+	/** Every player's Mehburity, by owner. */
+	public static Map<UUID, Companion> companions(MinecraftServer server) {
+		return data(server).companions();
 	}
 
 	public static void putCompanion(MinecraftServer server, UUID owner, Companion companion) {

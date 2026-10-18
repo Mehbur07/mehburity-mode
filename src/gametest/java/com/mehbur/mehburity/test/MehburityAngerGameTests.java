@@ -3,8 +3,10 @@ package com.mehbur.mehburity.test;
 import com.mehbur.mehburity.ai.AiRouter;
 import com.mehbur.mehburity.anger.Anger;
 import com.mehbur.mehburity.anger.AngerChat;
+import com.mehbur.mehburity.anger.Revenge;
 import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
+import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.CompanionRegistry;
 import com.mehbur.mehburity.entity.MehburityEntity;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -12,6 +14,7 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestSequence;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -21,6 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
+import static com.mehbur.mehburity.test.MehburityGameTests.instantRage;
 import static com.mehbur.mehburity.test.MehburityGameTests.owner;
 import static com.mehbur.mehburity.test.MehburityGameTests.survivalOwner;
 import static com.mehbur.mehburity.test.MehburityGameTests.tempConfig;
@@ -37,7 +41,9 @@ public final class MehburityAngerGameTests {
 			ServerPlayer attacker, int times) {
 		ServerLevel level = helper.getLevel();
 		for (int i = 0; i < times; i++) {
-			sequence = sequence.thenExecuteAfter(HIT_GAP, () -> mehburity.hurtServer(level, level.damageSources().playerAttack(attacker), 1.0F));
+			// The rage breaks out at once (revenge is tested on its own).
+			sequence = sequence.thenExecuteAfter(HIT_GAP, () -> instantRage(
+					() -> mehburity.hurtServer(level, level.damageSources().playerAttack(attacker), 1.0F)));
 		}
 		return sequence;
 	}
@@ -150,6 +156,54 @@ public final class MehburityAngerGameTests {
 						helper.assertTrue(owner.isAlive() && owner.getHealth() == owner.getMaxHealth(), "the owner was never touched");
 					})
 					.thenSucceed();
+		});
+	}
+
+	@GameTest(maxTicks = 300)
+	public void a_player_it_rages_at_finds_it_back_days_later(GameTestHelper helper) {
+		ServerPlayer owner = survivalOwner(helper);
+		ServerPlayer stranger = stranger(helper);
+		withCompanion(helper, owner, mehburity -> {
+			MinecraftServer server = helper.getLevel().getServer();
+			Anger.provoke(mehburity, stranger, 100.0);
+			helper.assertTrue(mehburity.isRemoved(), "no rage at once: it vanishes");
+			CompanionRegistry.Companion gone = CompanionRegistry.companion(server, owner.getUUID());
+			helper.assertValueEqual(CompanionMode.GONE, gone.mode(), "the registry knows it is gone");
+			helper.assertTrue(gone.revengeOn().orElseThrow().equals(stranger.getUUID()), "and whom it will come back for");
+			long wait = gone.revengeIn();
+			long days = MehburityConfig.get().anger.revengeDays;
+			helper.assertTrue(wait >= days * Revenge.DAY_TICKS && wait < (days + 1) * Revenge.DAY_TICKS,
+					"it comes back on the day after the wait, was " + wait);
+			helper.assertValueEqual(CompanionManager.SummonResult.GONE, CompanionManager.summon(owner), "it cannot be called back");
+			helper.assertTrue(CompanionManager.find(server, owner.getUUID()) == null, "and is not re-created meanwhile");
+
+			Revenge.advance(server, wait - 1);
+			helper.assertTrue(CompanionManager.find(server, owner.getUUID()) == null, "not a tick early");
+			Revenge.advance(server, 1);
+			MehburityEntity back = CompanionManager.find(server, owner.getUUID());
+			helper.assertTrue(back != null && back.isRaging() && back.getRageCulprit() == stranger, "back for its revenge");
+			helper.assertTrue(back.distanceTo(stranger) < 8.0F, "right behind the culprit");
+			helper.assertTrue(stranger.hasEffect(net.minecraft.world.effect.MobEffects.DARKNESS), "in the dark");
+			helper.assertTrue(back.isTalking(), "saying it came for its revenge");
+			CompanionRegistry.Companion after = CompanionRegistry.companion(server, owner.getUUID());
+			helper.assertTrue(after.mode() == CompanionMode.FOLLOW && after.revengeOn().isEmpty(), "no revenge pending any more");
+			Anger.endRage(back, Anger.RageEnd.FORCED);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(maxTicks = 200)
+	public void a_calm_down_order_calls_off_the_revenge(GameTestHelper helper) {
+		ServerPlayer owner = survivalOwner(helper);
+		withCompanion(helper, owner, mehburity -> {
+			MinecraftServer server = helper.getLevel().getServer();
+			Anger.provoke(mehburity, owner, 100.0);
+			helper.assertTrue(mehburity.isRemoved(), "it vanished");
+			helper.assertTrue(CompanionManager.forgive(server, owner.getUUID()), "the revenge is called off");
+			helper.succeedWhen(() -> {
+				MehburityEntity back = CompanionManager.find(server, owner.getUUID());
+				helper.assertTrue(back != null && !back.isRaging() && back.getAnger() == 0.0F, "back, calm, beside its owner");
+			});
 		});
 	}
 

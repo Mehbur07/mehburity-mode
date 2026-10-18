@@ -60,6 +60,10 @@ public final class VoicePlayer {
 	private static volatile float distanceVolume = 1.0F;
 	/** About this many seconds of audio are buffered, so walking away turns the voice down without a lag. */
 	private static final float LINE_BUFFER_SECONDS = 0.25F;
+	/** Its revenge line: a gravelly Gemini voice told to sound like a demon, then played slower and lower. */
+	private static final String DEEP_VOICE = "Algenib";
+	private static final String DEEP_STYLE = "a very deep, slow, menacing, demonic voice, like a growl coming out of the dark";
+	private static final float DEEP_PITCH = 0.78F;
 
 	/**
 	 * The Mehburity that talks: its entity id (or {@link #NO_ENTITY}) and where it stood, used until this client
@@ -102,22 +106,31 @@ public final class VoicePlayer {
 
 	/** {@code speaker} says {@code text}; quieter the farther it is. Call from the render thread. */
 	public static void speak(String text, Speaker speaker) {
+		speak(text, speaker, false);
+	}
+
+	/** Same, in the deep demonic voice of its revenge when {@code deep}. */
+	public static void speak(String text, Speaker speaker, boolean deep) {
 		MehburityClientConfig config = MehburityClientConfig.get();
 		if (!config.voiceEnabled || text.isBlank()) {
 			return;
 		}
-		speak(text, config.voiceName, config.voiceStyle, speaker);
+		if (deep) {
+			speak(text, DEEP_VOICE, DEEP_STYLE, speaker, true);
+		} else {
+			speak(text, config.voiceName, config.voiceStyle, speaker, false);
+		}
 	}
 
 	/** Used by the settings screen's "Listen" button with an unsaved voice (at full volume). */
 	public static void speak(String text, String voice, String style) {
-		speak(text, voice, style, Speaker.NONE);
+		speak(text, voice, style, Speaker.NONE, false);
 	}
 
-	private static void speak(String text, String voice, String style, Speaker speaker) {
+	private static void speak(String text, String voice, String style, Speaker speaker, boolean deep) {
 		MehburityClientConfig config = MehburityClientConfig.get();
 		if (config.geminiApiKey.isBlank()) {
-			chirp(speaker);
+			chirp(speaker, deep);
 			return;
 		}
 		int asked = generation;
@@ -125,13 +138,13 @@ public final class VoicePlayer {
 		queue = queue.thenCombineAsync(audio.handle((wav, error) -> {
 			if (error != null) {
 				MehburityMod.LOGGER.warn("Mehburity voice failed: {}", GeminiException.of(error).getMessage());
-				Minecraft.getInstance().execute(() -> chirp(speaker));
+				Minecraft.getInstance().execute(() -> chirp(speaker, deep));
 				return null;
 			}
 			return wav;
 		}), (ignored, wav) -> {
 			if (wav != null && asked == generation) {
-				play(wav, asked, speaker);
+				play(wav, asked, speaker, deep);
 			}
 			return null;
 		}, AUDIO);
@@ -185,11 +198,12 @@ public final class VoicePlayer {
 
 	/**
 	 * Blocking playback on the audio thread, scaled by our volume × Minecraft's voice/master volume × how far
-	 * away Mehburity is (re-applied between chunks, so it follows the player walking off mid-sentence).
+	 * away Mehburity is (re-applied between chunks, so it follows the player walking off mid-sentence). The deep
+	 * voice plays the same samples at a lower rate: slower and lower, like a recording slowed down.
 	 */
-	private static void play(byte[] wav, int asked, Speaker speaker) {
+	private static void play(byte[] wav, int asked, Speaker speaker, boolean deep) {
 		try (AudioInputStream stream = AudioSystem.getAudioInputStream(new ByteArrayInputStream(wav))) {
-			AudioFormat format = stream.getFormat();
+			AudioFormat format = deep ? slowed(stream.getFormat(), DEEP_PITCH) : stream.getFormat();
 			try (SourceDataLine line = AudioSystem.getSourceDataLine(format)) {
 				int frame = Math.max(1, format.getFrameSize());
 				int bufferBytes = Math.max(frame, (int) (format.getFrameRate() * LINE_BUFFER_SECONDS) * frame);
@@ -220,6 +234,11 @@ public final class VoicePlayer {
 		}
 	}
 
+	private static AudioFormat slowed(AudioFormat format, float factor) {
+		return new AudioFormat(format.getEncoding(), format.getSampleRate() * factor, format.getSampleSizeInBits(),
+				format.getChannels(), format.getFrameSize(), format.getFrameRate() * factor, format.isBigEndian());
+	}
+
 	/** How loud the line starts, worked out on the render thread (the client tick keeps it up to date afterwards). */
 	private static float startVolume(Speaker speaker) {
 		try {
@@ -244,18 +263,19 @@ public final class VoicePlayer {
 
 	/**
 	 * Short "speaking" sound when there is no voice, from where Mehburity is (Minecraft fades it out over
-	 * {@link #SILENT_DISTANCE} blocks); at full volume when it is not out in the world.
+	 * {@link #SILENT_DISTANCE} blocks); at full volume when it is not out in the world. Deep: a low growl.
 	 */
-	public static void chirp(Speaker speaker) {
+	public static void chirp(Speaker speaker, boolean deep) {
 		Minecraft minecraft = Minecraft.getInstance();
 		Vec3 at = speaker.position();
+		float pitch = deep ? 0.5F : 1.0F;
 		if (at == null || minecraft.level == null) {
-			minecraft.getSoundManager().play(SimpleSoundInstance.forUI(MehburitySounds.SPEAK, 1.0F));
+			minecraft.getSoundManager().play(SimpleSoundInstance.forUI(MehburitySounds.SPEAK, pitch));
 			return;
 		}
 		// Sounds are heard over 16 blocks per point of volume.
 		minecraft.level.playLocalSound(at.x, at.y, at.z, MehburitySounds.SPEAK, SoundSource.NEUTRAL,
-				(float) (SILENT_DISTANCE / 16.0), 1.0F, false);
+				(float) (SILENT_DISTANCE / 16.0), pitch, false);
 	}
 
 	// ---------------------------------------------------------------- disk cache

@@ -2,6 +2,7 @@ package com.mehbur.mehburity.ai;
 
 import com.mehbur.mehburity.MehburityMod;
 import com.mehbur.mehburity.config.MehburityConfig;
+import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.CompanionRegistry;
 import com.mehbur.mehburity.entity.MehburitySpeech;
 import com.mehbur.mehburity.network.AiReplyPayload;
@@ -64,8 +65,9 @@ public final class AiRouter {
 			return false;
 		}
 		String question = ChatAddress.extract(text, config.chatPrefixes);
-		if (question == null || CompanionRegistry.companion(player.level().getServer(), player.getUUID()) == null) {
-			return false;
+		CompanionRegistry.Companion companion = CompanionRegistry.companion(player.level().getServer(), player.getUUID());
+		if (question == null || companion == null || companion.mode() == CompanionMode.GONE) {
+			return false; // no Mehburity, or it vanished: nobody answers
 		}
 		if (question.length() > config.maxMessageLength) {
 			question = question.substring(0, config.maxMessageLength);

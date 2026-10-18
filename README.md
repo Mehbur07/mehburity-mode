@@ -180,6 +180,14 @@ Mehburity'nin 0–100 arası bir **öfke göstergesi** var.
 kızgınlaşır, üstünde kızgın partiküller çıkar ve ara ara kırmızı yanıp söner. **100**'de **öfke nöbetine** girer:
 kükrer, işini bırakır, [canavar formuna](#canavar-formu) geçer ve **yalnızca suçluyu** kovalar.
 
+**İntikam:** Onu nöbete sokan bir **oyuncuysa** hemen saldırmaz. Tek kelime etmeden duman içinde **kaybolur** ve
+**3 Minecraft günü** ortalıkta görünmez: çağrılamaz (`/mehburity cagir` "hiçbir yerde yok… geri dönecek" der), sohbete
+cevap vermez. **4. gün**, günün rastgele bir anında, suçlunun **arkasında birden belirir**: ekran kararır, gök gürler
+ve kalın, boğuk bir sesle **"İntikamımı almaya geldim."** der, sonra canavara dönüşüp onu kovalar. Suçlu (ya da
+sahibi) o sırada oyunda değilse, ikisi de oyundayken gelir. Uyuyarak ya da `/time add` ile geçen günler de sayılır;
+dünya kaydında tutulur, sunucu kapanınca unutulmaz. Yaratıklara (ör. sahibini öldüren zombi) hemen saldırır.
+`anger.revengeDays` ile gün sayısı değiştirilebilir (0: eskisi gibi hemen saldırır).
+
 Nöbet dört şekilde biter: suçlu ölünce, pasta veya özür göstergeyi 40'ın altına indirince, suçlu kaçınca (oyundan çıkar,
 başka boyuta geçer) ya da 90 saniye dolunca. Sonra Mehburity sahibinin yanına döner.
 
@@ -272,7 +280,8 @@ Alt komutlar ASCII yazılır (komut ayrıştırıcısı "ç, ğ" gibi harfleri k
 | `/mehburity ev dur` / `ev geri` | herkes | İnşaatı durdurur / son evi kaldırır |
 | `/mehburity ofke` | herkes | Ne kadar kızgın olduğunu söyler |
 | `/mehburity ayarlar` | herkes | Ayarlar ekranını açar (Gemini anahtarı, ses) |
-| `/mehburity sakin` | OP | Yüklü tüm Mehburity'leri sakinleştirir, öfke nöbetlerini bitirir |
+| `/mehburity sakin` | OP | Yüklü tüm Mehburity'leri sakinleştirir, öfke nöbetlerini bitirir, bekleyen intikamları iptal eder |
+| `/mehburity intikam` | OP | Kaybolmuş Mehburity'leri intikam için hemen geri getirir (denemek için) |
 | `/mehburity olay ses\|fisilti\|izleyen` | OP | Bir korku olayını hemen başlatır |
 | `/mehburity yenile` | OP | `config/mehburity.json`'u yeniden yükler ve oyunculara gönderir |
 
@@ -386,6 +395,7 @@ Bozuk bir dosya silinmez: `mehburity.json.broken` adıyla saklanır ve varsayıl
 | `anger.calmBelow` | 40 | Pasta/özür göstergeyi buna indirince nöbet biter |
 | `anger.cakeCalm` / `apologyCalm` | 60 / 25 | Pastanın / özrün düşürdüğü öfke |
 | `anger.apologyCooldownSeconds` | 30 | Aynı oyuncunun özrü bu sürede bir sayılır |
+| `anger.revengeDays` | 3 | Bir oyuncuya öfkelenince bu kadar gün kaybolur, sonraki gün intikama gelir (0: hemen saldırır) |
 | `anger.makeUpCake` | true | Sakinleşince kızdığı oyuncudan özür diler ve ona pasta verir |
 | `anger.makeUpCakeCooldownSeconds` | 0 | Oyuncu başına bu sürede en fazla bir barışma pastası (0: her seferinde) |
 | `anger.rageDamage` / `rageCooldownTicks` / `rageSpeed` | 10 / 10 / 3.0 | Canavar formu kapalıyken nöbetteki ışın ve hız |

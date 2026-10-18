@@ -242,6 +242,44 @@ public final class CompanionManager {
 		return mehburity;
 	}
 
+	// ---------------------------------------------------------------- revenge
+
+	/** Mehburity leaves the world, to come back for {@code culprit} in {@code ticks} of in-game time. */
+	public static void vanish(MehburityEntity mehburity, UUID culprit, long ticks) {
+		UUID ownerId = mehburity.getOwnerId();
+		if (ownerId == null || !(mehburity.level() instanceof ServerLevel level)) {
+			return;
+		}
+		CompanionRegistry.Companion companion = CompanionRegistry.companion(level.getServer(), ownerId);
+		if (companion != null) {
+			CompanionRegistry.putCompanion(level.getServer(), ownerId,
+					companion.withAnger(mehburity.getAnger()).withRevenge(culprit, ticks));
+		}
+		mehburity.setMiningJob(null);
+		mehburity.setBuildJob(null);
+		mehburity.discard();
+	}
+
+	/** A vanished Mehburity appears at {@code spot}, following its owner again (the revenge is over). */
+	public static @Nullable MehburityEntity comeBack(ServerLevel level, UUID ownerId, Vec3 spot) {
+		MehburityEntity mehburity = spawnCompanion(level, ownerId, spot, CompanionMode.FOLLOW);
+		CompanionRegistry.Companion companion = CompanionRegistry.companion(level.getServer(), ownerId);
+		if (mehburity != null && companion != null) {
+			CompanionRegistry.putCompanion(level.getServer(), ownerId, companion.withoutRevenge());
+		}
+		return mehburity;
+	}
+
+	/** Calls off a pending revenge: Mehburity comes back calm, beside its owner (next check). */
+	public static boolean forgive(MinecraftServer server, UUID ownerId) {
+		CompanionRegistry.Companion companion = CompanionRegistry.companion(server, ownerId);
+		if (companion == null || companion.mode() != CompanionMode.GONE) {
+			return false;
+		}
+		CompanionRegistry.putCompanion(server, ownerId, companion.withoutRevenge().withMode(CompanionMode.FOLLOW).withAnger(0.0F));
+		return true;
+	}
+
 	// ---------------------------------------------------------------- carrying
 
 	/** The owner's right click: Mehburity goes into their inventory as an item and leaves the world. */
@@ -310,7 +348,7 @@ public final class CompanionManager {
 
 	// ---------------------------------------------------------------- commands
 
-	public enum SummonResult { TELEPORTED, RESPAWNED, BOX_GIVEN }
+	public enum SummonResult { TELEPORTED, RESPAWNED, BOX_GIVEN, GONE }
 
 	/** {@code /mehburity cagir}: brings Mehburity to the player, or a new box if they never opened theirs. */
 	public static SummonResult summon(ServerPlayer player) {
@@ -319,6 +357,9 @@ public final class CompanionManager {
 		if (companion == null) {
 			spawnBox(player);
 			return SummonResult.BOX_GIVEN;
+		}
+		if (companion.mode() == CompanionMode.GONE) {
+			return SummonResult.GONE; // it comes back when it wants to
 		}
 
 		MehburityEntity mehburity = findEntity(server, companion.entityId());

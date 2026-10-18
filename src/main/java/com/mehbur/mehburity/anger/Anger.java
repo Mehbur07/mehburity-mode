@@ -73,6 +73,7 @@ public final class Anger {
 	public static void register() {
 		ServerLivingEntityEvents.AFTER_DEATH.register(Anger::onDeath);
 		AngerChat.register();
+		Revenge.register();
 	}
 
 	// ---------------------------------------------------------------- what makes it angry
@@ -137,7 +138,12 @@ public final class Anger {
 			GRUDGE.put(grudgeKey(mehburity), player.getUUID());
 		}
 		if (mayRage && after >= config.rageThreshold) {
-			startRage(mehburity, culprit);
+			if (Revenge.waitsForRevenge(mehburity, culprit)) {
+				Revenge.vanish(mehburity, (ServerPlayer) culprit); // no rage now: it comes back for them days later
+			} else {
+				startRage(mehburity, culprit, MehburitySpeech.text("anger.rage", "THAT'S IT! %s, I'm coming for you!",
+						culprit.getDisplayName()));
+			}
 		} else if (before < angry && after >= angry) {
 			tell(mehburity, culprit, MehburitySpeech.text("anger.angry", "You're making me really angry... Stop it!"));
 		} else if (before < annoyed && after >= annoyed) {
@@ -210,7 +216,8 @@ public final class Anger {
 
 	// ---------------------------------------------------------------- the rage
 
-	private static void startRage(MehburityEntity mehburity, LivingEntity culprit) {
+	/** Starts hunting {@code culprit} (as the demon, if enabled), saying {@code line} unless it is null. */
+	static void startRage(MehburityEntity mehburity, LivingEntity culprit, @Nullable Component line) {
 		mehburity.setMiningJob(null);
 		mehburity.setBuildJob(null);
 		mehburity.setRageCulprit(culprit);
@@ -224,7 +231,9 @@ public final class Anger {
 			level.playSound(null, mehburity.getX(), mehburity.getY(), mehburity.getZ(), MehburitySounds.MONSTER_TRANSFORM,
 					SoundSource.HOSTILE, 3.0F, 0.8F);
 		}
-		tell(mehburity, culprit, MehburitySpeech.text("anger.rage", "THAT'S IT! %s, I'm coming for you!", culprit.getDisplayName()));
+		if (line != null) {
+			tell(mehburity, culprit, line);
+		}
 		ServerPlayer owner = mehburity.getOwnerPlayer();
 		if (owner != null) {
 			GameEvents.record(owner, "Mehburity flew into a rage at " + culprit.getName().getString());

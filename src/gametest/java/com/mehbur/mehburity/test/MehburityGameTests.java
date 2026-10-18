@@ -91,6 +91,20 @@ public final class MehburityGameTests {
 		return player;
 	}
 
+	/**
+	 * Runs {@code action} with revenge turned off, so a rage at a player breaks out at once (the config is global;
+	 * the switch only lasts for this synchronous call).
+	 */
+	static void instantRage(Runnable action) {
+		int days = MehburityConfig.get().anger.revengeDays;
+		MehburityConfig.get().anger.revengeDays = 0;
+		try {
+			action.run();
+		} finally {
+			MehburityConfig.get().anger.revengeDays = days;
+		}
+	}
+
 	/** Gives the owner a box, opens it, and runs {@code then} once Mehburity is out. */
 	static void withCompanion(GameTestHelper helper, ServerPlayer owner, Consumer<MehburityEntity> then) {
 		MehburityBoxEntity box = CompanionManager.spawnBox(owner);
