@@ -106,6 +106,8 @@
 	"mehburity.speech.anger.cake_not_angry": "Thanks, but I'm not angry! Keep your cake.",
 	"mehburity.speech.anger.not_angry": "It's okay, I'm not angry!",
 	"mehburity.speech.anger.apology_too_soon": "You just said that. Show me you mean it!",
+	"mehburity.speech.anger.make_up": "Sorry I got so mad at you... Friends again?",
+	"mehburity.speech.anger.make_up_cake": "Sorry I got so mad at you... Here, this cake is for you. Friends again?",
 	"mehburity.speech.anger.apology": "Hmph... Okay, apology accepted.",
 	"mehburity.speech.anger.status_calm": "I'm calm. (anger %s/100)",
 	"mehburity.speech.anger.status_annoyed": "I'm a bit annoyed. (anger %s/100)",

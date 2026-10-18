@@ -21,6 +21,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
@@ -50,6 +51,8 @@ public final class Anger {
 	private static final int SPARK_INTERVAL = 10;
 	/** The meter only cools down once Mehburity has been left alone for this long. */
 	private static final int COOL_DOWN_AFTER_TICKS = 100;
+	/** At most one make-up cake per player in this long, so making it angry is no cake farm. */
+	private static final long MAKE_UP_CAKE_COOLDOWN_TICKS = 10L * 60L * 20L;
 
 	private record HitKey(UUID mehburity, UUID attacker) {
 	}
@@ -58,6 +61,10 @@ public final class Anger {
 	private static final Map<UUID, Long> LAST_APOLOGY = new HashMap<>();
 	/** Per Mehburity: when it was last made angrier. */
 	private static final Map<UUID, Long> LAST_PROVOKED = new HashMap<>();
+	/** Per Mehburity: the player it got really angry with (or raged at), to make up with once it is calm. */
+	private static final Map<UUID, UUID> GRUDGE = new HashMap<>();
+	/** Per player: when they last got a make-up cake. */
+	private static final Map<UUID, Long> LAST_CAKE = new HashMap<>();
 
 	private Anger() {
 	}
@@ -125,6 +132,9 @@ public final class Anger {
 
 		double annoyed = config.rageThreshold / 3.0;
 		double angry = config.rageThreshold * 2.0 / 3.0;
+		if (culprit instanceof Player player && after >= angry) {
+			GRUDGE.put(mehburity.getUUID(), player.getUUID());
+		}
 		if (mayRage && after >= config.rageThreshold) {
 			startRage(mehburity, culprit);
 		} else if (before < angry && after >= angry) {
@@ -265,6 +275,9 @@ public final class Anger {
 		if (owner != null) {
 			GameEvents.record(owner, "Mehburity's rage ended (" + end.name().toLowerCase(java.util.Locale.ROOT) + ")");
 		}
+		if (culprit instanceof ServerPlayer player && player.getUUID().equals(GRUDGE.get(mehburity.getUUID()))) {
+			makeUp(back, player);
+		}
 	}
 
 	/** Every server tick: cooling down, and keeping the rage on track. */
@@ -286,6 +299,43 @@ public final class Anger {
 		if (mehburity.getAnger() >= angry && mehburity.tickCount % (SPARK_INTERVAL * 3) == 0) {
 			spark(mehburity, 1);
 		}
+		UUID grudge = GRUDGE.get(mehburity.getUUID());
+		if (grudge != null && mehburity.getAnger() < MehburityConfig.get().anger.rageThreshold / 3.0
+				&& mehburity.level() instanceof ServerLevel level
+				&& level.getServer().getPlayerList().getPlayer(grudge) instanceof ServerPlayer player) {
+			makeUp(mehburity, player);
+		}
+	}
+
+	/**
+	 * Calm again after being really angry with {@code player}: it says sorry and hands them a cake (into the
+	 * inventory, or at their feet). Waits while they are dead; one cake per player every 10 minutes.
+	 */
+	private static void makeUp(MehburityEntity mehburity, ServerPlayer player) {
+		if (player.isDeadOrDying()) {
+			return; // keeps the grudge: makes up once they are back
+		}
+		GRUDGE.remove(mehburity.getUUID());
+		if (!MehburityConfig.get().anger.makeUpCake) {
+			return;
+		}
+		long now = player.level().getGameTime();
+		Long last = LAST_CAKE.get(player.getUUID());
+		if (last != null && now - last < MAKE_UP_CAKE_COOLDOWN_TICKS) {
+			tell(mehburity, player, MehburitySpeech.text("anger.make_up", "Sorry I got so mad at you... Friends again?"));
+			return;
+		}
+		LAST_CAKE.put(player.getUUID(), now);
+		ItemStack cake = new ItemStack(Items.CAKE);
+		if (!player.getInventory().add(cake)) {
+			player.drop(cake, false);
+		}
+		ServerLevel level = player.level();
+		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.7F, 1.2F);
+		level.sendParticles(ParticleTypes.HEART, mehburity.getX(), mehburity.getY() + 0.8, mehburity.getZ(), 5, 0.3, 0.3, 0.3, 0.0);
+		tell(mehburity, player, MehburitySpeech.text("anger.make_up_cake",
+				"Sorry I got so mad at you... Here, this cake is for you. Friends again?"));
+		GameEvents.record(player, "Mehburity calmed down, said sorry and gave the player a cake");
 	}
 
 	private static void tickRage(MehburityEntity mehburity) {

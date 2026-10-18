@@ -159,7 +159,7 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		/** Beam damage during a rage (the normal beam does combat.damage). */
 		public double rageDamage = 10.0;
 		public int rageCooldownTicks = 10;
-		/** Flying speed multiplier while chasing the culprit. */
+		/** Speed multiplier while chasing the culprit. */
 		public double rageSpeed = 3.0;
 		/** Gives up after this long. */
 		public int maxRageSeconds = 90;
@@ -167,6 +167,8 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		public boolean rageAtPlayers = true;
 		/** Lets a rage target its own owner (Verity-like). */
 		public boolean rageAtOwner = true;
+		/** Once it has calmed down, it says sorry to the player it got really angry with and gives them a cake. */
+		public boolean makeUpCake = true;
 		/** Words that count as insults when said to Mehburity (accents and case do not matter). */
 		public List<String> insults = new ArrayList<>(List.of(
 				"aptal", "salak", "gerizekali", "beyinsiz", "seni sevmiyorum", "nefret ediyorum",

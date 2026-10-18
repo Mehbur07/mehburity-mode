@@ -153,6 +153,28 @@ public final class MehburityAngerGameTests {
 		});
 	}
 
+	@GameTest(maxTicks = 200)
+	public void once_calm_it_makes_up_with_a_cake(GameTestHelper helper) {
+		ServerPlayer owner = survivalOwner(helper);
+		withCompanion(helper, owner, mehburity -> {
+			Anger.provoke(mehburity, owner, 70.0);
+			helper.startSequence()
+					.thenExecuteAfter(5, () -> {
+						helper.assertTrue(owner.getInventory().countItem(Items.CAKE) == 0, "no cake while it is still angry");
+						Anger.calm(mehburity, 60.0);
+					})
+					.thenWaitUntil(() -> helper.assertTrue(owner.getInventory().countItem(Items.CAKE) == 1,
+							"calm again, it says sorry with a cake"))
+					.thenExecute(() -> {
+						Anger.provoke(mehburity, owner, 70.0);
+						Anger.calm(mehburity, 60.0);
+					})
+					.thenExecuteAfter(10, () -> helper.assertTrue(owner.getInventory().countItem(Items.CAKE) == 1,
+							"no second cake right away: making it angry is no cake farm"))
+					.thenSucceed();
+		});
+	}
+
 	@GameTest(maxTicks = 300)
 	public void cake_calms_a_rage_even_at_the_owner(GameTestHelper helper) {
 		ServerPlayer owner = survivalOwner(helper);
@@ -167,6 +189,7 @@ public final class MehburityAngerGameTests {
 						helper.assertFalse(mehburity.isRaging(), "a cake ends the rage");
 						helper.assertTrue(owner.getMainHandItem().getCount() == 1, "one cake is eaten");
 						helper.assertTrue(mehburity.getAnger() <= MehburityConfig.get().anger.calmBelow, "the meter went down");
+						helper.assertTrue(owner.getInventory().countItem(Items.CAKE) == 2, "the rage over, it gives a cake back as a sorry");
 					})
 					.thenSucceed();
 		});

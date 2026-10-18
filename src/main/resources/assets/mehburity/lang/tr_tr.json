@@ -106,6 +106,8 @@
 	"mehburity.speech.anger.cake_not_angry": "Teşekkürler ama kızgın değilim! Pastan sende kalsın.",
 	"mehburity.speech.anger.not_angry": "Sorun yok, kızgın değilim!",
 	"mehburity.speech.anger.apology_too_soon": "Bunu daha yeni söyledin. Gerçekten özür dilediğini göster!",
+	"mehburity.speech.anger.make_up": "Sana o kadar kızdığım için özür dilerim... Barışalım mı?",
+	"mehburity.speech.anger.make_up_cake": "Sana o kadar kızdığım için özür dilerim... Al, bu pasta senin. Barışalım mı?",
 	"mehburity.speech.anger.apology": "Hıh... Peki, özrün kabul edildi.",
 	"mehburity.speech.anger.status_calm": "Sakinim. (öfke %s/100)",
 	"mehburity.speech.anger.status_annoyed": "Biraz sinirliyim. (öfke %s/100)",
