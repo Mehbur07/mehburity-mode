@@ -17,6 +17,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
@@ -29,10 +30,10 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.control.FlyingMoveControl;
+import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -45,7 +46,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * The floating companion. It cannot be hurt or killed: damage is ignored and falling into the void brings it
+ * The rolling companion: a ball that rolls along the ground after its owner. It cannot be hurt or killed: damage is ignored and falling into the void brings it
  * back to its owner. Ownership and the follow/stay mode are mirrored in {@link CompanionRegistry}.
  */
 public class MehburityEntity extends PathfinderMob {
@@ -81,6 +82,11 @@ public class MehburityEntity extends PathfinderMob {
 	public static final int SWIPE_TICKS = 12;
 	/** How long the client takes to draw the beam at full charge (just looks; the real charge is server-side). */
 	private static final float BEAM_CHARGE_VISUAL_TICKS = 12.0F;
+	/** The drawn sphere's radius: rolling one circumference turns it over once. */
+	private static final double ROLL_RADIUS = 0.4;
+	private static final double ROLL_MIN_STEP = 0.003;
+	/** Share of the remaining turn it settles back each tick when it stops. */
+	private static final float ROLL_SETTLE = 0.15F;
 
 	private @Nullable UUID ownerId;
 	private CompanionMode mode = CompanionMode.FOLLOW;
@@ -94,19 +100,22 @@ public class MehburityEntity extends PathfinderMob {
 	private int clientBeamTicks;
 	private int clientFlashTicks;
 	private int clientSwipeTicks;
+	/** Client: how far the ball has rolled (radians, kept in 0..2π) and towards which yaw, for the renderer. */
+	private float clientRoll;
+	private float clientRollO;
+	private float clientRollYaw;
 
 	public MehburityEntity(EntityType<? extends MehburityEntity> type, Level level) {
 		super(type, level);
-		this.moveControl = new FlyingMoveControl<>(this, 20, true);
-		this.setNoGravity(true);
 		this.setPersistenceRequired();
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Mob.createMobAttributes()
 				.add(Attributes.MAX_HEALTH, 20.0)
-				.add(Attributes.FLYING_SPEED, 0.12F)
-				.add(Attributes.MOVEMENT_SPEED, 0.12F)
+				.add(Attributes.MOVEMENT_SPEED, 0.15F)
+				// Rolls up a one-block step instead of hopping.
+				.add(Attributes.STEP_HEIGHT, 1.0)
 				.add(Attributes.FOLLOW_RANGE, 48.0);
 	}
 
@@ -129,14 +138,16 @@ public class MehburityEntity extends PathfinderMob {
 		// A rage overrides everything: the only target is the culprit.
 		this.targetSelector.addGoal(0, new RageTargetGoal(this));
 		this.targetSelector.addGoal(1, targeting);
-		// The rage form walks and claws instead of flying and shooting.
+		// Swims in water instead of sinking (the demon ignores it, it moves itself).
+		this.goalSelector.addGoal(0, new FloatGoal(this));
+		// The rage form walks and claws instead of rolling and shooting.
 		this.goalSelector.addGoal(0, new MonsterGoal(this));
 		// Fighting comes before following; the companion manager still teleports it back if it gets too far.
 		this.goalSelector.addGoal(1, new BeamAttackGoal(this, targeting));
 		// Jobs pause for fights and keep following from pulling it away from the work. Only one job runs at a time.
 		this.goalSelector.addGoal(2, new BuildGoal(this));
 		this.goalSelector.addGoal(2, new MineGoal(this));
-		this.goalSelector.addGoal(3, new FollowOwnerFlyingGoal(this));
+		this.goalSelector.addGoal(3, new FollowOwnerGoal(this));
 		this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
 		this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
 	}
@@ -152,15 +163,10 @@ public class MehburityEntity extends PathfinderMob {
 
 	@Override
 	protected PathNavigation createNavigation(Level level) {
-		FlyingPathNavigation navigation = new FlyingPathNavigation(this, level);
+		GroundPathNavigation navigation = new GroundPathNavigation(this, level);
 		navigation.setCanOpenDoors(false);
 		navigation.setCanFloat(true);
 		return navigation;
-	}
-
-	@Override
-	public void travel(Vec3 input) {
-		this.travelFlying(input, this.getSpeed());
 	}
 
 	// ---------------------------------------------------------------- owner and mode
@@ -366,6 +372,37 @@ public class MehburityEntity extends PathfinderMob {
 		return clientFlashTicks <= 0 ? 0.0F : Math.max(0.0F, (clientFlashTicks - partialTicks) / BEAM_FLASH_TICKS);
 	}
 
+	// ---------------------------------------------------------------- rolling
+
+	/** Client: how far the ball has turned over, in radians (0 = face upright). */
+	public float getRoll(float partialTicks) {
+		return Mth.lerp(partialTicks, clientRollO, clientRoll);
+	}
+
+	/** Client: the yaw (degrees) it last rolled towards; the ball turns over around the axis across it. */
+	public float getRollYaw() {
+		return clientRollYaw;
+	}
+
+	/** Turns the ball over by the distance it moved; at rest it settles back with its face upright. */
+	private void tickRoll() {
+		clientRollO = clientRoll;
+		double dx = this.getX() - this.xo;
+		double dz = this.getZ() - this.zo;
+		double moved = Math.sqrt(dx * dx + dz * dz);
+		if (moved > ROLL_MIN_STEP && !isMonster()) {
+			clientRollYaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0F;
+			clientRoll += (float) (moved / ROLL_RADIUS);
+		} else {
+			float upright = clientRoll > Mth.PI ? Mth.TWO_PI : 0.0F;
+			clientRoll += (upright - clientRoll) * ROLL_SETTLE;
+		}
+		if (clientRoll >= Mth.TWO_PI) {
+			clientRoll -= Mth.TWO_PI;
+			clientRollO -= Mth.TWO_PI;
+		}
+	}
+
 	@Override
 	public void onSyncedDataUpdated(EntityDataAccessor<?> accessor) {
 		super.onSyncedDataUpdated(accessor);
@@ -402,6 +439,7 @@ public class MehburityEntity extends PathfinderMob {
 			if (clientSwipeTicks > 0) {
 				clientSwipeTicks--;
 			}
+			tickRoll();
 			return;
 		}
 
@@ -428,7 +466,6 @@ public class MehburityEntity extends PathfinderMob {
 		int emerge = this.entityData.get(DATA_EMERGE_TICKS);
 		if (emerge > 0) {
 			this.entityData.set(DATA_EMERGE_TICKS, emerge - 1);
-			this.setDeltaMovement(0.0, 0.025, 0.0);
 		}
 
 		// A copy left in an unloaded chunk (crash, re-summon) is no longer the registered one: remove it.
@@ -455,22 +492,22 @@ public class MehburityEntity extends PathfinderMob {
 	}
 
 	/**
-	 * A free spot beside the owner's shoulders, 1.5-2.5 blocks away so it never overlaps the camera,
-	 * falling back to just above their head.
+	 * A free spot beside the owner's feet, 1.5-2.5 blocks away so it never overlaps the camera,
+	 * falling back to the owner's own spot.
 	 */
 	Vec3 findSpotNear(ServerPlayer owner) {
 		ServerLevel level = owner.level();
 		for (int attempt = 0; attempt < 12; attempt++) {
 			double angle = this.random.nextDouble() * Math.PI * 2.0;
 			double distance = 1.5 + this.random.nextDouble();
-			Vec3 candidate = new Vec3(owner.getX() + Math.cos(angle) * distance, owner.getY() + 1.2,
+			Vec3 candidate = new Vec3(owner.getX() + Math.cos(angle) * distance, owner.getY(),
 					owner.getZ() + Math.sin(angle) * distance);
 			if (level.noCollision(this, this.getDimensions(this.getPose()).makeBoundingBox(candidate))
 					&& level.getFluidState(BlockPos.containing(candidate)).isEmpty()) {
 				return candidate;
 			}
 		}
-		return owner.position().add(0.0, owner.getBbHeight() + 0.3, 0.0);
+		return owner.position();
 	}
 
 	// ---------------------------------------------------------------- immortality
@@ -498,6 +535,15 @@ public class MehburityEntity extends PathfinderMob {
 		}
 	}
 
+	/**
+	 * The ball always falls; the demon places its own feet. Overridden rather than set, because Mehburities saved
+	 * before it learned to roll carry a NoGravity flag.
+	 */
+	@Override
+	public boolean isNoGravity() {
+		return isMonster();
+	}
+
 	@Override
 	public boolean isPushable() {
 		return false;
@@ -515,7 +561,7 @@ public class MehburityEntity extends PathfinderMob {
 
 	@Override
 	protected void checkFallDamage(double ya, boolean onGround, net.minecraft.world.level.block.state.BlockState onState, BlockPos pos) {
-		// Flying; never takes fall damage.
+		// Immortal; a fall never hurts it.
 	}
 
 	// ---------------------------------------------------------------- saving

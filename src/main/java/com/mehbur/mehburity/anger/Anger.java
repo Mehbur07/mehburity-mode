@@ -309,10 +309,10 @@ public final class Anger {
 		if (mehburity.distanceToSqr(culprit) > CHASE_BLINK_DISTANCE * CHASE_BLINK_DISTANCE) {
 			ServerLevel level = (ServerLevel) mehburity.level();
 			level.sendParticles(ParticleTypes.LARGE_SMOKE, mehburity.getX(), mehburity.getY() + 0.4, mehburity.getZ(), 15, 0.3, 0.3, 0.3, 0.02);
-			// The demon lands on its feet a few steps behind them, the sphere just above their head.
+			// Lands a few steps behind them: the demon farther back, the ball close by.
 			Vec3 near = mehburity.isMonster()
 					? culprit.position().add(culprit.getLookAngle().multiply(-6.0, 0.0, -6.0))
-					: culprit.position().add(culprit.getLookAngle().scale(-3.0)).add(0.0, culprit.getBbHeight() + 1.0, 0.0);
+					: culprit.position().add(culprit.getLookAngle().multiply(-3.0, 0.0, -3.0));
 			mehburity.teleportTo(near.x, near.y, near.z);
 		}
 		if (mehburity.tickCount % SPARK_INTERVAL == 0) {

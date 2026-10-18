@@ -19,14 +19,12 @@ import net.minecraft.world.phys.Vec3;
 import java.util.EnumSet;
 
 /**
- * Fights the current target with a neon beam: flies into range (unless it is guarding a spot in STAY mode),
+ * Fights the current target with a neon beam: rolls into range (unless it is guarding a spot in STAY mode),
  * charges while the target stays in sight, then hits. The beam is drawn by the client from the synced beam target.
  */
 public final class BeamAttackGoal extends Goal {
-	/** Flies closer when the target is beyond this share of the beam range. */
+	/** Rolls closer when the target is beyond this share of the beam range. */
 	private static final double APPROACH_FRACTION = 0.75;
-	/** Hovers this far above the target's head while closing in, so it sees over small obstacles. */
-	private static final double HOVER_ABOVE = 1.5;
 	private static final int REPATH_INTERVAL = 10;
 	/** Remembered for the owner's recent events (Gemini context). */
 	private static final String KILL_EVENT = "Mehburity zapped and killed %s (%s)";
@@ -122,7 +120,7 @@ public final class BeamAttackGoal extends Goal {
 		}
 		repathDelay = adjustedTickDelay(REPATH_INTERVAL);
 		double speed = mehburity.isRaging() ? MehburityConfig.get().anger.rageSpeed : MehburityConfig.get().companion.followSpeed;
-		mehburity.getNavigation().moveTo(target.getX(), target.getY() + target.getBbHeight() + HOVER_ABOVE, target.getZ(), speed);
+		mehburity.getNavigation().moveTo(target.getX(), target.getY(), target.getZ(), speed);
 	}
 
 	private void fire(LivingEntity target, MehburityConfig.Combat config) {

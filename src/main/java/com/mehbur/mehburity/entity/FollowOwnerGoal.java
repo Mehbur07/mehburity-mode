@@ -7,13 +7,13 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.EnumSet;
 
-/** Flies after the owner while in {@link CompanionMode#FOLLOW}, teleporting when left too far behind. */
-final class FollowOwnerFlyingGoal extends Goal {
+/** Rolls after the owner while in {@link CompanionMode#FOLLOW}, teleporting when left too far behind. */
+final class FollowOwnerGoal extends Goal {
 	private final MehburityEntity mehburity;
 	private @Nullable ServerPlayer owner;
 	private int timeToRecalcPath;
 
-	FollowOwnerFlyingGoal(MehburityEntity mehburity) {
+	FollowOwnerGoal(MehburityEntity mehburity) {
 		this.mehburity = mehburity;
 		this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
 	}
@@ -69,7 +69,7 @@ final class FollowOwnerFlyingGoal extends Goal {
 		if (owner.level() == mehburity.level() && mehburity.isTooFarFrom(owner)) {
 			mehburity.teleportToOwner(owner);
 		} else {
-			mehburity.getNavigation().moveTo(owner.getX(), owner.getY() + 1.2, owner.getZ(),
+			mehburity.getNavigation().moveTo(owner.getX(), owner.getY(), owner.getZ(),
 					MehburityConfig.get().companion.followSpeed);
 		}
 	}

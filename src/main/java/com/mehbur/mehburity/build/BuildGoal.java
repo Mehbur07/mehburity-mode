@@ -17,15 +17,16 @@ import net.minecraft.world.phys.Vec3;
 import java.util.EnumSet;
 
 /**
- * Builds Mehburity's {@link BuildJob}: hovers over the part being built and places blocks at
+ * Builds Mehburity's {@link BuildJob}: rolls up to the part being built and places blocks at
  * {@code build.blocksPerSecond}, with particles and the block's own sound. Fights (a higher priority goal) pause it.
  */
 public final class BuildGoal extends Goal {
 	private static final int REPATH_INTERVAL = 20;
-	/** Flies (well, blinks) straight to the work when navigation could not get there in this many ticks. */
+	/** Blinks straight to the work when navigation could not get there in this many ticks. */
 	private static final int BLINK_AFTER_TICKS = 60;
 	/** Upper bound on steps looked at per tick, so long runs of already-empty air do not stall the server. */
 	private static final int MAX_CHECKS_PER_TICK = 2000;
+	/** Blinks to this height above the stuck block and drops down beside the work. */
 	private static final double HOVER_ABOVE = 2.5;
 
 	private final MehburityEntity mehburity;

@@ -23,7 +23,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Draws Mehburity as a real, smooth UV sphere (not cubes) wrapped in an equirectangular texture:
- * the centre of the texture is the face, pointing where Mehburity looks. It bobs gently while hovering.
+ * the centre of the texture is the face, pointing where Mehburity looks. It rolls over the ground as it moves and
+ * settles back face-up when it stops.
  */
 public class MehburityRenderer extends EntityRenderer<MehburityEntity, MehburityRenderState> {
 	/** Placeholder art, 256x128 equirectangular. Replace the PNG to change the look. */
@@ -69,6 +70,8 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		super.extractRenderState(entity, state, partialTicks);
 		state.yRot = Mth.rotLerp(partialTicks, entity.yHeadRotO, entity.yHeadRot);
 		state.xRot = entity.getXRot(partialTicks);
+		state.roll = entity.getRoll(partialTicks);
+		state.rollYaw = entity.getRollYaw();
 		state.emergeProgress = entity.getEmergeProgress(partialTicks);
 		state.anger = entity.getAnger();
 		state.raging = entity.isRaging();
@@ -128,11 +131,15 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 			return;
 		}
 		float emerge = easeOutBack(state.emergeProgress);
-		float bob = Mth.sin(state.ageInTicks * 0.1F) * 0.06F * state.emergeProgress;
 		float scale = 0.25F + 0.75F * emerge;
 
 		poseStack.pushPose();
-		poseStack.translate(0.0F, state.boundingBoxHeight * 0.5F + bob, 0.0F);
+		// While growing out of the box it sits on the ground, so the centre rises with the size.
+		poseStack.translate(0.0F, RADIUS * scale, 0.0F);
+		// Rolling: turn over around the horizontal axis across the direction it rolls (top moves forward).
+		poseStack.mulPose(Axis.YP.rotationDegrees(-state.rollYaw));
+		poseStack.mulPose(Axis.XP.rotation(state.roll));
+		poseStack.mulPose(Axis.YP.rotationDegrees(state.rollYaw));
 		poseStack.mulPose(Axis.YP.rotationDegrees(-state.yRot));
 		poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot * 0.5F));
 		// Spins one full turn while rising out of the box.
@@ -145,7 +152,7 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 		collector.submitCustomGeometry(poseStack, face(state), (pose, buffer) -> buildSphere(pose, buffer, light, overlay));
 		poseStack.popPose();
 		if (state.beamTarget != null) {
-			submitBeam(state, poseStack, collector, bob);
+			submitBeam(state, poseStack, collector);
 		}
 		super.submit(state, poseStack, collector, camera);
 	}
@@ -196,8 +203,8 @@ public class MehburityRenderer extends EntityRenderer<MehburityEntity, Mehburity
 	 * A square tube from Mehburity's centre to the target: thin and faint while charging, thick and bright for a
 	 * moment when the shot lands. Uses the additive lightning render type, so it glows in Verity darkness.
 	 */
-	private static void submitBeam(MehburityRenderState state, PoseStack poseStack, SubmitNodeCollector collector, float bob) {
-		float startY = state.boundingBoxHeight * 0.5F + bob;
+	private static void submitBeam(MehburityRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
+		float startY = RADIUS;
 		Vec3 beam = state.beamTarget.subtract(state.x, state.y + startY, state.z);
 		float length = (float) beam.length();
 		if (length < 0.01F) {

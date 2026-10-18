@@ -23,6 +23,7 @@ import com.mehbur.mehburity.verity.EventsFeature;
 import com.mehbur.mehburity.verity.FlashlightItem;
 import com.mehbur.mehburity.verity.WatcherEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -116,16 +117,26 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		MehburityMod.LOGGER.info("Mehburity client game test passed");
 	}
 
+	/**
+	 * Puts Mehburity on the ground {@code distance} blocks straight ahead of the player (on flat ground) and returns
+	 * the yaw and pitch that look at the middle of the ball.
+	 */
+	private static float[] placeInFront(MinecraftServer server, ServerPlayer player, double distance) {
+		Vec3 front = player.position().add(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(distance));
+		CompanionManager.find(server, player.getUUID()).teleportTo(front.x, player.getY(), front.z);
+		double drop = player.getEyeHeight() - 0.4;
+		return new float[] {player.getYRot(), (float) Math.toDegrees(Math.atan2(drop, distance))};
+	}
+
 	/** A real right click picks Mehburity up into the inventory; a right click on the ground with it lets it out. */
 	private static void checkCarrying(ClientGameTestContext context, TestServerContext server, UUID playerId) {
-		float yaw = server.computeOnServer(s -> {
+		float[] view = server.computeOnServer(s -> {
 			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
 			CompanionManager.setMode(player, CompanionMode.STAY);
-			Vec3 front = player.getEyePosition().add(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(2.5)).subtract(0.0, 0.4, 0.0);
-			CompanionManager.find(s, playerId).teleportTo(front.x, front.y, front.z);
-			return player.getYRot();
+			return placeInFront(s, player, 2.5);
 		});
-		context.getInput().lookAt(yaw, 0.0F);
+		float yaw = view[0];
+		context.getInput().lookAt(yaw, view[1]);
 		context.waitTicks(5);
 		context.getInput().pressKey(options -> options.keyUse);
 		server.waitFor(s -> CompanionRegistry.companion(s, playerId).mode() == CompanionMode.CARRIED, 100);
@@ -155,6 +166,33 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		context.getInput().lookAt(yaw, 0.0F);
 		context.waitTicks(20);
 		context.takeScreenshot("mehburity-3c-let-out");
+
+		// Rolls across the view, from left to right: the face turns over mid-roll.
+		float[] rollView = server.computeOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			CompanionManager.setMode(player, CompanionMode.STAY);
+			float[] look = placeInFront(s, player, 4.0);
+			Vec3 forward = Vec3.directionFromRotation(0.0F, player.getYRot());
+			Vec3 left = new Vec3(forward.z, 0.0, -forward.x);
+			MehburityEntity mehburity = CompanionManager.find(s, playerId);
+			mehburity.teleportTo(mehburity.getX() + left.x * 3.0, mehburity.getY(), mehburity.getZ() + left.z * 3.0);
+			return look;
+		});
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.getInput().lookAt(rollView[0], rollView[1]);
+		context.waitTicks(5);
+		server.runOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			Vec3 forward = Vec3.directionFromRotation(0.0F, player.getYRot());
+			Vec3 to = player.position().add(forward.scale(4.0)).add(-forward.z * 3.0, 0.0, forward.x * 3.0);
+			CompanionManager.find(s, playerId).getNavigation().moveTo(to.x, to.y, to.z, MehburityConfig.get().companion.followSpeed);
+		});
+		context.waitTicks(8);
+		context.takeScreenshot("mehburity-3d-rolling");
+		context.waitTicks(60);
+		context.takeScreenshot("mehburity-3e-settled");
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		server.runOnServer(s -> CompanionManager.setMode(s.getPlayerList().getPlayer(playerId), CompanionMode.FOLLOW));
 	}
 
 	/**
@@ -343,18 +381,16 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		double speed = MehburityConfig.get().monster.blocksPerSecond;
 		// The demon stands still for the photos.
 		server.runOnServer(s -> MehburityConfig.get().monster.blocksPerSecond = 0.0);
-		// Mehburity floats straight ahead at eye height, so looking level along the player's yaw hits it.
-		float yaw = server.computeOnServer(s -> {
+		// Mehburity sits on the ground straight ahead; the player looks down at it.
+		float[] view = server.computeOnServer(s -> {
 			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
-			MehburityEntity mehburity = CompanionManager.find(s, playerId);
 			CompanionManager.setMode(player, CompanionMode.STAY);
-			Vec3 front = player.getEyePosition().add(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(2.5)).subtract(0.0, 0.4, 0.0);
-			mehburity.teleportTo(front.x, front.y, front.z);
-			return player.getYRot();
+			return placeInFront(s, player, 2.5);
 		});
+		float yaw = view[0];
 		context.getInput().pressKey(options -> options.keyToggleGui);
 		context.waitTicks(5);
-		context.getInput().lookAt(yaw, 0.0F);
+		context.getInput().lookAt(yaw, view[1]);
 		int hits = (int) Math.ceil(MehburityConfig.get().anger.rageThreshold / MehburityConfig.get().anger.playerHitAnger);
 		for (int i = 0; i < hits; i++) {
 			context.getInput().pressKey(options -> options.keyAttack);
@@ -483,12 +519,8 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		if (!server.computeOnServer(s -> CompanionManager.find(s, playerId).isScared())) {
 			throw new AssertionError("Mehburity must look scared once the watcher vanished");
 		}
-		server.runOnServer(s -> {
-			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
-			Vec3 front = player.getEyePosition().add(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(2.0)).subtract(0.0, 0.4, 0.0);
-			CompanionManager.find(s, playerId).teleportTo(front.x, front.y, front.z);
-		});
-		context.getInput().lookAt(yaw, 0.0F);
+		float scaredPitch = server.computeOnServer(s -> placeInFront(s, s.getPlayerList().getPlayer(playerId), 2.0)[1]);
+		context.getInput().lookAt(yaw, scaredPitch);
 		context.waitTicks(15); // it turns to look at the player
 		context.takeScreenshot("mehburity-v4-scared");
 		context.getInput().pressKey(options -> options.keyToggleGui);

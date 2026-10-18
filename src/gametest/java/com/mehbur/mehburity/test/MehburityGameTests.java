@@ -341,7 +341,25 @@ public final class MehburityGameTests {
 				helper.assertTrue(CompanionManager.setMode(owner, CompanionMode.FOLLOW), "mode must be set");
 				double close = MehburityConfig.get().companion.followStartDistance + 1.5;
 				helper.succeedWhen(() -> helper.assertTrue(mehburity.distanceTo(owner) < close,
-						"FOLLOW must fly back to the owner"));
+						"FOLLOW must roll back to the owner"));
+			});
+		});
+	}
+
+	@GameTest(maxTicks = 200)
+	public void mehburity_rolls_on_the_ground(GameTestHelper helper) {
+		ServerPlayer owner = owner(helper);
+		withCompanion(helper, owner, mehburity -> {
+			helper.assertFalse(mehburity.isNoGravity(), "the ball must fall, not hover");
+			CompanionManager.setMode(owner, CompanionMode.STAY);
+			mehburity.teleportTo(mehburity.getX(), owner.getY() + 4.0, mehburity.getZ());
+			helper.succeedWhen(() -> {
+				helper.assertTrue(mehburity.onGround(), "Mehburity must land on the ground");
+				// (The mock owner itself hangs a block above the floor: it has no physics.)
+				BlockPos below = mehburity.blockPosition().below();
+				helper.assertFalse(helper.getLevel().getBlockState(below).getCollisionShape(helper.getLevel(), below).isEmpty(),
+						"Mehburity must rest on a solid floor");
+				helper.assertTrue(mehburity.getY() < owner.getY() + 0.5, "Mehburity must have come down");
 			});
 		});
 	}

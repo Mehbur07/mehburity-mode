@@ -8,6 +8,9 @@ public class MehburityRenderState extends EntityRenderState {
 	/** Where the face points (head yaw/pitch), in degrees. */
 	public float yRot;
 	public float xRot;
+	/** How far the ball has turned over (radians, 0 = face upright) and the yaw (degrees) it rolls towards. */
+	public float roll;
+	public float rollYaw;
 	/** 0 → just started rising out of the box, 1 → fully out. */
 	public float emergeProgress = 1.0F;
 	/** Middle of the beam's target, in world coordinates; null when Mehburity is not firing. */

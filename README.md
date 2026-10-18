@@ -2,7 +2,7 @@
 
 <img src="src/main/resources/assets/mehburity/icon.png" alt="Mehburity" width="96" align="right">
 
-**Minecraft 26.2 / Fabric** için bir yapay zeka yoldaşı. Mehburity, yanında süzülen neon cyan, gülen yüzlü bir küre.
+**Minecraft 26.2 / Fabric** için bir yapay zeka yoldaşı. Mehburity, yanında yerde yuvarlanan neon cyan, gülen yüzlü bir top.
 Gemini ile seninle konuşur, sesli cevap verir, seni ışınıyla korur, maden kazar ve ev yapar. Kızdırılırsa 18 blokluk bir
 iblise dönüşüp suçluyu avlar. ThatMob'un **Verity**'sinden esinlenmiştir: bir kutudan çıkar, dünya zifiri karanlıktır,
 elinde bir el feneri vardır ve karanlıkta… bazen yalnız değilsindir.
@@ -106,7 +106,8 @@ Emirler Gemini'ye gitmeden anlaşılır, büyük/küçük harf ve Türkçe karak
 
 ### Yoldaş: takip, ölümsüzlük
 
-- Havada süzülür, seni takip eder, yüzü baktığı yöne döner. 20 bloktan uzak kalırsan ya da başka boyuta geçersen
+- Yerde yuvarlanarak seni takip eder (bir bloğu yuvarlanıp çıkar, suda yüzer); durunca yüzü dik konuma oturur ve baktığı
+  yöne döner. 20 bloktan uzak kalırsan ya da başka boyuta geçersen
   yanına ışınlanır. `/mehburity otur` ile bulunduğu yerde bekler, `/mehburity takip` ile yeniden peşine düşer.
 - **Ölümsüzdür:** hasar almaz, `/kill` ile ölmez, boşluğa düşerse sana döner. Ama vurulduğunu fark eder (bkz. [Öfke](#öfke)).
 - **Oyuncu başına bir Mehburity.** Sahiplik dünya kaydında tutulur. Oyundan çıkınca seninle "gider", girince yanında
@@ -135,7 +136,7 @@ sayılır (XP ve loot düşer). `/mehburity savas kapat` ile kendi Mehburity'ni 
 
 ### Madencilik
 
-"Mehburity, maden kaz" dediğinde etrafındaki (12 blok) **açıkta görünen** cevherleri bulur, yanlarına uçar ve alet
+"Mehburity, maden kaz" dediğinde etrafındaki (12 blok) **açıkta görünen** cevherleri bulur, yanlarına yuvarlanır ve alet
 gerekmeden kendisi kırar. Damar bitene kadar devam eder. Taşa gömülü cevherleri görmez, x-ray yapmaz. Kazdıkları
 **Mehburity'nin çantasına** gider (27 yığın). Çanta sana bağlıdır; oyundan çıkınca ya da ölünce kaybolmaz.
 "Kazdığın madenleri ver" deyince her şey envanterine geçer, sığmayanlar ayağına düşer. Kırdığı bloklar elmas kazmayla
@@ -198,7 +199,7 @@ iner, titrer ve dumanlar içinde 2 saniyede büyür. Bu iki saniye, suçlunun ka
 - 5 blok yakına gelince **pençesiyle** vurur: 24 hasar (zırh azaltır) ve savurma. Kuleye çıkmak kurtarmaz.
 - Ölüm mesajı: *"… Mehburity tarafından parçalandı"*.
 - Nöbet bitince dumanlar içinde küçülüp küreye döner.
-- `monster.enabled: false` yapılırsa öfke nöbeti kırmızı bir küre olarak kalır; daha hızlı uçar ve daha güçlü bir
+- `monster.enabled: false` yapılırsa öfke nöbeti kırmızı bir küre olarak kalır; daha hızlı yuvarlanır ve daha güçlü bir
   ışınla vurur.
 
 ### Verity modülü
@@ -296,7 +297,7 @@ Bozuk bir dosya silinmez: `mehburity.json.broken` adıyla saklanır ve varsayıl
 
 | Alan | Varsayılan | Açıklama |
 |---|---|---|
-| `companion.followStartDistance` | 4.0 | Bu mesafeden uzaksan peşinden uçar |
+| `companion.followStartDistance` | 4.0 | Bu mesafeden uzaksan peşinden yuvarlanır |
 | `companion.followStopDistance` | 2.5 | Bu kadar yaklaşınca durur |
 | `companion.teleportDistance` | 20.0 | Bundan uzaksan yanına ışınlanır |
 | `companion.followSpeed` | 2.0 | Takip hızı çarpanı |
@@ -367,7 +368,7 @@ Bozuk bir dosya silinmez: `mehburity.json.broken` adıyla saklanır ve varsayıl
 | `anger.calmBelow` | 40 | Pasta/özür göstergeyi buna indirince nöbet biter |
 | `anger.cakeCalm` / `apologyCalm` | 60 / 25 | Pastanın / özrün düşürdüğü öfke |
 | `anger.apologyCooldownSeconds` | 30 | Aynı oyuncunun özrü bu sürede bir sayılır |
-| `anger.rageDamage` / `rageCooldownTicks` / `rageSpeed` | 10 / 10 / 3.0 | Canavar formu kapalıyken nöbetteki ışın ve uçuş |
+| `anger.rageDamage` / `rageCooldownTicks` / `rageSpeed` | 10 / 10 / 3.0 | Canavar formu kapalıyken nöbetteki ışın ve hız |
 | `anger.maxRageSeconds` | 90 | Bu süreden sonra kovalamayı bırakır |
 | `anger.rageAtPlayers` / `rageAtOwner` | true / true | Oyunculara / sahibine öfke nöbeti |
 | `anger.insults` | ["aptal", "salak", …] | Hakaret sayılan kelimeler ("aptalsın" da sayılır) |

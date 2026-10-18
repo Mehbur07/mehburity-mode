@@ -11,7 +11,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 
 public final class MehburityEntities {
-	/** 0.8-block floating sphere. {@code noSummon}: Mehburity only comes out of its box, one per player. */
+	/** 0.8-block rolling ball. {@code noSummon}: Mehburity only comes out of its box, one per player. */
 	public static final EntityType<MehburityEntity> MEHBURITY = register("mehburity",
 			EntityType.Builder.of(MehburityEntity::new, MobCategory.MISC)
 					.sized(0.8F, 0.8F)

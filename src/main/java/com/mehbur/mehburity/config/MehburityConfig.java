@@ -38,13 +38,13 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 
 	/** How Mehburity moves around its owner. Distances are in blocks. */
 	public static final class Companion {
-		/** Starts flying towards the owner when farther than this. */
+		/** Starts rolling towards the owner when farther than this. */
 		public double followStartDistance = 4.0;
 		/** Stops when this close. */
 		public double followStopDistance = 2.5;
 		/** Teleports next to the owner when farther than this (or in another dimension). */
 		public double teleportDistance = 20.0;
-		/** Multiplier on the base flying speed while following. */
+		/** Multiplier on the base rolling speed while following. */
 		public double followSpeed = 2.0;
 	}
 
