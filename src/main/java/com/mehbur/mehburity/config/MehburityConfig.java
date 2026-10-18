@@ -169,6 +169,8 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		public boolean rageAtOwner = true;
 		/** Once it has calmed down, it says sorry to the player it got really angry with and gives them a cake. */
 		public boolean makeUpCake = true;
+		/** At most one make-up cake per player in this many seconds (0: every time it calms down). */
+		public int makeUpCakeCooldownSeconds = 0;
 		/** Words that count as insults when said to Mehburity (accents and case do not matter). */
 		public List<String> insults = new ArrayList<>(List.of(
 				"aptal", "salak", "gerizekali", "beyinsiz", "seni sevmiyorum", "nefret ediyorum",
@@ -383,6 +385,7 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		anger.cakeCalm = Mth.clamp(anger.cakeCalm, 0.0, 100.0);
 		anger.apologyCalm = Mth.clamp(anger.apologyCalm, 0.0, 100.0);
 		anger.apologyCooldownSeconds = Mth.clamp(anger.apologyCooldownSeconds, 0, 3600);
+		anger.makeUpCakeCooldownSeconds = Mth.clamp(anger.makeUpCakeCooldownSeconds, 0, 86400);
 		anger.rageDamage = Mth.clamp(anger.rageDamage, 0.0, 1000.0);
 		anger.rageCooldownTicks = Mth.clamp(anger.rageCooldownTicks, 0, 200);
 		anger.rageSpeed = Mth.clamp(anger.rageSpeed, 0.1, 10.0);

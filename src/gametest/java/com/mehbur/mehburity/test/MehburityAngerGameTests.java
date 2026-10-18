@@ -166,12 +166,36 @@ public final class MehburityAngerGameTests {
 					.thenWaitUntil(() -> helper.assertTrue(owner.getInventory().countItem(Items.CAKE) == 1,
 							"calm again, it says sorry with a cake"))
 					.thenExecute(() -> {
-						Anger.provoke(mehburity, owner, 70.0);
-						Anger.calm(mehburity, 60.0);
+						// Every time it calms down, also just annoyed (two hits), and right away after a cake or a sorry.
+						Anger.provoke(mehburity, owner, 50.0);
+						Anger.calm(mehburity, 40.0);
+						helper.assertTrue(owner.getInventory().countItem(Items.CAKE) == 2, "a second cake the second time");
+						// A server can limit it; then only the sorry comes.
+						MehburityConfig.get().anger.makeUpCakeCooldownSeconds = 600;
+						try {
+							Anger.provoke(mehburity, owner, 50.0);
+							Anger.calm(mehburity, 40.0);
+						} finally {
+							MehburityConfig.get().anger.makeUpCakeCooldownSeconds = 0;
+						}
+						helper.assertTrue(owner.getInventory().countItem(Items.CAKE) == 2, "no cake within the server's cooldown");
 					})
-					.thenExecuteAfter(10, () -> helper.assertTrue(owner.getInventory().countItem(Items.CAKE) == 1,
-							"no second cake right away: making it angry is no cake farm"))
 					.thenSucceed();
+		});
+	}
+
+	@GameTest(maxTicks = 200)
+	public void the_make_up_cake_survives_being_carried(GameTestHelper helper) {
+		ServerPlayer owner = survivalOwner(helper);
+		withCompanion(helper, owner, mehburity -> {
+			Anger.provoke(mehburity, owner, 50.0);
+			CompanionManager.carry(owner, mehburity);
+			helper.assertTrue(CompanionManager.release(owner, null), "let out again");
+			MehburityEntity out = CompanionManager.find(helper.getLevel().getServer(), owner.getUUID());
+			helper.assertTrue(out != null && out != mehburity, "a new Mehburity entity");
+			Anger.calm(out, 40.0);
+			helper.assertTrue(owner.getInventory().countItem(Items.CAKE) == 1, "it still remembers whom to make up with");
+			helper.succeed();
 		});
 	}
 

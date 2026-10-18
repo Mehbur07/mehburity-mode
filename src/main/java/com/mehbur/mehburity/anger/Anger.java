@@ -51,8 +51,6 @@ public final class Anger {
 	private static final int SPARK_INTERVAL = 10;
 	/** The meter only cools down once Mehburity has been left alone for this long. */
 	private static final int COOL_DOWN_AFTER_TICKS = 100;
-	/** At most one make-up cake per player in this long, so making it angry is no cake farm. */
-	private static final long MAKE_UP_CAKE_COOLDOWN_TICKS = 10L * 60L * 20L;
 
 	private record HitKey(UUID mehburity, UUID attacker) {
 	}
@@ -61,7 +59,10 @@ public final class Anger {
 	private static final Map<UUID, Long> LAST_APOLOGY = new HashMap<>();
 	/** Per Mehburity: when it was last made angrier. */
 	private static final Map<UUID, Long> LAST_PROVOKED = new HashMap<>();
-	/** Per Mehburity: the player it got really angry with (or raged at), to make up with once it is calm. */
+	/**
+	 * Per owner (so carrying it, logging out or a re-created Mehburity keep it): the player it got angry with, to
+	 * make up with once it is calm.
+	 */
 	private static final Map<UUID, UUID> GRUDGE = new HashMap<>();
 	/** Per player: when they last got a make-up cake. */
 	private static final Map<UUID, Long> LAST_CAKE = new HashMap<>();
@@ -132,8 +133,8 @@ public final class Anger {
 
 		double annoyed = config.rageThreshold / 3.0;
 		double angry = config.rageThreshold * 2.0 / 3.0;
-		if (culprit instanceof Player player && after >= angry) {
-			GRUDGE.put(mehburity.getUUID(), player.getUUID());
+		if (culprit instanceof Player player && after >= annoyed) {
+			GRUDGE.put(grudgeKey(mehburity), player.getUUID());
 		}
 		if (mayRage && after >= config.rageThreshold) {
 			startRage(mehburity, culprit);
@@ -204,6 +205,7 @@ public final class Anger {
 		if (mehburity.isRaging() && after <= MehburityConfig.get().anger.calmBelow) {
 			endRage(mehburity, RageEnd.CALMED);
 		}
+		makeUpIfCalm(mehburity); // right away after a cake or an apology
 	}
 
 	// ---------------------------------------------------------------- the rage
@@ -275,7 +277,7 @@ public final class Anger {
 		if (owner != null) {
 			GameEvents.record(owner, "Mehburity's rage ended (" + end.name().toLowerCase(java.util.Locale.ROOT) + ")");
 		}
-		if (culprit instanceof ServerPlayer player && player.getUUID().equals(GRUDGE.get(mehburity.getUUID()))) {
+		if (culprit instanceof ServerPlayer player && player.getUUID().equals(GRUDGE.get(grudgeKey(mehburity)))) {
 			makeUp(back, player);
 		}
 	}
@@ -299,29 +301,39 @@ public final class Anger {
 		if (mehburity.getAnger() >= angry && mehburity.tickCount % (SPARK_INTERVAL * 3) == 0) {
 			spark(mehburity, 1);
 		}
-		UUID grudge = GRUDGE.get(mehburity.getUUID());
-		if (grudge != null && mehburity.getAnger() < MehburityConfig.get().anger.rageThreshold / 3.0
+		makeUpIfCalm(mehburity);
+	}
+
+	/** Below "annoyed" again and not raging: makes up with whoever it was angry with, if they are online. */
+	private static void makeUpIfCalm(MehburityEntity mehburity) {
+		UUID grudge = GRUDGE.get(grudgeKey(mehburity));
+		if (grudge != null && !mehburity.isRaging() && mehburity.getAnger() < MehburityConfig.get().anger.rageThreshold / 3.0
 				&& mehburity.level() instanceof ServerLevel level
 				&& level.getServer().getPlayerList().getPlayer(grudge) instanceof ServerPlayer player) {
 			makeUp(mehburity, player);
 		}
 	}
 
+	private static UUID grudgeKey(MehburityEntity mehburity) {
+		return mehburity.getOwnerId() != null ? mehburity.getOwnerId() : mehburity.getUUID();
+	}
+
 	/**
 	 * Calm again after being really angry with {@code player}: it says sorry and hands them a cake (into the
-	 * inventory, or at their feet). Waits while they are dead; one cake per player every 10 minutes.
+	 * inventory, or at their feet). Waits while they are dead. Every time, unless the server set a
+	 * {@code anger.makeUpCakeCooldownSeconds}; within it, only the sorry.
 	 */
 	private static void makeUp(MehburityEntity mehburity, ServerPlayer player) {
 		if (player.isDeadOrDying()) {
 			return; // keeps the grudge: makes up once they are back
 		}
-		GRUDGE.remove(mehburity.getUUID());
+		GRUDGE.remove(grudgeKey(mehburity));
 		if (!MehburityConfig.get().anger.makeUpCake) {
 			return;
 		}
 		long now = player.level().getGameTime();
 		Long last = LAST_CAKE.get(player.getUUID());
-		if (last != null && now - last < MAKE_UP_CAKE_COOLDOWN_TICKS) {
+		if (last != null && now - last < MehburityConfig.get().anger.makeUpCakeCooldownSeconds * 20L) {
 			tell(mehburity, player, MehburitySpeech.text("anger.make_up", "Sorry I got so mad at you... Friends again?"));
 			return;
 		}

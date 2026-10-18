@@ -180,9 +180,9 @@ kükrer, işini bırakır, [canavar formuna](#canavar-formu) geçer ve **yalnız
 Nöbet dört şekilde biter: suçlu ölünce, pasta veya özür göstergeyi 40'ın altına indirince, suçlu kaçınca (oyundan çıkar,
 başka boyuta geçer) ya da 90 saniye dolunca. Sonra Mehburity sahibinin yanına döner.
 
-**Barışma:** Bir oyuncuya gerçekten kızdıysa (ya da ona nöbet geçirdiyse), sakinleşince ondan özür diler ve ona bir
-**pasta** verir (envanteri doluysa ayağına düşer). Kızdırıp pasta toplanmasın diye oyuncu başına 10 dakikada bir pasta
-verir; arada yalnızca özür diler.
+**Barışma:** Bir oyuncuya kızdıysa (ya da ona nöbet geçirdiyse), her sakinleştiğinde ondan özür diler ve ona bir
+**pasta** verir (envanteri doluysa ayağına düşer). Pasta ya da özürle sakinleştirirsen hemen, kendi kendine soğursa
+biraz sonra. Sunucu isterse `anger.makeUpCakeCooldownSeconds` ile pastayı seyrekleştirebilir.
 
 **Sakinleştirmek için:**
 
@@ -380,7 +380,8 @@ Bozuk bir dosya silinmez: `mehburity.json.broken` adıyla saklanır ve varsayıl
 | `anger.calmBelow` | 40 | Pasta/özür göstergeyi buna indirince nöbet biter |
 | `anger.cakeCalm` / `apologyCalm` | 60 / 25 | Pastanın / özrün düşürdüğü öfke |
 | `anger.apologyCooldownSeconds` | 30 | Aynı oyuncunun özrü bu sürede bir sayılır |
-| `anger.makeUpCake` | true | Sakinleşince kızdığı oyuncudan özür diler ve ona pasta verir (oyuncu başına 10 dakikada bir) |
+| `anger.makeUpCake` | true | Sakinleşince kızdığı oyuncudan özür diler ve ona pasta verir |
+| `anger.makeUpCakeCooldownSeconds` | 0 | Oyuncu başına bu sürede en fazla bir barışma pastası (0: her seferinde) |
 | `anger.rageDamage` / `rageCooldownTicks` / `rageSpeed` | 10 / 10 / 3.0 | Canavar formu kapalıyken nöbetteki ışın ve hız |
 | `anger.maxRageSeconds` | 90 | Bu süreden sonra kovalamayı bırakır |
 | `anger.rageAtPlayers` / `rageAtOwner` | true / true | Oyunculara / sahibine öfke nöbeti |
