@@ -59,7 +59,7 @@ public final class MehburityItem extends Item {
 	public InteractionResult useOn(UseOnContext context) {
 		if (context.getPlayer() instanceof ServerPlayer player) {
 			BlockPos pos = context.getClickedPos().relative(context.getClickedFace());
-			release(context.getItemInHand(), player, Vec3.atCenterOf(pos));
+			release(context.getItemInHand(), player, context.getHand(), Vec3.atCenterOf(pos));
 		}
 		return InteractionResult.SUCCESS;
 	}
@@ -68,12 +68,16 @@ public final class MehburityItem extends Item {
 	@Override
 	public InteractionResult use(Level level, Player player, InteractionHand hand) {
 		if (player instanceof ServerPlayer serverPlayer) {
-			release(player.getItemInHand(hand), serverPlayer, null);
+			release(player.getItemInHand(hand), serverPlayer, hand, null);
 		}
 		return InteractionResult.SUCCESS;
 	}
 
-	private static void release(ItemStack stack, ServerPlayer player, @Nullable Vec3 spot) {
+	/**
+	 * The used item always leaves the hand, also in creative: vanilla puts the count of a stack used on a block back
+	 * afterwards for players with infinite materials, which would leave a second Mehburity in the inventory.
+	 */
+	private static void release(ItemStack stack, ServerPlayer player, InteractionHand hand, @Nullable Vec3 spot) {
 		UUID owner = stack.get(OWNER);
 		if (owner != null && !owner.equals(player.getUUID())) {
 			ServerPlayer realOwner = player.level().getServer().getPlayerList().getPlayer(owner);
@@ -86,5 +90,8 @@ public final class MehburityItem extends Item {
 			MehburitySpeech.say(player, MehburitySpeech.text("already_have", "You already have me!"));
 		}
 		stack.shrink(1);
+		if (player.getItemInHand(hand) == stack) {
+			player.setItemInHand(hand, ItemStack.EMPTY);
+		}
 	}
 }

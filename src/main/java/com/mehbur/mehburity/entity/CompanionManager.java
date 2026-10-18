@@ -14,6 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -58,6 +59,7 @@ public final class CompanionManager {
 			if (server.getTickCount() % CHECK_INTERVAL == 0) {
 				for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 					keepNear(player, false);
+					removeStaleItems(player);
 				}
 			}
 		});
@@ -320,6 +322,31 @@ public final class CompanionManager {
 	}
 
 	/**
+	 * Mehburity items only exist while their Mehburity is carried. Copies left in an inventory once it is out again
+	 * (creative copies, called back with {@code /mehburity cagir}) go away, so there is never a second one to hold.
+	 */
+	static void removeStaleItems(ServerPlayer player) {
+		MinecraftServer server = player.level().getServer();
+		Inventory inventory = player.getInventory();
+		boolean changed = false;
+		for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+			ItemStack stack = inventory.getItem(slot);
+			if (stack.is(MehburityItem.ITEM) && !isCarried(server, stack.get(MehburityItem.OWNER))) {
+				inventory.setItem(slot, ItemStack.EMPTY);
+				changed = true;
+			}
+		}
+		if (changed) {
+			player.inventoryMenu.sendAllDataToRemote();
+		}
+	}
+
+	private static boolean isCarried(MinecraftServer server, @Nullable UUID ownerId) {
+		CompanionRegistry.Companion companion = ownerId == null ? null : CompanionRegistry.companion(server, ownerId);
+		return companion != null && companion.mode() == CompanionMode.CARRIED;
+	}
+
+	/**
 	 * A carried Mehburity thrown out of the inventory (Q) does not lie there as an item: it comes out as the ball
 	 * where it landed and keeps the throw, so it rolls on. Waits as an item (that never despawns) while its owner
 	 * is offline; a stale copy just goes away.
@@ -369,6 +396,7 @@ public final class CompanionManager {
 			return SummonResult.TELEPORTED;
 		}
 		spawnCompanion(player, CompanionMode.FOLLOW);
+		removeStaleItems(player); // called back while carried: the item in the inventory is the old Mehburity
 		return SummonResult.RESPAWNED;
 	}
 

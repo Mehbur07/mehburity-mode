@@ -31,7 +31,9 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.item.ItemStack;
 
 import java.io.IOException;
@@ -291,10 +293,32 @@ public final class MehburityGameTests {
 				// Called back while carried: the old item is stale and must not make a second one.
 				out.interact(owner, InteractionHand.MAIN_HAND, Vec3.ZERO);
 				helper.assertValueEqual(CompanionManager.SummonResult.RESPAWNED, CompanionManager.summon(owner), "cagir brings it back");
-				mehburityInHand(owner).use(level, owner, InteractionHand.MAIN_HAND);
 				helper.assertTrue(companionsOf(level, owner) == 1, "still exactly one Mehburity");
-				helper.assertTrue(owner.getMainHandItem().isEmpty(), "the stale item goes away");
+				helper.assertFalse(owner.getInventory().contains(s -> s.is(MehburityItem.ITEM)), "the stale item goes away");
 				helper.succeed();
+			});
+		});
+	}
+
+	/** The mock player is in creative, where vanilla puts back the count of a stack used on a block. */
+	@GameTest(maxTicks = 200)
+	public void creative_release_on_a_block_leaves_no_copy(GameTestHelper helper) {
+		ServerPlayer owner = owner(helper);
+		ServerLevel level = helper.getLevel();
+		withCompanion(helper, owner, mehburity -> {
+			mehburity.interact(owner, InteractionHand.MAIN_HAND, Vec3.ZERO);
+			ItemStack item = mehburityInHand(owner);
+			BlockPos floor = helper.absolutePos(new BlockPos(4, 0, 4));
+			owner.gameMode.useItemOn(owner, level, item, InteractionHand.MAIN_HAND,
+					new BlockHitResult(Vec3.atCenterOf(floor).add(0.0, 0.5, 0.0), Direction.UP, floor, false));
+			helper.assertTrue(CompanionManager.find(level.getServer(), owner.getUUID()) != null, "clicking a block lets it out");
+			helper.assertFalse(owner.getInventory().contains(s -> s.is(MehburityItem.ITEM)), "no copy stays in the hand");
+
+			// A copy that got in some other way (creative pick, old stack) disappears on the next check.
+			owner.getInventory().add(MehburityItem.of(owner.getUUID()));
+			helper.succeedWhen(() -> {
+				helper.assertFalse(owner.getInventory().contains(s -> s.is(MehburityItem.ITEM)), "stale copies are removed");
+				helper.assertTrue(companionsOf(level, owner) == 1, "exactly one Mehburity");
 			});
 		});
 	}
