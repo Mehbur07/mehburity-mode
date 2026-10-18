@@ -10,19 +10,23 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -31,6 +35,9 @@ import java.util.Set;
  * {@code mining.targets} and are parsed again whenever the list changes (config reload).
  */
 public final class MiningRules {
+	/** A tree is at most this many logs, reaching at most this far sideways from where it was pointed at. */
+	public static final int MAX_TREE_LOGS = 256;
+	private static final int TREE_SPREAD = 8;
 	private static @Nullable List<String> parsedFrom;
 	private static List<TagKey<Block>> targetTags = List.of();
 	private static Set<Block> targetBlocks = Set.of();
@@ -92,6 +99,43 @@ public final class MiningRules {
 		return level.mayInteract(owner, pos)
 				&& !owner.blockActionRestricted(level, pos, owner.gameMode())
 				&& PlayerBlockBreakEvents.BEFORE.invoker().beforeBlockBreak(level, owner, pos, state, null);
+	}
+
+	/** Blocks a tree is made of; cut down log by log. */
+	public static boolean isLog(BlockState state) {
+		return state.is(BlockTags.LOGS);
+	}
+
+	/**
+	 * The logs of the tree {@code start} belongs to: every log connected to it (diagonals too, for acacia branches),
+	 * at most {@link #MAX_TREE_LOGS}. Empty when no natural leaves grow on them, so a log cabin is never felled.
+	 */
+	public static Set<BlockPos> treeLogs(ServerLevel level, BlockPos start) {
+		Set<BlockPos> logs = new LinkedHashSet<>();
+		if (!isLog(level.getBlockState(start))) {
+			return logs;
+		}
+		ArrayDeque<BlockPos> open = new ArrayDeque<>();
+		open.add(start.immutable());
+		logs.add(start.immutable());
+		boolean leaves = false;
+		while (!open.isEmpty() && logs.size() < MAX_TREE_LOGS) {
+			BlockPos pos = open.poll();
+			for (BlockPos next : BlockPos.betweenClosed(pos.offset(-1, -1, -1), pos.offset(1, 1, 1))) {
+				BlockState state = level.getBlockState(next);
+				if (!leaves && state.getBlock() instanceof LeavesBlock && !state.getValue(LeavesBlock.PERSISTENT)) {
+					leaves = true;
+				}
+				if (isLog(state) && Math.abs(next.getX() - start.getX()) <= TREE_SPREAD && Math.abs(next.getZ() - start.getZ()) <= TREE_SPREAD
+						&& logs.size() < MAX_TREE_LOGS && logs.add(next.immutable())) {
+					open.add(next.immutable());
+				}
+			}
+		}
+		if (!leaves) {
+			logs.clear();
+		}
+		return logs;
 	}
 
 	/** Has a side Mehburity can reach it from (air or water, never lava). */

@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.item.ItemStack;
@@ -23,7 +24,8 @@ import java.util.EnumSet;
 import java.util.List;
 
 /**
- * Works through Mehburity's {@link MiningJob}: picks the nearest exposed target, flies next to it, breaks it over
+ * Works through Mehburity's {@link MiningJob}: picks the nearest exposed target (a tree from the bottom up), rolls
+ * next to it, breaks it over
  * time with the vanilla crack animation, and puts the drops in the owner's {@link MiningBag}. Fighting (a higher
  * priority goal) pauses it; the job continues afterwards.
  */
@@ -33,6 +35,8 @@ public final class MineGoal extends Goal {
 	/** Gives up on a block it could not start breaking within this many ticks. */
 	private static final int GIVE_UP_TICKS = 200;
 	private static final int HIT_SOUND_INTERVAL = 4;
+	/** Reaches up a tree from the ground this far, through its leaves (a rolling ball cannot climb it). */
+	private static final double TREE_REACH = 8.0;
 
 	private final MehburityEntity mehburity;
 	private @Nullable BlockPos target;
@@ -92,7 +96,11 @@ public final class MineGoal extends Goal {
 			searchDelay = adjustedTickDelay(SEARCH_INTERVAL);
 			target = nextTarget(level, owner, job);
 			if (target == null) {
-				Mining.finish(mehburity, owner, job.kind() == MiningJob.Kind.SINGLE ? MiningJob.End.UNREACHABLE : MiningJob.End.NOTHING_LEFT);
+				Mining.finish(mehburity, owner, switch (job.kind()) {
+					case SINGLE -> MiningJob.End.UNREACHABLE;
+					case TREE -> job.mined() == 0 ? MiningJob.End.UNREACHABLE : MiningJob.End.TREE_DONE;
+					case ORES -> MiningJob.End.NOTHING_LEFT;
+				});
 				return;
 			}
 			breakTicks = MiningRules.breakTicks(level, target, level.getBlockState(target));
@@ -110,11 +118,14 @@ public final class MineGoal extends Goal {
 
 		Vec3 center = Vec3.atCenterOf(target);
 		mehburity.getLookControl().setLookAt(center.x, center.y, center.z);
-		if (!canReach(level, target)) {
+		if (!canReach(level, target, job)) {
 			resetProgress(level);
 			if (--repathDelay <= 0) {
 				repathDelay = adjustedTickDelay(REPATH_INTERVAL);
 				BlockPos side = MiningRules.openSide(level, target, mehburity.position());
+				if (side == null && job.kind() == MiningJob.Kind.TREE) {
+					side = target; // a log deep in the leaves: get under it
+				}
 				if (side == null) {
 					giveUp(job);
 					return;
@@ -148,6 +159,9 @@ public final class MineGoal extends Goal {
 			BlockPos pos = job.single();
 			return pos != null && !job.isSkipped(pos) && stillWanted(level, job, pos, level.getBlockState(pos)) ? pos : null;
 		}
+		if (job.kind() == MiningJob.Kind.TREE) {
+			return nextLog(level, job);
+		}
 		MehburityConfig.Mining config = MehburityConfig.get().mining;
 		Entity center = mehburity.getMode() == CompanionMode.STAY || owner.level() != level ? mehburity : owner;
 		BlockPos origin = center.blockPosition();
@@ -171,6 +185,23 @@ public final class MineGoal extends Goal {
 		return best;
 	}
 
+	/** The tree's lowest log left, the nearest one on that level: it is cut from the trunk up. */
+	private @Nullable BlockPos nextLog(ServerLevel level, MiningJob job) {
+		BlockPos best = null;
+		double bestDistance = Double.MAX_VALUE;
+		for (BlockPos pos : job.treeLogs()) {
+			if (job.isSkipped(pos) || !stillWanted(level, job, pos, level.getBlockState(pos))) {
+				continue;
+			}
+			double distance = mehburity.distanceToSqr(Vec3.atCenterOf(pos));
+			if (best == null || pos.getY() < best.getY() || (pos.getY() == best.getY() && distance < bestDistance)) {
+				best = pos;
+				bestDistance = distance;
+			}
+		}
+		return best;
+	}
+
 	private static boolean stillWanted(ServerLevel level, MiningJob job, BlockPos pos, BlockState state) {
 		if (!MiningRules.isBreakable(level, pos, state)) {
 			return false;
@@ -178,19 +209,27 @@ public final class MineGoal extends Goal {
 		if (job.kind() == MiningJob.Kind.SINGLE) {
 			return true;
 		}
+		if (job.kind() == MiningJob.Kind.TREE) {
+			return MiningRules.isLog(state);
+		}
 		return MiningRules.isTarget(state) && (!MehburityConfig.get().mining.exposedOnly || MiningRules.isExposed(level, pos));
 	}
 
-	/** Within reach and nothing in between. */
-	private boolean canReach(ServerLevel level, BlockPos pos) {
-		double reach = MehburityConfig.get().mining.reach;
+	/** Within reach and nothing in between (for a tree, its own leaves and logs do not count). */
+	private boolean canReach(ServerLevel level, BlockPos pos, MiningJob job) {
+		boolean tree = job.kind() == MiningJob.Kind.TREE;
+		double reach = tree ? Math.max(TREE_REACH, MehburityConfig.get().mining.reach) : MehburityConfig.get().mining.reach;
 		Vec3 eye = mehburity.getEyePosition();
 		Vec3 center = Vec3.atCenterOf(pos);
 		if (eye.distanceToSqr(center) > reach * reach) {
 			return false;
 		}
 		BlockHitResult hit = level.clip(new ClipContext(eye, center, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mehburity));
-		return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(pos);
+		if (hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(pos)) {
+			return true;
+		}
+		BlockState between = level.getBlockState(hit.getBlockPos());
+		return tree && (between.is(BlockTags.LEAVES) || MiningRules.isLog(between));
 	}
 
 	private void breakBlock(ServerLevel level, ServerPlayer owner, MiningJob job, BlockPos pos, BlockState state) {
@@ -223,7 +262,7 @@ public final class MineGoal extends Goal {
 			Mining.finish(mehburity, owner, MiningJob.End.DONE);
 		} else if (full || MiningBag.isFull(owner)) {
 			Mining.finish(mehburity, owner, MiningJob.End.BAG_FULL);
-		} else if (job.mined() >= MehburityConfig.get().mining.maxBlocksPerTrip) {
+		} else if (job.kind() != MiningJob.Kind.TREE && job.mined() >= MehburityConfig.get().mining.maxBlocksPerTrip) {
 			Mining.finish(mehburity, owner, MiningJob.End.TRIP_LIMIT);
 		}
 	}

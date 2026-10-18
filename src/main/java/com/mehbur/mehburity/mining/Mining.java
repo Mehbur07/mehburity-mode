@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -20,6 +21,7 @@ import net.minecraft.world.phys.HitResult;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Everything the owner can ask about mining, shared by {@code /mehburity kaz|ver|canta} and the chat
@@ -27,6 +29,9 @@ import java.util.List;
  * whether it did something.
  */
 public final class Mining {
+	/** From a leaf the owner points at, the tree's log is looked for this far. */
+	private static final int LEAF_TO_LOG = 5;
+
 	private Mining() {
 	}
 
@@ -75,6 +80,64 @@ public final class Mining {
 		mehburity.setMiningJob(MiningJob.single(pos));
 		MehburitySpeech.speak(owner, MehburitySpeech.text("mining.start_one", "On it!"));
 		return true;
+	}
+
+	/**
+	 * Cuts down a whole tree: the one the owner looks at (a log or its leaves), or else the nearest one around. The
+	 * logs go into the bag; the leaves are left to fall off on their own.
+	 */
+	public static boolean startTree(ServerPlayer owner) {
+		MehburityEntity mehburity = ready(owner);
+		if (mehburity == null) {
+			return false;
+		}
+		ServerLevel level = owner.level();
+		BlockPos start = treeStart(owner, level);
+		Set<BlockPos> logs = start == null ? Set.of() : MiningRules.treeLogs(level, start);
+		if (logs.isEmpty()) {
+			MehburitySpeech.say(owner, start == null
+					? MehburitySpeech.text("mining.no_tree", "I don't see a tree. Look at the one you want me to cut.")
+					: MehburitySpeech.text("mining.not_a_tree", "That's not a tree, I'd rather leave it alone."));
+			return false;
+		}
+		if (mehburity.level() != level) {
+			mehburity = mehburity.teleportToOwner(owner);
+		}
+		mehburity.setMiningJob(MiningJob.tree(logs));
+		MehburitySpeech.speak(owner, MehburitySpeech.text("mining.start_tree", "Timber! I'll cut it down."));
+		GameEvents.record(owner, "the player asked Mehburity to cut down a tree (" + logs.size() + " logs)");
+		return true;
+	}
+
+	/** A log of the tree the owner looks at (through its leaves), else the nearest log around them. */
+	private static @Nullable BlockPos treeStart(ServerPlayer owner, ServerLevel level) {
+		BlockPos looked = lookedAtBlock(owner);
+		if (looked != null) {
+			BlockState state = level.getBlockState(looked);
+			if (MiningRules.isLog(state)) {
+				return looked;
+			}
+			if (state.is(BlockTags.LEAVES)) {
+				BlockPos log = nearestLog(level, looked, LEAF_TO_LOG);
+				if (log != null) {
+					return log;
+				}
+			}
+		}
+		return nearestLog(level, owner.blockPosition(), MehburityConfig.get().mining.searchRadius);
+	}
+
+	private static @Nullable BlockPos nearestLog(ServerLevel level, BlockPos center, int radius) {
+		BlockPos best = null;
+		double bestDistance = Double.MAX_VALUE;
+		for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, -radius, -radius), center.offset(radius, radius, radius))) {
+			double distance = pos.distSqr(center);
+			if (distance < bestDistance && MiningRules.isLog(level.getBlockState(pos))) {
+				best = pos.immutable();
+				bestDistance = distance;
+			}
+		}
+		return best;
 	}
 
 	public static boolean stop(ServerPlayer owner) {
@@ -131,6 +194,7 @@ public final class Mining {
 					"My bag is full! Say \"kazdığın madenleri ver\" and I'll hand everything over.");
 			case TRIP_LIMIT -> MehburitySpeech.text("mining.trip_limit", "That's %s blocks, I'm taking a break!", mined);
 			case DONE -> MehburitySpeech.text("mining.done_one", "Done!");
+			case TREE_DONE -> MehburitySpeech.text("mining.tree_done", "Timber! The tree is down, %s logs went into my bag.", mined);
 			case UNREACHABLE -> MehburitySpeech.text("mining.unreachable", "I can't reach that block.");
 			case STOPPED -> MehburitySpeech.text("mining.stopped", "Okay, I stopped mining.");
 		};

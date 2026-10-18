@@ -9,16 +9,16 @@ import org.jspecify.annotations.Nullable;
 import java.util.regex.Pattern;
 
 /**
- * Mining orders in plain chat, Turkish or English: "Mehburity, maden kaz", "bunu kaz", "kazmayı bırak",
+ * Mining orders in plain chat, Turkish or English: "Mehburity, maden kaz", "bunu kaz", "bu ağacı kes", "kazmayı bırak",
  * "ne kazdın?", "kazdığın madenleri ver". Matching runs on accent-free lower case ({@link ChatAddress#fold}).
  * Anything else goes on to Gemini as a normal question.
  */
 public final class MiningChat {
-	public enum Intent { GIVE, STOP, LIST, MINE_HERE, MINE }
+	public enum Intent { GIVE, STOP, LIST, TREE, MINE_HERE, MINE }
 
 	/** "kaz..." (dig) but not "kazan..." (win, cauldron) or "kazık". */
 	private static final String DIG = "(\\bkaz(?!an|ik)\\w*|\\bmine\\b|\\bmining\\b|\\bdig\\w*|\\bdug\\b)";
-	private static final String MINED_THINGS = "(maden|kazd|cevher|esya|topla|canta|\\bores?\\b|\\bmined\\b|\\bitems?\\b|\\bloot\\b|\\bstuff\\b|\\bbag\\b|\\bdrops\\b)";
+	private static final String MINED_THINGS = "(maden|kazd|cevher|esya|topla|canta|odun|kutuk|\\blogs?\\b|\\bwood\\b|\\bores?\\b|\\bmined\\b|\\bitems?\\b|\\bloot\\b|\\bstuff\\b|\\bbag\\b|\\bdrops\\b)";
 
 	private static final Pattern GIVE_VERB = Pattern.compile("(\\bver\\w*|\\bgive\\b|\\bhand\\b)");
 	private static final Pattern GIVE_OBJECT = Pattern.compile(MINED_THINGS);
@@ -28,6 +28,10 @@ public final class MiningChat {
 			"(\\bne(ler)?\\b.*\\b(kazd|topladi)|\\bcantan|\\bwhat\\b.*\\b(mine|mined|dug|bag|got)\\b|\\binventory\\b|\\bin your bag\\b)");
 	private static final Pattern HERE = Pattern.compile("(\\b(bunu|sunu|onu)\\b|\\b(bu|su|o) blo|\\b(this|that) block\\b|\\b(this|that)\\b)");
 	private static final Pattern DIG_WORD = Pattern.compile(DIG);
+	private static final Pattern TREE_WORD = Pattern.compile("(\\bagac\\w*|\\btrees?\\b|\\bodun\\w*|\\bkutu?k\\w*|\\blogs?\\b|\\bwood\\b)");
+	private static final Pattern TREE_VERB = Pattern.compile(DIG + "|\\bkes\\w*|\\bkir\\w*|\\bdevir\\w*|\\btopla\\w*|\\bcut\\w*|\\bchop\\w*|\\bfell\\b");
+	/** Stopping a tree job; without "kes", which means "cut" next to a tree. */
+	private static final Pattern TREE_STOP = Pattern.compile("(\\bdur(dur\\w*|\\b)|birak|\\byeter\\b|\\bstop\\b|\\benough\\b|\\bquit\\b)");
 	private static final Pattern GO_MINING = Pattern.compile("(maden\\w* (bul|topla|ara|cikar)|\\bmadene\\b)");
 
 	private MiningChat() {
@@ -46,8 +50,15 @@ public final class MiningChat {
 		if (STOP_VERB.matcher(text).find() && MINING_WORD.matcher(text).find()) {
 			return Intent.STOP;
 		}
+		boolean tree = TREE_WORD.matcher(text).find();
+		if (tree && TREE_STOP.matcher(text).find()) {
+			return Intent.STOP;
+		}
 		if (LIST.matcher(text).find()) {
 			return Intent.LIST;
+		}
+		if (tree && TREE_VERB.matcher(text).find()) {
+			return Intent.TREE;
 		}
 		boolean dig = DIG_WORD.matcher(text).find();
 		if (dig && HERE.matcher(text).find()) {
@@ -69,6 +80,7 @@ public final class MiningChat {
 				case GIVE -> Mining.give(owner);
 				case STOP -> Mining.stop(owner);
 				case LIST -> Mining.list(owner);
+				case TREE -> Mining.startTree(owner);
 				case MINE_HERE -> Mining.startLookedAt(owner);
 				case MINE -> Mining.startOres(owner);
 			}

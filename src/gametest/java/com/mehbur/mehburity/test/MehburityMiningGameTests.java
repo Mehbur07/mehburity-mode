@@ -67,6 +67,12 @@ public final class MehburityMiningGameTests {
 		helper.assertValueEqual(MiningChat.Intent.STOP, MiningChat.parse("stop mining"), "stop (English)");
 		helper.assertValueEqual(MiningChat.Intent.LIST, MiningChat.parse("ne kazdın?"), "list");
 		helper.assertValueEqual(MiningChat.Intent.LIST, MiningChat.parse("what did you mine?"), "list (English)");
+		helper.assertValueEqual(MiningChat.Intent.TREE, MiningChat.parse("Mehburity bu ağacı kaz"), "dig this tree");
+		helper.assertValueEqual(MiningChat.Intent.TREE, MiningChat.parse("şu ağacı kes"), "cut that tree");
+		helper.assertValueEqual(MiningChat.Intent.TREE, MiningChat.parse("odun topla"), "collect wood");
+		helper.assertValueEqual(MiningChat.Intent.TREE, MiningChat.parse("chop this tree"), "tree (English)");
+		helper.assertValueEqual(MiningChat.Intent.STOP, MiningChat.parse("ağacı kesmeyi bırak"), "stop cutting");
+		helper.assertValueEqual(MiningChat.Intent.GIVE, MiningChat.parse("kestiğin odunları ver"), "give the logs");
 		helper.assertTrue(MiningChat.parse("nasılsın?") == null, "small talk goes to Gemini");
 		helper.assertTrue(MiningChat.parse("oyunu kazandın mı?") == null, "\"kazandın\" (won) is not digging");
 		helper.assertTrue(MiningChat.parse("en sevdiğin renk ne?") == null, "a question is not an order");
@@ -170,6 +176,50 @@ public final class MehburityMiningGameTests {
 						helper.assertFalse(Mining.startLookedAt(owner), "blocks holding items are refused");
 						helper.assertTrue(mehburity.getMiningJob() == null, "no job after a refusal");
 						PROTECTED.remove(helper.absolutePos(guarded));
+					})
+					.thenSucceed();
+		});
+	}
+
+	@GameTest(maxTicks = 1200)
+	public void cuts_down_the_tree_it_is_shown(GameTestHelper helper) {
+		ServerPlayer owner = owner(helper);
+		withCompanion(helper, owner, mehburity -> {
+			// A log pillar without leaves is someone's building, not a tree.
+			BlockPos pillar = new BlockPos(0, 1, 0);
+			helper.setBlock(pillar, Blocks.OAK_LOG);
+			helper.setBlock(pillar.above(), Blocks.OAK_LOG);
+			lookAt(helper, owner, pillar.above());
+			helper.assertFalse(Mining.startTree(owner), "a log pillar without leaves is not felled");
+
+			BlockPos base = new BlockPos(5, 1, 5);
+			for (int y = 0; y < 5; y++) {
+				helper.setBlock(base.above(y), Blocks.OAK_LOG);
+			}
+			for (int dx = -1; dx <= 1; dx++) {
+				for (int dz = -1; dz <= 1; dz++) {
+					if (dx != 0 || dz != 0) {
+						helper.setBlock(base.offset(dx, 3, dz), Blocks.OAK_LEAVES);
+						helper.setBlock(base.offset(dx, 4, dz), Blocks.OAK_LEAVES);
+					}
+				}
+			}
+			helper.setBlock(base.above(5), Blocks.OAK_LEAVES);
+			// Pointing at the leaves is enough.
+			lookAt(helper, owner, base.offset(-1, 3, 0));
+			helper.assertTrue(Mining.startTree(owner), "cutting the tree must start");
+			helper.startSequence()
+					.thenWaitUntil(() -> {
+						helper.assertTrue(mehburity.getMiningJob() == null, "Mehburity must finish the tree");
+						for (int y = 0; y < 5; y++) {
+							helper.assertBlockPresent(Blocks.AIR, base.above(y));
+						}
+					})
+					.thenExecute(() -> {
+						List<ItemStack> bag = MiningBag.contents(owner);
+						helper.assertTrue(count(bag, Items.OAK_LOG) == 5, "five logs in the bag: " + bag);
+						helper.assertBlockPresent(Blocks.OAK_LOG, pillar);
+						helper.assertBlockPresent(Blocks.OAK_LOG, pillar.above());
 					})
 					.thenSucceed();
 		});

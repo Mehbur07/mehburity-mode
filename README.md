@@ -91,6 +91,7 @@ Emirler Gemini'ye gitmeden anlaşılır, büyük/küçük harf ve Türkçe karak
 |---|---|---|
 | maden kaz / go mining | Etraftaki açıkta görünen cevherleri kazar | `/mehburity kaz` |
 | bunu kaz / mine this block | Baktığın bloğu kazar | `/mehburity kaz bunu` |
+| bu ağacı kes / bu ağacı kaz / odun topla / chop this tree | Baktığın (yoksa en yakın) ağacı baştan sona keser | `/mehburity kaz agac` |
 | kazmayı bırak / stop mining | Kazmayı bırakır | `/mehburity kaz dur` |
 | kazdığın madenleri ver / give me what you mined | Çantasındakileri verir | `/mehburity ver` |
 | ne kazdın? | Çantada ne olduğunu söyler | `/mehburity canta` |
@@ -142,6 +143,11 @@ gerekmeden kendisi kırar. Damar bitene kadar devam eder. Taşa gömülü cevher
 "Kazdığın madenleri ver" deyince her şey envanterine geçer, sığmayanlar ayağına düşer. Kırdığı bloklar elmas kazmayla
 kırılmış gibi eşya düşürür (XP dahil). Spawn korumasına, macera moduna ve koruma modlarına uyar. Saldırı olursa önce
 savaşır, sonra kazmaya devam eder.
+
+**Ağaç kesme:** "Mehburity, bu ağacı kes" (ya da "kaz", "odun topla") dediğinde baktığın ağacı (kütüğüne ya da
+yaprağına bakman yeter; bakmıyorsan en yakın ağacı) gövdesinden yukarı doğru, bütün kütükleriyle keser ve kütükleri
+çantasına koyar. Yapraklar normal ağaçlardaki gibi kendiliğinden döküler. Etrafında doğal yaprak olmayan kütükleri
+(ör. kütükten yapılmış evleri) ağaç saymaz ve kesmez. "Ağacı kesmeyi bırak" durdurur, "kestiğin odunları ver" verir.
 
 ### Ev yapma
 
@@ -248,7 +254,7 @@ Alt komutlar ASCII yazılır (komut ayrıştırıcısı "ç, ğ" gibi harfleri k
 | `/mehburity otur` / `takip` | herkes | Olduğu yerde bekler / seni takip eder |
 | `/mehburity savas` | herkes | Savaş durumunu söyler |
 | `/mehburity savas ac` / `kapat` | herkes | Mehburity seni korusun / savaşmasın |
-| `/mehburity kaz` / `kaz bunu` / `kaz dur` | herkes | Cevher kazar / baktığın bloğu kazar / durur |
+| `/mehburity kaz` / `kaz bunu` / `kaz agac` / `kaz dur` | herkes | Cevher kazar / baktığın bloğu kazar / ağacı keser / durur |
 | `/mehburity ver` / `canta` | herkes | Kazdıklarını verir / çantayı söyler |
 | `/mehburity ev [ahsap\|tas\|tugla\|elimdeki]` | herkes | Ev yapar |
 | `/mehburity ev dur` / `ev geri` | herkes | İnşaatı durdurur / son evi kaldırır |

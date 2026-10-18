@@ -60,6 +60,7 @@ public final class MehburityCommands {
 				.then(Commands.literal("kaz")
 						.executes(ctx -> mining(ctx, Mining::startOres))
 						.then(Commands.literal("bunu").executes(ctx -> mining(ctx, Mining::startLookedAt)))
+						.then(Commands.literal("agac").executes(ctx -> mining(ctx, Mining::startTree)))
 						.then(Commands.literal("dur").executes(ctx -> mining(ctx, Mining::stop))))
 				.then(houseCommand())
 				.then(Commands.literal("ver").executes(ctx -> mining(ctx, Mining::give)))

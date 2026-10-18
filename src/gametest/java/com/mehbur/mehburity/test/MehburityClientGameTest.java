@@ -26,6 +26,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
@@ -358,6 +359,48 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		context.waitFor(mc -> mc.player.getInventory().countItem(Items.RAW_IRON) >= 2, 100);
 		context.waitTicks(10);
 		context.takeScreenshot("mehburity-m3-given");
+
+		// "Mehburity, bu ağacı kes": a real generated oak behind the player, cut down log by log.
+		BlockPos trunk = server.computeOnServer(s -> {
+			ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+			ServerLevel level = player.level();
+			Vec3 behind = player.position().add(Vec3.directionFromRotation(0.0F, player.getYRot()).scale(-6.0));
+			int x = (int) Math.floor(behind.x);
+			int z = (int) Math.floor(behind.z);
+			return new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z), z);
+		});
+		server.runCommand("place feature minecraft:oak " + trunk.getX() + " " + trunk.getY() + " " + trunk.getZ());
+		if (!server.computeOnServer(s -> s.overworld().getBlockState(trunk).is(BlockTags.LOGS))) {
+			throw new AssertionError("the oak must have grown at " + trunk);
+		}
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.getInput().lookAt(trunk.above(2));
+		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, bu ağacı kes"));
+		server.waitFor(s -> CompanionManager.find(s, playerId).getMiningJob() != null, 100);
+		context.waitTicks(40);
+		context.takeScreenshot("mehburity-t1-cutting");
+		server.waitFor(s -> CompanionManager.find(s, playerId).getMiningJob() == null, 1200);
+		int logsLeft = server.computeOnServer(s -> {
+			int left = 0;
+			for (BlockPos pos : BlockPos.betweenClosed(trunk.offset(-3, 0, -3), trunk.offset(3, 10, 3))) {
+				if (s.overworld().getBlockState(pos).is(BlockTags.LOGS)) {
+					left++;
+				}
+			}
+			return left;
+		});
+		if (logsLeft > 0) {
+			throw new AssertionError(logsLeft + " logs of the tree are still standing");
+		}
+		context.waitTicks(5);
+		context.takeScreenshot("mehburity-t2-felled");
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, kestiğin odunları ver"));
+		context.waitFor(mc -> mc.player.getInventory().countItem(Items.OAK_LOG) >= 3, 100);
+		// The leaves left behind decay into saplings; clear them so the house test sees no stray items.
+		server.runCommand("fill " + (trunk.getX() - 4) + " " + trunk.getY() + " " + (trunk.getZ() - 4) + " "
+				+ (trunk.getX() + 4) + " " + (trunk.getY() + 10) + " " + (trunk.getZ() + 4) + " air replace #minecraft:leaves");
+		server.runCommand("kill @e[type=item]");
 	}
 
 	/** "Mehburity, taş ev yap" from the real chat, a look at the house, then "evi geri al". */
