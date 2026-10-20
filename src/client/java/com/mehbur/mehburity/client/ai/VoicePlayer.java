@@ -64,6 +64,9 @@ public final class VoicePlayer {
 	private static final String DEEP_VOICE = "Algenib";
 	private static final String DEEP_STYLE = "a very deep, slow, menacing, demonic voice, like a growl coming out of the dark";
 	private static final float DEEP_PITCH = 0.78F;
+	/** Part of every line's style, so the cached lines said before it (with a wrong name) are fetched again. */
+	private static final String NAME_HINT = "Say the name Mehburity exactly as meh-BUR-ih-tee, rhyming with Verity; "
+			+ "there is no s sound in it";
 
 	/**
 	 * The Mehburity that talks: its entity id (or {@link #NO_ENTITY}) and where it stood, used until this client
@@ -134,7 +137,7 @@ public final class VoicePlayer {
 			return;
 		}
 		int asked = generation;
-		CompletableFuture<byte[]> audio = fetch(config.voiceModel, voice, style, text);
+		CompletableFuture<byte[]> audio = fetch(config.voiceModel, voice, withNameHint(style), text);
 		queue = queue.thenCombineAsync(audio.handle((wav, error) -> {
 			if (error != null) {
 				MehburityMod.LOGGER.warn("Mehburity voice failed: {}", GeminiException.of(error).getMessage());
@@ -148,6 +151,14 @@ public final class VoicePlayer {
 			}
 			return null;
 		}, AUDIO);
+	}
+
+	/**
+	 * Tells the voice how to say the name, on top of the configured style. Text-to-speech does not know the made-up
+	 * name and guesses things like "Mehburisty"; respelling it in the text made it worse than this hint.
+	 */
+	static String withNameHint(String style) {
+		return style == null || style.isBlank() ? NAME_HINT : style + ". " + NAME_HINT;
 	}
 
 	private static CompletableFuture<byte[]> fetch(String model, String voice, String style, String text) {
