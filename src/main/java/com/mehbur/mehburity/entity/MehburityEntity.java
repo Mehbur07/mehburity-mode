@@ -107,6 +107,8 @@ public class MehburityEntity extends PathfinderMob {
 	/** Whom it is raging at; not saved (a rage ends with the session). */
 	private @Nullable LivingEntity rageCulprit;
 	private int rageTicks;
+	/** Walking up to the culprit from far away (its revenge): no blinking next to them until it got close once. */
+	private boolean approaching;
 	private int clientBeamTicks;
 	private int clientFlashTicks;
 	private int clientSwipeTicks;
@@ -249,10 +251,19 @@ public class MehburityEntity extends PathfinderMob {
 		return rageTicks;
 	}
 
+	public boolean isApproaching() {
+		return approaching;
+	}
+
+	public void setApproaching(boolean approaching) {
+		this.approaching = approaching;
+	}
+
 	/** Starts (culprit) or ends (null) the rage. Called by {@link Anger}. Ending it also ends the rage form. */
 	public void setRageCulprit(@Nullable LivingEntity culprit) {
 		this.rageCulprit = culprit;
 		this.rageTicks = 0;
+		this.approaching = false;
 		this.entityData.set(DATA_RAGING, culprit != null);
 		if (culprit == null) {
 			this.setTarget(null);

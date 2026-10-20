@@ -9,6 +9,7 @@ import com.mehbur.mehburity.entity.MehburityEntity;
 import com.mehbur.mehburity.entity.MehburitySounds;
 import com.mehbur.mehburity.entity.MehburitySpeech;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -18,6 +19,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -26,14 +28,15 @@ import java.util.UUID;
 
 /**
  * A rage at a player does not break out at once: Mehburity vanishes without a word, stays away for
- * {@code anger.revengeDays} in-game days, and some time on the day after that it suddenly appears behind the culprit,
- * says in a deep voice that it came for its revenge, and turns into the demon. The countdown lives in the companion
+ * {@code anger.revengeDays} in-game days, and some time on the day after that it suddenly appears far behind the
+ * culprit ({@code anger.revengeMinChunks} to {@code revengeMaxChunks} chunks), says in a deep voice that it came for
+ * its revenge, turns into the demon and walks up to them. The countdown lives in the companion
  * registry, so it survives logouts and restarts; it counts in-game time (sleeping and {@code /time add} skip ahead).
  */
 public final class Revenge {
 	public static final long DAY_TICKS = 24000L;
 	private static final int CHECK_INTERVAL = 20;
-	/** Appears this far behind the culprit. */
+	/** Right behind the culprit (revenge distance 0, or nothing farther is loaded): this many blocks. */
 	private static final double BEHIND = 6.0;
 	private static final int DARKNESS_TICKS = 80;
 	private static final RandomSource RANDOM = RandomSource.create();
@@ -105,12 +108,36 @@ public final class Revenge {
 	}
 
 	/**
+	 * Where it appears: a random distance between the configured chunks behind the culprit, on the ground. Closer
+	 * (a chunk at a time) where that is not loaded and ticking; right behind them if nothing is.
+	 */
+	private static Vec3 spotFarBehind(ServerLevel level, ServerPlayer culprit) {
+		MehburityConfig.Anger config = MehburityConfig.get().anger;
+		double min = config.revengeMinChunks * 16.0;
+		double max = config.revengeMaxChunks * 16.0;
+		Vec3 backwards = backwards(culprit);
+		for (double distance = min + RANDOM.nextDouble() * (max - min); distance >= 16.0; distance -= 16.0) {
+			Vec3 at = culprit.position().add(backwards.scale(distance));
+			BlockPos column = BlockPos.containing(at);
+			if (level.isPositionEntityTicking(column)) {
+				int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column.getX(), column.getZ());
+				return new Vec3(at.x, ground, at.z);
+			}
+		}
+		return spotBehind(level, culprit);
+	}
+
+	private static Vec3 backwards(ServerPlayer culprit) {
+		Vec3 backwards = culprit.getLookAngle().multiply(-1.0, 0.0, -1.0);
+		return backwards.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : backwards.normalize();
+	}
+
+	/**
 	 * A free spot {@link #BEHIND} blocks behind the culprit at their height (a little higher on a slope, closer when
 	 * a wall is in the way); right at their feet if there is no room at all, e.g. in a tunnel.
 	 */
 	private static Vec3 spotBehind(ServerLevel level, ServerPlayer culprit) {
-		Vec3 backwards = culprit.getLookAngle().multiply(-1.0, 0.0, -1.0);
-		backwards = backwards.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : backwards.normalize();
+		Vec3 backwards = backwards(culprit);
 		for (double distance = BEHIND; distance >= 1.0; distance -= 1.0) {
 			for (int up = 0; up <= 3; up++) {
 				Vec3 spot = culprit.position().add(backwards.scale(distance)).add(0.0, up, 0.0);
@@ -122,17 +149,19 @@ public final class Revenge {
 		return culprit.position();
 	}
 
-	/** Out of nowhere, behind the culprit: darkness, thunder, a deep voice, and the demon. */
+	/** Out of nowhere, far behind the culprit: darkness, thunder, a deep voice, and the demon coming for them. */
 	private static void comeBack(ServerPlayer owner, ServerPlayer culprit) {
 		ServerLevel level = culprit.level();
-		Vec3 spot = spotBehind(level, culprit);
+		Vec3 spot = spotFarBehind(level, culprit);
 		MehburityEntity mehburity = CompanionManager.comeBack(level, owner.getUUID(), spot);
 		if (mehburity == null) {
 			return;
 		}
 		level.sendParticles(ParticleTypes.LARGE_SMOKE, spot.x, spot.y + 0.5, spot.z, 40, 0.5, 0.6, 0.5, 0.03);
-		level.playSound(null, spot.x, spot.y, spot.z, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.HOSTILE, 4.0F, 0.6F);
-		level.playSound(null, spot.x, spot.y, spot.z, MehburitySounds.RAGE, SoundSource.HOSTILE, 2.0F, 0.5F);
+		// The thunder rolls where the culprit is; the roar comes from far behind them.
+		level.playSound(null, culprit.getX(), culprit.getY(), culprit.getZ(), SoundEvents.LIGHTNING_BOLT_THUNDER,
+				SoundSource.HOSTILE, 4.0F, 0.6F);
+		level.playSound(null, spot.x, spot.y, spot.z, MehburitySounds.RAGE, SoundSource.HOSTILE, 8.0F, 0.5F);
 		culprit.addEffect(new MobEffectInstance(MobEffects.DARKNESS, DARKNESS_TICKS, 0, false, false));
 		mehburity.getLookControl().setLookAt(culprit);
 		var line = MehburitySpeech.text("anger.revenge", "I have come for my revenge.");
@@ -142,5 +171,6 @@ public final class Revenge {
 		}
 		GameEvents.record(owner, "Mehburity came back for its revenge on " + culprit.getName().getString());
 		Anger.startRage(mehburity, culprit, null);
+		mehburity.setApproaching(true);
 	}
 }

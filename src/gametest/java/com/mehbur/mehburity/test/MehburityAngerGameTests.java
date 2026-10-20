@@ -179,10 +179,23 @@ public final class MehburityAngerGameTests {
 
 			Revenge.advance(server, wait - 1);
 			helper.assertTrue(CompanionManager.find(server, owner.getUUID()) == null, "not a tick early");
-			Revenge.advance(server, 1);
+			// Far behind the culprit; a chunk here, as the test world is not loaded 5-10 chunks out.
+			MehburityConfig.Anger config = MehburityConfig.get().anger;
+			int minChunks = config.revengeMinChunks;
+			int maxChunks = config.revengeMaxChunks;
+			config.revengeMinChunks = 1;
+			config.revengeMaxChunks = 1;
+			try {
+				Revenge.advance(server, 1);
+			} finally {
+				config.revengeMinChunks = minChunks;
+				config.revengeMaxChunks = maxChunks;
+			}
 			MehburityEntity back = CompanionManager.find(server, owner.getUUID());
 			helper.assertTrue(back != null && back.isRaging() && back.getRageCulprit() == stranger, "back for its revenge");
-			helper.assertTrue(back.distanceTo(stranger) < 8.0F, "right behind the culprit");
+			double behind = Math.hypot(back.getX() - stranger.getX(), back.getZ() - stranger.getZ());
+			helper.assertTrue(behind > 12.0 && behind < 20.0, "a chunk behind the culprit, was " + behind);
+			helper.assertTrue(back.isApproaching(), "walking up to them, not blinking next to them");
 			helper.assertTrue(stranger.hasEffect(net.minecraft.world.effect.MobEffects.DARKNESS), "in the dark");
 			helper.assertTrue(back.isTalking(), "saying it came for its revenge");
 			CompanionRegistry.Companion after = CompanionRegistry.companion(server, owner.getUUID());

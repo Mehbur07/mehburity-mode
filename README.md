@@ -201,11 +201,14 @@ kükrer, işini bırakır, [canavar formuna](#canavar-formu) geçer ve **yalnız
 
 **İntikam:** Onu nöbete sokan bir **oyuncuysa** hemen saldırmaz. Tek kelime etmeden duman içinde **kaybolur** ve
 **3 Minecraft günü** ortalıkta görünmez: çağrılamaz (`/mehburity cagir` "hiçbir yerde yok… geri dönecek" der), sohbete
-cevap vermez. **4. gün**, günün rastgele bir anında, suçlunun **arkasında birden belirir**: ekran kararır, gök gürler
-ve kalın, boğuk bir sesle **"İntikamımı almaya geldim."** der, sonra canavara dönüşüp onu kovalar. Suçlu (ya da
+cevap vermez. **4. gün**, günün rastgele bir anında, suçlunun **5–10 chunk (80–160 blok) arkasında** birden belirir:
+ekran kararır, gök gürler, kafanın içinde kalın, boğuk bir ses **"İntikamımı almaya geldim."** der; uzaktan bir kükreme
+gelir ve canavar karanlıktan **yürüyerek** yaklaşır (ona bir kez yaklaşana kadar yanına ışınlanmaz, kaçmak için
+zamanın olur). O kadar uzak yer yüklü değilse yüklü olan en uzak yerde belirir. Suçlu (ya da
 sahibi) o sırada oyunda değilse, ikisi de oyundayken gelir. Uyuyarak ya da `/time add` ile geçen günler de sayılır;
 dünya kaydında tutulur, sunucu kapanınca unutulmaz. Yaratıklara (ör. sahibini öldüren zombi) hemen saldırır.
-`anger.revengeDays` ile gün sayısı değiştirilebilir (0: eskisi gibi hemen saldırır).
+`anger.revengeDays` ile gün sayısı, `anger.revengeMinChunks` / `revengeMaxChunks` ile uzaklık değiştirilebilir
+(gün 0: eskisi gibi hemen saldırır; uzaklık 0: hemen arkada belirir).
 
 Nöbet dört şekilde biter: suçlu ölünce, pasta veya özür göstergeyi 40'ın altına indirince, suçlu kaçınca (oyundan çıkar,
 başka boyuta geçer) ya da 90 saniye dolunca. Sonra Mehburity sahibinin yanına döner.
@@ -225,19 +228,20 @@ biraz sonra. Sunucu isterse `anger.makeUpCakeCooldownSeconds` ile pastayı seyre
 
 ### Canavar formu
 
-Öfke nöbetinde Mehburity **18 blok boyunda, iskelet gibi sıska, neon cyan bir iblise** dönüşür (Verity JE'nin
-canavarından esinlenmiştir; model ve dokular bu mod için sıfırdan yapılmıştır). Önce sırıtan küre olarak yere iner,
+Öfke nöbetinde Mehburity **18 blok boyunda, açlıktan kemikleri çıkmış, insan biçimli neon cyan bir iblise** dönüşür
+(ThatMob'un Verity'sinin canavar formu örnek alınmıştır; model ve dokular bu mod için sıfırdan yapılmıştır). Önce sırıtan küre olarak yere iner,
 titrer ve dumanlar içinde 2 saniyede büyür. Bu iki saniye, suçlunun kaçmak için kazandığı süredir.
 
 İblisin görünüşü:
 
-- **Gövde:** ince, uca doğru incelen uzuvlar ve eklemleri; derin bir kamburluk, kaburgaları görünen dar bir göğüs,
-  ince bir bel ve sırtından çıkan omur kabartıları.
-- **Kollar ve bacaklar:** dizlerin altına inen çok uzun kollar, ellerinde dörder uzun, kemiksi parmak; uzun parmaklı
-  ayaklar.
-- **Kafa:** yumurta biçimli cyan bir kafa, **içi boş kapkara gözler** ve **çarpık, dişli, geniş bir sırıtış**. Başını
-  yana yatık tutar, arada bir aniden seğirir; konuşurken ağzı açılır.
-- **Renk:** neon cyan, parmak uçları koyu turkuaz. Karanlıkta parlar.
+- **Gövde:** sıska bir insan bedeni: deri altından görünen kaburgalar ve göğüs kemiği, köprücük kemikleri, içine
+  çökmüş bir karın, ince bir bel ve sırtında omur kabartıları. Hafif kamburdur, boynu öne uzanır.
+- **Kollar ve bacaklar:** uzun ve ince; çıkık dizler ve dirsekler. Kollar dizlerin altına iner, ellerinde dört uzun,
+  eklemli parmak ve bir başparmak; uzun, ince ayaklar.
+- **Kafa:** insan biçimli bir kafa: geniş kafatası, çökük yanaklar, sivri bir çene. **İçi boş kapkara gözler**, iki
+  yarık burun deliği ve yanaktan yanağa uzanan, **iki sıra insan dişiyle** bir sırıtış. Başını biraz yana yatık tutar,
+  arada bir aniden seğirir; konuşurken dişleri aralanır.
+- **Renk:** neon cyan, parmak uçları koyu.
 
 - **Yürüyerek** kovalar: saniyede 6,5 blok, yani koşan bir oyuncudan hızlıdır. Blokların **içinden geçer**, hiçbir
   şeyi kırmaz. Ayakları yüzeydedir; suçlu yerin altına saklanırsa onun hizasına iner.
@@ -415,6 +419,7 @@ Bozuk bir dosya silinmez: `mehburity.json.broken` adıyla saklanır ve varsayıl
 | `anger.cakeCalm` / `apologyCalm` | 60 / 25 | Pastanın / özrün düşürdüğü öfke |
 | `anger.apologyCooldownSeconds` | 30 | Aynı oyuncunun özrü bu sürede bir sayılır |
 | `anger.revengeDays` | 3 | Bir oyuncuya öfkelenince bu kadar gün kaybolur, sonraki gün intikama gelir (0: hemen saldırır) |
+| `anger.revengeMinChunks` / `revengeMaxChunks` | 5 / 10 | İntikamda suçlunun bu kadar chunk arkasında belirip yürüyerek gelir (0 / 0: hemen arkada) |
 | `anger.makeUpCake` | true | Sakinleşince kızdığı oyuncudan özür diler ve ona pasta verir |
 | `anger.makeUpCakeCooldownSeconds` | 0 | Oyuncu başına bu sürede en fazla bir barışma pastası (0: her seferinde) |
 | `anger.rageDamage` / `rageCooldownTicks` / `rageSpeed` | 10 / 10 / 3.0 | Canavar formu kapalıyken nöbetteki ışın ve hız |
@@ -503,9 +508,10 @@ yeterli (`src/main/resources/assets/mehburity/` altında):
 | Dosya | Boyut | Ne |
 |---|---|---|
 | `textures/entity/mehburity/mehburity.png` | 256×128 | Mehburity küresi (eşdikdörtgen: ortası = yüz, üst kenar = tepe) |
-| `textures/entity/mehburity/mehburity_annoyed.png` / `_mad.png` / `_scared.png` | 256×128 | Sinirli / kızgın / korkmuş yüz (aynı düzen); kızgın yüz canavarın kafası |
+| `textures/entity/mehburity/mehburity_annoyed.png` / `_mad.png` / `_scared.png` | 256×128 | Sinirli / kızgın / korkmuş yüz (aynı düzen) |
+| `textures/entity/mehburity/mehburity_demon.png` / `_demon_talk.png` | 512×256 | Canavarın yüzü (küreyle aynı düzen) / konuşurken |
 | `textures/entity/mehburity/mehburity_angry.png` | 256×128 | Canavar formu kapalıyken öfke nöbetindeki kırmızı küre |
-| `textures/entity/mehburity/mehburity_monster.png` | 64×64 | Canavarın derisi: üst yarı gövde (her uzvun çevresine sarılır), alt yarı boynuz/pençe/diken |
+| `textures/entity/mehburity/mehburity_monster.png` | 256×512 | Canavarın derisi: üst yarı kollar/bacaklar, üçüncü çeyrek gövde (kalçadan boyna), son çeyrek eller/ayaklar; her parçanın çevresine sarılır, ön yüz u = 0,25 |
 | `textures/entity/mehburity/watcher.png` / `watcher_skin.png` | 256×128 / 64×64 | İzleyen iblisin kafası / derisi (canavarla aynı düzen) |
 | `textures/item/mehburity.png` | 16×16 | Envanterdeki Mehburity |
 | `textures/entity/mehburity/box.png` | 64×64 | Kutu (gövde 0,0; ön/arka kapaklar 0,24; yan kapaklar 0,32) |

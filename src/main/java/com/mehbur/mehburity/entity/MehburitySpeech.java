@@ -41,13 +41,16 @@ public final class MehburitySpeech {
 		sendVoice(player, message, speaker, false);
 	}
 
-	/** Like {@link #say}, but in a deep, slow, demonic voice (and dark red in chat): its revenge. */
+	/**
+	 * Like {@link #say}, but in a deep, slow, demonic voice (and dark red in chat): its revenge. The voice is heard at
+	 * full volume however far away {@code speaker} is, like a voice in the player's head.
+	 */
 	public static void sayDeep(ServerPlayer player, Component message, MehburityEntity speaker) {
 		player.sendSystemMessage(Component.empty()
 				.append(Component.literal("[Mehburity] ").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD))
 				.append(message.copy().withStyle(ChatFormatting.DARK_RED, ChatFormatting.ITALIC)));
 		speaker.talk(message.getString());
-		sendVoice(player, message, speaker, true);
+		sendVoice(player, message, null, true);
 	}
 
 	/** Moves the mouth of {@code player}'s Mehburity while it says {@code text}, if it is out in the world. */

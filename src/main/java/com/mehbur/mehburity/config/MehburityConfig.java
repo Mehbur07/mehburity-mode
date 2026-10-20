@@ -174,6 +174,12 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		 * back for them some time on the day after. 0: rages at once. Mobs are always hunted at once.
 		 */
 		public int revengeDays = 3;
+		/**
+		 * The revenge starts this many chunks behind the culprit (a random distance in between), and the demon walks
+		 * up to them from there. Closer when that is not loaded; 0 and 0: right behind them.
+		 */
+		public int revengeMinChunks = 5;
+		public int revengeMaxChunks = 10;
 		/** At most one make-up cake per player in this many seconds (0: every time it calms down). */
 		public int makeUpCakeCooldownSeconds = 0;
 		/** Words that count as insults when said to Mehburity (accents and case do not matter). */
@@ -392,6 +398,8 @@ public final class MehburityConfig implements JsonConfigFile.Sanitizable {
 		anger.apologyCooldownSeconds = Mth.clamp(anger.apologyCooldownSeconds, 0, 3600);
 		anger.makeUpCakeCooldownSeconds = Mth.clamp(anger.makeUpCakeCooldownSeconds, 0, 86400);
 		anger.revengeDays = Mth.clamp(anger.revengeDays, 0, 30);
+		anger.revengeMinChunks = Mth.clamp(anger.revengeMinChunks, 0, 32);
+		anger.revengeMaxChunks = Mth.clamp(anger.revengeMaxChunks, anger.revengeMinChunks, 32);
 		anger.rageDamage = Mth.clamp(anger.rageDamage, 0.0, 1000.0);
 		anger.rageCooldownTicks = Mth.clamp(anger.rageCooldownTicks, 0, 200);
 		anger.rageSpeed = Mth.clamp(anger.rageSpeed, 0.1, 10.0);

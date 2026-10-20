@@ -619,7 +619,7 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		context.waitTicks(10);
 		context.takeScreenshot("mehburity-a2-calmed");
 
-		// Revenge: driven into a rage, it vanishes; brought back early, it appears behind the player in the dark.
+		// Revenge: driven into a rage, it vanishes; brought back early, it appears far behind the player in the dark.
 		server.runOnServer(s -> Anger.provoke(CompanionManager.find(s, playerId), s.getPlayerList().getPlayer(playerId), 100.0));
 		if (server.computeOnServer(s -> CompanionManager.find(s, playerId) != null)) {
 			throw new AssertionError("driven into a rage at a player, Mehburity must vanish");
@@ -628,7 +628,7 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		server.runCommand("mehburity intikam");
 		server.waitFor(s -> CompanionManager.find(s, playerId) != null && CompanionManager.find(s, playerId).isRaging(), 100);
 		context.waitTicks(15);
-		context.getInput().lookAt(yaw + 180.0F, -25.0F);
+		context.getInput().lookAt(yaw + 180.0F, -6.0F);
 		context.waitTicks(30);
 		context.takeScreenshot("mehburity-r1-revenge");
 		server.runOnServer(s -> Anger.endRage(CompanionManager.find(s, playerId), Anger.RageEnd.FORCED));

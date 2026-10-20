@@ -377,7 +377,11 @@ public final class Anger {
 			endRage(mehburity, RageEnd.TIMEOUT);
 			return;
 		}
-		if (mehburity.distanceToSqr(culprit) > CHASE_BLINK_DISTANCE * CHASE_BLINK_DISTANCE) {
+		boolean far = mehburity.distanceToSqr(culprit) > CHASE_BLINK_DISTANCE * CHASE_BLINK_DISTANCE;
+		if (mehburity.isApproaching()) {
+			// Coming from far away for its revenge: it walks the whole way, and blinks only once it got close.
+			mehburity.setApproaching(far);
+		} else if (far) {
 			ServerLevel level = (ServerLevel) mehburity.level();
 			level.sendParticles(ParticleTypes.LARGE_SMOKE, mehburity.getX(), mehburity.getY() + 0.4, mehburity.getZ(), 15, 0.3, 0.3, 0.3, 0.02);
 			// Lands a few steps behind them: the demon farther back, the ball close by.
