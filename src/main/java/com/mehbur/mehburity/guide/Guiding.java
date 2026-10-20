@@ -106,6 +106,16 @@ public final class Guiding {
 		MehburitySpeech.say(owner, MehburitySpeech.text("guide.lost", "You went somewhere else, so I stopped leading the way."));
 	}
 
+	/** There is no way a player can walk (or swim) there from here. */
+	static void noWay(MehburityEntity mehburity, ServerPlayer owner) {
+		GuideJob job = mehburity.getGuideJob();
+		mehburity.setGuideJob(null);
+		mehburity.getNavigation().stop();
+		MehburitySpeech.say(owner, MehburitySpeech.text("guide.no_way",
+				"I can't find a way to the %s on foot from here. Maybe from somewhere else?",
+				job == null ? Component.empty() : name(job.destination())));
+	}
+
 	/** Nudges the owner to keep up. */
 	static void callOwner(ServerPlayer owner) {
 		MehburitySpeech.say(owner, MehburitySpeech.text("guide.follow", "Come on, follow me! This way."));

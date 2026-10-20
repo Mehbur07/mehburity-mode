@@ -219,5 +219,6 @@
 	"mehburity.direction.south": "güney",
 	"mehburity.direction.southwest": "güneybatı",
 	"mehburity.direction.west": "batı",
-	"mehburity.direction.northwest": "kuzeybatı"
+	"mehburity.direction.northwest": "kuzeybatı",
+	"mehburity.speech.guide.no_way": "Buradan %s tarafına yürüyerek gidilecek bir yol bulamıyorum. Belki başka bir yerden?"
 }

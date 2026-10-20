@@ -219,5 +219,6 @@
 	"mehburity.direction.south": "south",
 	"mehburity.direction.southwest": "southwest",
 	"mehburity.direction.west": "west",
-	"mehburity.direction.northwest": "northwest"
+	"mehburity.direction.northwest": "northwest",
+	"mehburity.speech.guide.no_way": "I can't find a way to the %s on foot from here. Maybe from somewhere else?"
 }

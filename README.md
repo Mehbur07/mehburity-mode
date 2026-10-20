@@ -298,7 +298,15 @@ gösterir. Sen onu takip edersin:
 
 - 12 bloktan fazla geride kalırsan durur, sana döner ve bekler; bir süre gelmezsen *"Hadi, beni takip et! Bu
   taraftan."* der. Yanına gelince yola devam eder.
-- Önüne bir engel çıkarsa etrafından dolaşmayı dener; geçemezse ışık saçarak biraz ileri sıçrar.
+- **Sadece senin yürüyebileceğin yollardan** götürür. Rotayı A\* algoritmasıyla, Minecraft botu Baritone'un yaptığı
+  gibi 64 blokluk parçalar halinde planlar (sıradaki parçayı önceden hesaplar). Bir oyuncunun sığdığı yerler (2 blok
+  yükseklik), en fazla 1 blok tırmanma ve 3 blok düşme sayılır. Köşeden kesmez; yapraklara, çitlere, duvarlara, örümcek
+  ağına, lava, ateşe, kaktüse ve magmaya girmez. Su yüzeyinde yüzmek pahalıdır, köy patikaları tercih edilir.
+  Çıkmaz sokağa girmez, girerse geri dönüp başka yol bulur; asla blokların içinden ışınlanmaz.
+- **Rota yerde görünür:** senden başlayıp onun önünden devam eden neon cyan noktalar (Google Maps'teki çizgi gibi,
+  sadece sen görürsün).
+- Yürüyerek ya da yüzerek gidilebilecek hiçbir yol yoksa *"Buradan köy tarafına yürüyerek gidilecek bir yol
+  bulamıyorum."* der ve durur.
 - Yapıya 24 blok yaklaşınca *"İşte geldik, köy burada!"* der. Yer altındaki yapılarda (kale, maden ocağı, antik şehir,
   deneme odaları, gömülü hazine, patika harabeleri) *"tam altımızda! Aşağı kazman gerekecek."* der.
 - "dur", "vazgeç" ya da "stop" ile bırakır. Kazma ya da ev yapma emri de yol göstermeyi bitirir. Başka bir boyuta
@@ -576,7 +584,7 @@ src/main/java/com/mehbur/mehburity/
   combat/   Hedef kuralları (CombatTargets), hedef seçimi, ışın saldırısı, hasar tipleri
   mining/   Kurallar, kazma hedefi (MineGoal), çanta (MiningBag), sohbet emirleri
   build/    Plan (HousePlan), stiller, inşaat hedefi (BuildGoal), geri alma (Building), sohbet emirleri
-  guide/    Yapı bulma (Destination, Guiding), önden gitme hedefi (GuideGoal), sohbet emirleri (GuideChat)
+  guide/    Yapı bulma (Destination, Guiding), yürünebilir rota (RoutePlanner, A*), önden gitme (GuideGoal), sohbet (GuideChat)
   anger/    Öfke göstergesi ve nöbet (Anger), suçluyu hedefleme, canavar formu (MonsterGoal), özür/hakaret (AngerChat)
   verity/   Verity modülü (VerityFeature): kutu, karanlık, el feneri (FlashlightItem/Feature),
             korku olayları (EventsFeature) ve izleyen iblis (WatcherEntity)

@@ -14,8 +14,6 @@ public final class GuideJob {
 	private final ResourceKey<Level> dimension;
 	/** Ticks spent waiting for the owner to catch up. */
 	int waitTicks;
-	/** 0 straight at the target; otherwise the n-th way round an obstacle. */
-	int detour;
 
 	public GuideJob(Destination destination, BlockPos target, ResourceKey<Level> dimension) {
 		this.destination = destination;

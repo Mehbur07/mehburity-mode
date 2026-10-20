@@ -468,7 +468,13 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 		if (rolled < 3.0) {
 			throw new AssertionError("Mehburity must roll off ahead towards the village, moved " + rolled);
 		}
+		// Looking at it, without the HUD: the dotted route on the ground leads past it towards the village.
+		BlockPos ahead = server.computeOnServer(s -> CompanionManager.find(s, playerId).blockPosition());
+		context.getInput().pressKey(options -> options.keyToggleGui);
+		context.getInput().lookAt(ahead);
+		context.waitTicks(20);
 		context.takeScreenshot("mehburity-g1-guiding");
+		context.getInput().pressKey(options -> options.keyToggleGui);
 		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, dur"));
 		server.waitFor(s -> CompanionManager.find(s, playerId).getGuideJob() == null, 100);
 	}
