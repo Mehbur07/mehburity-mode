@@ -20,6 +20,7 @@ elinde bir el feneri vardır ve karanlıkta… bazen yalnız değilsindir.
    - [Savaş](#savaş)
    - [Madencilik](#madencilik)
    - [Ev yapma](#ev-yapma)
+   - [Yol gösterme](#yol-gösterme)
    - [Öfke](#öfke)
    - [Canavar formu](#canavar-formu)
    - [Verity modülü](#verity-modülü): kutu, karanlık, el feneri, korku olayları, yüz ifadeleri
@@ -104,6 +105,9 @@ Emirler Gemini'ye gitmeden anlaşılır, büyük/küçük harf ve Türkçe karak
 | iki katlı, havuzlu, kırmızı çatılı beyaz bir ev yap | **Tarif ettiğin evi** tasarlayıp yapar | — |
 | inşaatı durdur / stop building | Yarıda bırakır | `/mehburity ev dur` |
 | evi geri al / remove the house | Evi kaldırır, araziyi eski haline getirir | `/mehburity ev geri` |
+| beni en yakın köye götür / take me to the nearest village | En yakın köyü bulup **önden gider**, sen onu takip edersin | `/mehburity gotur koy` |
+| en yakın kaleye / çöl tapınağına / antik şehre… yol göster | Aynısı, o yapı için | `/mehburity gotur kale` … |
+| dur / vazgeç / stop (yol gösterirken) | Yol göstermeyi bırakır | `/mehburity gotur dur` |
 | özür dilerim, affet, pardon, sorry | Öfkesini azaltır (−25) | – |
 | aptal, salak, I hate you… | Kızdırır (+15) | – |
 
@@ -286,6 +290,28 @@ ile istedikleri olayı hemen başlatabilir.
 **Yüz ifadeleri.** Mehburity'nin yüzü duruma göre değişir: **mutlu** (normal), **sinirli** (düz ağız, öfke 33+),
 **kızgın** (öfke 66+), **öfke nöbeti** (kırmızı) ve **korkmuş** (kocaman gözler, korku olaylarında).
 
+### Yol gösterme
+
+"Mehburity, beni en yakın köye götür" dediğinde en yakın köyü `/locate` gibi bulur, ne kadar uzakta ve hangi yönde
+olduğunu söyler (*"En yakın köy 272 blok uzakta, güneydoğu yönünde. Beni takip et!"*) ve **önden yuvarlanarak** yolu
+gösterir. Sen onu takip edersin:
+
+- 12 bloktan fazla geride kalırsan durur, sana döner ve bekler; bir süre gelmezsen *"Hadi, beni takip et! Bu
+  taraftan."* der. Yanına gelince yola devam eder.
+- Önüne bir engel çıkarsa etrafından dolaşmayı dener; geçemezse ışık saçarak biraz ileri sıçrar.
+- Yapıya 24 blok yaklaşınca *"İşte geldik, köy burada!"* der. Yer altındaki yapılarda (kale, maden ocağı, antik şehir,
+  deneme odaları, gömülü hazine, patika harabeleri) *"tam altımızda! Aşağı kazman gerekecek."* der.
+- "dur", "vazgeç" ya da "stop" ile bırakır. Kazma ya da ev yapma emri de yol göstermeyi bitirir. Başka bir boyuta
+  geçersen bırakır. Kavga çıkarsa önce savaşır, sonra yola devam eder.
+- En fazla 100 chunk uzağa bakar (`/locate` ile aynı). Bulamazsa *"Yakınlarda hiç köy bulamadım."* der.
+
+Gidebileceği yerler (`/mehburity gotur <ad>`): köy (`koy`), kale (`kale`; Nether'deyken Nether kalesi), Nether kalesi
+(`nether_kalesi`), bastion (`bastion`), End şehri (`end_sehri`), antik şehir (`antik_sehir`), okyanus anıtı
+(`okyanus_aniti`), okyanus harabesi (`okyanus_harabesi`), orman konağı (`orman_konagi`), çöl tapınağı (`col_tapinagi`),
+orman tapınağı (`orman_tapinagi`), cadı kulübesi (`cadi_kulubesi`), iglo (`iglo`), yağmacı karakolu (`karakol`), batık
+gemi (`batik_gemi`), harap portal (`harap_portal`), maden ocağı (`maden_ocagi`), patika harabeleri
+(`patika_harabeleri`), deneme odaları (`deneme_odalari`), gömülü hazine (`gomulu_hazine`).
+
 ## Komutlar
 
 Alt komutlar ASCII yazılır (komut ayrıştırıcısı "ç, ğ" gibi harfleri kabul etmez).
@@ -301,6 +327,7 @@ Alt komutlar ASCII yazılır (komut ayrıştırıcısı "ç, ğ" gibi harfleri k
 | `/mehburity ver` / `canta` | herkes | Kazdıklarını verir / çantayı söyler |
 | `/mehburity ev [ahsap\|tas\|tugla\|elimdeki]` | herkes | Ev yapar |
 | `/mehburity ev dur` / `ev geri` | herkes | İnşaatı durdurur / son evi kaldırır |
+| `/mehburity gotur <yer>` / `gotur dur` | herkes | En yakın yapıya önden gider / yol göstermeyi bırakır |
 | `/mehburity ofke` | herkes | Ne kadar kızgın olduğunu söyler |
 | `/mehburity ayarlar` | herkes | Ayarlar ekranını açar (Gemini anahtarı, ses) |
 | `/mehburity sakin` | OP | Yüklü tüm Mehburity'leri sakinleştirir, öfke nöbetlerini bitirir, bekleyen intikamları iptal eder |
@@ -549,6 +576,7 @@ src/main/java/com/mehbur/mehburity/
   combat/   Hedef kuralları (CombatTargets), hedef seçimi, ışın saldırısı, hasar tipleri
   mining/   Kurallar, kazma hedefi (MineGoal), çanta (MiningBag), sohbet emirleri
   build/    Plan (HousePlan), stiller, inşaat hedefi (BuildGoal), geri alma (Building), sohbet emirleri
+  guide/    Yapı bulma (Destination, Guiding), önden gitme hedefi (GuideGoal), sohbet emirleri (GuideChat)
   anger/    Öfke göstergesi ve nöbet (Anger), suçluyu hedefleme, canavar formu (MonsterGoal), özür/hakaret (AngerChat)
   verity/   Verity modülü (VerityFeature): kutu, karanlık, el feneri (FlashlightItem/Feature),
             korku olayları (EventsFeature) ve izleyen iblis (WatcherEntity)

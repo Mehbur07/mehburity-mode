@@ -4,6 +4,7 @@ import com.mehbur.mehburity.ai.AiRouter;
 import com.mehbur.mehburity.ai.GameEvents;
 import com.mehbur.mehburity.anger.Anger;
 import com.mehbur.mehburity.build.Building;
+import com.mehbur.mehburity.guide.Guiding;
 import com.mehbur.mehburity.command.MehburityCommands;
 import com.mehbur.mehburity.config.MehburityConfig;
 import com.mehbur.mehburity.entity.CompanionManager;
@@ -48,6 +49,7 @@ public final class MehburityMod implements ModInitializer {
 		GameEvents.register();
 		AiRouter.register();
 		Anger.register(); // first: apologies and insults are heard before any other chat order
+		Guiding.register(); // before building and mining: "en yakin maden ocagina gotur" is not a mining order
 		Building.register(); // before mining: "ev yap" is the more specific chat order
 		Mining.register();
 		VerityFeatures.registerAll();

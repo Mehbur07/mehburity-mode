@@ -220,6 +220,7 @@ public final class Anger {
 	static void startRage(MehburityEntity mehburity, LivingEntity culprit, @Nullable Component line) {
 		mehburity.setMiningJob(null);
 		mehburity.setBuildJob(null);
+		mehburity.setGuideJob(null);
 		mehburity.setRageCulprit(culprit);
 		set(mehburity, 100.0F);
 		ServerLevel level = (ServerLevel) mehburity.level();

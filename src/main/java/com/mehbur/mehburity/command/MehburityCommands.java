@@ -13,6 +13,8 @@ import com.mehbur.mehburity.entity.CompanionMode;
 import com.mehbur.mehburity.entity.CompanionRegistry;
 import com.mehbur.mehburity.entity.MehburityEntity;
 import com.mehbur.mehburity.entity.MehburitySpeech;
+import com.mehbur.mehburity.guide.Destination;
+import com.mehbur.mehburity.guide.Guiding;
 import com.mehbur.mehburity.mining.Mining;
 import com.mehbur.mehburity.network.OpenSettingsPayload;
 import com.mehbur.mehburity.verity.EventsFeature;
@@ -66,6 +68,7 @@ public final class MehburityCommands {
 						.then(Commands.literal("agac").executes(ctx -> mining(ctx, Mining::startTree)))
 						.then(Commands.literal("dur").executes(ctx -> mining(ctx, Mining::stop))))
 				.then(houseCommand())
+				.then(guideCommand())
 				.then(Commands.literal("ver").executes(ctx -> mining(ctx, Mining::give)))
 				.then(Commands.literal("canta").executes(ctx -> mining(ctx, Mining::list)))
 				.then(Commands.literal("ofke").executes(MehburityCommands::angerStatus))
@@ -230,7 +233,17 @@ public final class MehburityCommands {
 		return house;
 	}
 
-	/** Job subcommands (mining, building); the action itself answers the player. */
+	/** {@code /mehburity gotur <yer>}: leads the way to the nearest one; {@code gotur dur} stops. */
+	private static LiteralArgumentBuilder<CommandSourceStack> guideCommand() {
+		LiteralArgumentBuilder<CommandSourceStack> guide = Commands.literal("gotur")
+				.then(Commands.literal("dur").executes(ctx -> mining(ctx, Guiding::stop)));
+		for (Destination destination : Destination.values()) {
+			guide.then(Commands.literal(destination.id()).executes(ctx -> mining(ctx, player -> Guiding.start(player, destination))));
+		}
+		return guide;
+	}
+
+	/** Job subcommands (mining, building, guiding); the action itself answers the player. */
 	private static int mining(CommandContext<CommandSourceStack> ctx, Predicate<ServerPlayer> action) throws CommandSyntaxException {
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		if (CompanionRegistry.companion(player.level().getServer(), player.getUUID()) == null) {

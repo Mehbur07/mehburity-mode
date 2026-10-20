@@ -120,6 +120,7 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 			context.waitTicks(20);
 			context.takeScreenshot("mehburity-8-rejoined");
 		}
+		checkGuiding(context);
 		MehburityMod.LOGGER.info("Mehburity client game test passed");
 	}
 
@@ -434,6 +435,44 @@ public final class MehburityClientGameTest implements FabricClientGameTest {
 	}
 
 	/** "Mehburity, taş ev yap" from the real chat, a look at the house, then "evi geri al". */
+	/**
+	 * "Take me to the nearest village": a real structure search, in a world of its own (the usual test world has no
+	 * structures). Mehburity finds the village and rolls off ahead of the player, who stays put.
+	 */
+	private static void checkGuiding(ClientGameTestContext context) {
+		try (TestSingleplayerContext singleplayer = context.worldBuilder().adjustSettings(settings -> settings.setGenerateStructures(true)).create()) {
+			TestServerContext server = singleplayer.getServer();
+			singleplayer.getConnection().waitForChunksRender();
+			server.runCommand("time set noon");
+			UUID playerId = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().getUUID());
+			server.waitFor(s -> CompanionRegistry.box(s, playerId) != null, 100);
+			server.runOnServer(s -> {
+				ServerPlayer player = s.getPlayerList().getPlayer(playerId);
+				if (s.overworld().getEntity(CompanionRegistry.box(s, playerId)) instanceof MehburityBoxEntity box) {
+					box.interact(player, InteractionHand.MAIN_HAND, Vec3.ZERO);
+				}
+			});
+			server.waitFor(s -> CompanionManager.find(s, playerId) != null && !CompanionManager.find(s, playerId).isEmerging(), 300);
+			checkGuiding(context, server, playerId);
+		}
+	}
+
+	private static void checkGuiding(ClientGameTestContext context, TestServerContext server, UUID playerId) {
+		Vec3 start = server.computeOnServer(s -> CompanionManager.find(s, playerId).position());
+		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, beni en yakın köye götür"));
+		server.waitFor(s -> CompanionManager.find(s, playerId).getGuideJob() != null, 200);
+		BlockPos village = server.computeOnServer(s -> CompanionManager.find(s, playerId).getGuideJob().target());
+		MehburityMod.LOGGER.info("Mehburity leads the way to the village at {}", village);
+		context.waitTicks(80);
+		double rolled = server.computeOnServer(s -> CompanionManager.find(s, playerId).position().distanceTo(start));
+		if (rolled < 3.0) {
+			throw new AssertionError("Mehburity must roll off ahead towards the village, moved " + rolled);
+		}
+		context.takeScreenshot("mehburity-g1-guiding");
+		context.runOnClient(mc -> mc.player.connection.sendChat("Mehburity, dur"));
+		server.waitFor(s -> CompanionManager.find(s, playerId).getGuideJob() == null, 100);
+	}
+
 	private static void checkBuilding(ClientGameTestContext context, TestServerContext server, UUID playerId) {
 		double speed = server.computeOnServer(s -> MehburityConfig.get().build.blocksPerSecond);
 		server.runOnServer(s -> MehburityConfig.get().build.blocksPerSecond = 120.0);

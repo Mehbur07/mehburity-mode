@@ -259,6 +259,7 @@ public final class CompanionManager {
 		}
 		mehburity.setMiningJob(null);
 		mehburity.setBuildJob(null);
+		mehburity.setGuideJob(null);
 		mehburity.discard();
 	}
 

@@ -8,6 +8,8 @@ import com.mehbur.mehburity.build.BuildJob;
 import com.mehbur.mehburity.combat.BeamAttackGoal;
 import com.mehbur.mehburity.combat.DefendOwnerTargetGoal;
 import com.mehbur.mehburity.config.MehburityConfig;
+import com.mehbur.mehburity.guide.GuideGoal;
+import com.mehbur.mehburity.guide.GuideJob;
 import com.mehbur.mehburity.mining.MineGoal;
 import com.mehbur.mehburity.mining.MiningJob;
 import net.minecraft.core.BlockPos;
@@ -104,6 +106,8 @@ public class MehburityEntity extends PathfinderMob {
 	private @Nullable MiningJob miningJob;
 	/** The house it is building; not saved either. */
 	private @Nullable BuildJob buildJob;
+	/** Where it is leading its owner; not saved either. */
+	private @Nullable GuideJob guideJob;
 	/** Whom it is raging at; not saved (a rage ends with the session). */
 	private @Nullable LivingEntity rageCulprit;
 	private int rageTicks;
@@ -163,6 +167,7 @@ public class MehburityEntity extends PathfinderMob {
 		// Jobs pause for fights and keep following from pulling it away from the work. Only one job runs at a time.
 		this.goalSelector.addGoal(2, new BuildGoal(this));
 		this.goalSelector.addGoal(2, new MineGoal(this));
+		this.goalSelector.addGoal(2, new GuideGoal(this));
 		this.goalSelector.addGoal(3, new FollowOwnerGoal(this));
 		this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
 		this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
@@ -226,6 +231,9 @@ public class MehburityEntity extends PathfinderMob {
 
 	public void setMiningJob(@Nullable MiningJob job) {
 		this.miningJob = job;
+		if (job != null) {
+			this.guideJob = null; // one job at a time
+		}
 	}
 
 	// ---------------------------------------------------------------- anger
@@ -375,6 +383,17 @@ public class MehburityEntity extends PathfinderMob {
 
 	public void setBuildJob(@Nullable BuildJob job) {
 		this.buildJob = job;
+		if (job != null) {
+			this.guideJob = null; // one job at a time
+		}
+	}
+
+	public @Nullable GuideJob getGuideJob() {
+		return guideJob;
+	}
+
+	public void setGuideJob(@Nullable GuideJob job) {
+		this.guideJob = job;
 	}
 
 	// ---------------------------------------------------------------- emerge animation
@@ -535,7 +554,8 @@ public class MehburityEntity extends PathfinderMob {
 	@Override
 	protected void customServerAiStep(ServerLevel level) {
 		super.customServerAiStep(level);
-		if (talkTicks <= 0 || isMonster() || this.getTarget() != null || miningJob != null || buildJob != null) {
+		if (talkTicks <= 0 || isMonster() || this.getTarget() != null || miningJob != null || buildJob != null
+				|| guideJob != null) {
 			return;
 		}
 		ServerPlayer owner = getOwnerPlayer();
