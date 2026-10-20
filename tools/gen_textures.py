@@ -197,65 +197,174 @@ def dot(a, b):
     return sum(x * y for x, y in zip(a, b))
 
 
-def demon_face_ink(open_mouth: bool):
-    """The demon's face: big empty black eyes and a wide, crooked grin full of jagged teeth.
-
-    The grin is tilted (one corner higher than the other), which is what makes it look wrong.
-    """
-
-    def ink(fx: float, fy: float) -> bool:
-        for ex in (-0.27, 0.27):
-            # Tall, slightly drooping hollow eyes, the outer side lower.
-            dy = fy + 0.2 - 0.05 * (abs(fx) - 0.27) / 0.12
-            if ((fx - ex) / 0.135) ** 2 + (dy / 0.23) ** 2 <= 1.0:
-                return True
-        half = 0.66
-        if abs(fx) >= half:
-            return False
-        k = 1.0 - (fx / half) ** 2
-        twist = 0.08 * fx
-        top = 0.1 + 0.05 * k - twist
-        bottom = 0.13 + (0.45 if open_mouth else 0.34) * k - twist
-        if not top < fy < bottom:
-            return False
-        # Jagged teeth: triangles hanging from the top, smaller ones standing on the bottom.
-        saw = 1.0 - abs(((fx + 1.0) * 14.0) % 2.0 - 1.0)
-        if fy < top + 0.06 * saw * min(1.0, k * 3.0):
-            return False
-        if fy > bottom - 0.04 * saw * min(1.0, k * 3.0):
-            return False
-        return True
-
-    return ink
+DEMON_SKIN = (0, 228, 245)
 
 
-def monster_skin(width: int, height: int):
-    """The rage form's skin. Top half: smooth neon cyan with a faint glow along the limbs. Third quarter: deep
-    teal for the long fingers and toes. Last quarter: the ribcage, dark bands across the chest."""
+def shade(rgb, amount: float, n: int = 0):
+    """rgb darkened (amount < 1) or brightened, with a little noise, as an opaque pixel."""
+    return tuple(max(0, min(255, int(c * amount) + (n if c else 0))) for c in rgb) + (255,)
+
+
+def smoothstep(edge0: float, edge1: float, x: float) -> float:
+    t = max(0.0, min(1.0, (x - edge0) / (edge1 - edge0)))
+    return t * t * (3.0 - 2.0 * t)
+
+
+def supersampled(width: int, height: int, sample, n: int = 3):
+    """px(x, y) averaging sample(u, v) -> (r, g, b) over n x n points inside each texel, for smooth edges."""
 
     def px(x, y):
-        n = noise(x, y) // 3
-        if y >= height * 3 // 4:
-            t = (y - height * 3 // 4) / (height // 4)
-            rib = (t * 6.0) % 1.0 < 0.32 and abs((x % 32) - 16) > 3  # broken at the breastbone
-            if rib:
-                return (0, 120 + n, 140 + n, 255)
-            return (10, min(255, 205 + n), min(255, 228 + n), 255)
-        if y >= height // 2:
-            t = (y - height // 2) / (height // 4 - 1)  # darker towards the tips
-            return (0, max(0, int(110 - 50 * t) + n), max(0, int(130 - 50 * t) + n), 255)
-        # A soft brighter band down the middle of each face (u), like light running along the limb.
-        band = 1.0 - abs((x % 16) - 7.5) / 7.5
-        return (int(20 * band), min(255, 214 + int(30 * band) + n), min(255, 234 + int(20 * band) + n), 255)
+        acc = [0.0, 0.0, 0.0]
+        for i in range(n):
+            for j in range(n):
+                c = sample((x + (i + 0.5) / n) / width, (y + (j + 0.5) / n) / height)
+                for k in range(3):
+                    acc[k] += c[k]
+        return tuple(int(a / (n * n)) for a in acc) + (255,)
 
     return px
 
 
-def watcher_skin(width: int, height: int):
-    """The watcher's skin: near-black with glowing red veins on top, plain dark for horns and claws below."""
+# Torso rings of MehburityMonsterModel.TORSO, bottom and top: the torso band of the skin spans these heights.
+TORSO_BOTTOM, TORSO_TOP = -0.8, 5.85
+
+
+def monster_skin(width: int, height: int, base=DEMON_SKIN):
+    """The rage form's skin, laid out for MehburityMonsterModel (u goes round each part, the front at u = 0.25).
+
+    Top half: the limbs, plain skin lit a little brighter at the front. Third quarter: the torso, from below the hips
+    (top rows) to the neck: ribs showing through the chest and sides, the breastbone, a hollow belly, collar bones
+    and the knobs of the spine at the back. Last quarter: hands and feet, darker towards the finger tips.
+    """
 
     def px(x, y):
-        if y >= height // 2:
+        u = (x + 0.5) / width
+        v = (y + 0.5) / height
+        n = noise(x, y) // 3
+        a = u * 2 * math.pi
+        s = (a - math.pi / 2 + math.pi) % (2 * math.pi) - math.pi  # 0 at the front, +-pi at the back
+        if v < 0.5:
+            return shade(base, 0.9 + 0.1 * math.cos(s), n)
+        if v >= 0.75:
+            t = (v - 0.75) / 0.25
+            return shade(base, 0.95 - 0.45 * smoothstep(0.82, 1.0, t), n)
+
+        h = TORSO_BOTTOM + (v - 0.5) / 0.25 * (TORSO_TOP - TORSO_BOTTOM)
+        light = 0.9 + 0.1 * math.cos(s)
+        side = abs(s)
+        # Ribs: bright bones with dark gaps between them, sloping down from the breastbone round the sides and
+        # rising again towards the spine.
+        drop = 0.4 * min(side, 1.7) / 1.7 - (0.3 * (side - 1.7) / 1.4 if side > 1.7 else 0.0)
+        rib_zone = smoothstep(2.0, 2.5, h + drop) * (1.0 - smoothstep(4.7, 5.0, h + drop))
+        if side < 0.13:
+            rib_zone *= 0.15  # the breastbone
+        ribs = 0.5 + 0.5 * math.cos((h + drop - 2.6) / 0.42 * 2 * math.pi)
+        light *= 1.0 - rib_zone * 0.17 * (1.0 - ribs) ** 2
+        if side < 0.17 and 2.4 < h < 4.9:
+            light *= 0.94 if side > 0.12 else 1.02
+        # The belly caves in under the ribcage; a dark line runs down its middle.
+        if side < 1.2 and 0.7 < h < 2.3:
+            light *= 1.0 - 0.14 * math.sin((h - 0.7) / 1.6 * math.pi) * (1.0 - side / 1.2)
+            if side < 0.03:
+                light *= 0.9
+        # Collar bones, with the hollow under them.
+        if side < 1.4:
+            collar = 5.25 - 0.12 * side
+            d = h - collar
+            if -0.16 < d < 0:
+                light *= 0.78
+            elif 0 <= d < 0.07:
+                light *= 1.08
+        # The spine: a row of knobs down the back.
+        if side > math.pi - 0.16 and 0.4 < h < 5.4:
+            knob = 0.5 + 0.5 * math.cos((h - 0.4) / 0.36 * 2 * math.pi)
+            light *= 0.75 + 0.3 * knob
+        return shade(base, light, n)
+
+    return px
+
+
+def demon_face(width: int, height: int, open_mouth: bool, base=DEMON_SKIN):
+    """The demon's head (equirectangular, like the sphere textures): a gaunt human face.
+
+    Hollow black eyes sunk into dark sockets, two slit nostrils, hollow cheeks, and a grin stretched from cheek to
+    cheek over two rows of human teeth, the corners pulled up. Talking opens the rows apart over a black throat.
+    """
+    eye_x, eye_y = 0.31, -0.13
+    half = 0.6
+
+    def mouth_center(fx):
+        return 0.37 - 0.17 * (fx / half) ** 2
+
+    def sample(u, v):
+        theta = v * math.pi
+        phi = (u - 0.5) * 2 * math.pi
+        dx = math.sin(theta) * math.sin(phi)
+        dy = math.cos(theta)
+        dz = math.sin(theta) * math.cos(phi)
+        light = 0.86 + 0.14 * max(0.0, dz)
+        if dz <= 0.05:
+            return shade(base, light)[:3]
+        fx, fy = dx, -dy
+        # Hollow cheeks and temples.
+        for cx in (-0.43, 0.43):
+            d = ((fx - cx) / 0.16) ** 2 + ((fy - 0.16) / 0.2) ** 2
+            light *= 1.0 - 0.22 * math.exp(-d)
+        # Eyes: a black hollow inside a socket that darkens towards it. The outer corners droop.
+        for ex in (-eye_x, eye_x):
+            ey = eye_y + 0.03 * (abs(fx) - eye_x) / 0.1
+            e = math.hypot((fx - ex) / 0.13, (fy - ey) / 0.17)
+            if e <= 1.0:
+                return (4, 4, 8)
+            if e < 1.7:
+                light *= 0.35 + 0.65 * smoothstep(1.0, 1.7, e)
+        # Nose: two slit nostrils and a little shadow under them.
+        for nx in (-0.055, 0.055):
+            if ((fx - nx) / 0.022) ** 2 + ((fy - 0.11) / 0.04) ** 2 <= 1.0:
+                return (6, 20, 26)
+        if abs(fx) < 0.09 and 0.14 < fy < 0.17:
+            light *= 0.85
+        # Creases from the nose round the mouth.
+        for side in (-1, 1):
+            cx, cy, r = side * 0.2, 0.36, 0.33
+            d = math.hypot(fx - cx, fy - cy) - r
+            if abs(d) < 0.012 and side * fx > 0.3 and fy < 0.36:
+                light *= 0.72
+        # The grin.
+        if abs(fx) < half + 0.02:
+            k = max(0.0, 1.0 - (fx / half) ** 2)
+            cy = mouth_center(fx)
+            hh = (0.16 if open_mouth else 0.09) * math.sqrt(k) + 0.006
+            d = fy - cy
+            if abs(d) < hh:
+                gap = hh * 0.55 if open_mouth else 0.008
+                if abs(d) < gap:
+                    return (4, 2, 4)
+                # Teeth: about eighteen across, the front ones broadest, each with rounded tips.
+                tx = math.asin(max(-1.0, min(1.0, fx / half))) / (math.pi / 2)
+                k_teeth = tx * 9.0 + 0.5
+                frac = k_teeth - math.floor(k_teeth)
+                edge = min(frac, 1.0 - frac)
+                if edge < 0.07:
+                    return (30, 34, 34)
+                tip = abs(d) - gap
+                if tip < 0.014 and edge < 0.07 + (0.014 - tip) * 9.0:
+                    return (8, 6, 8)
+                depth = 1.0 - 0.45 * abs(tx) ** 2.5
+                tooth = (236, 232, 214)
+                return tuple(int(c * depth) for c in tooth)
+            if abs(d) < hh + 0.02:
+                return shade((0, 80, 95), 1.0)[:3]
+        return shade(base, light)[:3]
+
+    return supersampled(width, height, sample)
+
+
+def watcher_skin(width: int, height: int):
+    """The watcher's skin: near-black with glowing red veins on the limbs and torso, plain dark hands and feet."""
+
+    def px(x, y):
+        if y >= height * 3 // 4:
             n = noise(x, y) // 2
             return (30 + n, 10, 14, 255)
         n = noise(x, y)
@@ -351,10 +460,10 @@ if __name__ == "__main__":
         (ENTITY / "mehburity_annoyed_talk.png", 256, 128, sphere(256, 128, NEON_CYAN, talk_annoyed_face_ink)),
         (ENTITY / "mehburity_mad_talk.png", 256, 128, sphere(256, 128, NEON_CYAN, talk_angry_face_ink)),
         (ENTITY / "mehburity_angry_talk.png", 256, 128, sphere(256, 128, RAGE_RED, talk_angry_face_ink)),
-        # The demon's head: hollow eyes and a crooked, toothy grin (and the same, talking).
-        (ENTITY / "mehburity_demon.png", 256, 128, sphere(256, 128, NEON_CYAN, demon_face_ink(False))),
-        (ENTITY / "mehburity_demon_talk.png", 256, 128, sphere(256, 128, NEON_CYAN, demon_face_ink(True))),
-        (ENTITY / "mehburity_monster.png", 64, 64, monster_skin(64, 64)),
+        # The demon's head: a gaunt face, hollow eyes and a grin of human teeth (and the same, talking).
+        (ENTITY / "mehburity_demon.png", 512, 256, demon_face(512, 256, False)),
+        (ENTITY / "mehburity_demon_talk.png", 512, 256, demon_face(512, 256, True)),
+        (ENTITY / "mehburity_monster.png", 256, 512, monster_skin(256, 512)),
         # The watcher: Mehburity's smile, glowing white on a near-black head, and a black body with red veins.
         (ENTITY / "watcher.png", 256, 128, sphere(256, 128, (22, 12, 16, 255), face_ink, (245, 240, 235, 255))),
         (ENTITY / "watcher_skin.png", 64, 64, watcher_skin(64, 64)),
